@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { OnboardingStepPage } from "@/components/onboarding/OnboardingStepPage";
+import { ChipSelect } from "@/components/ui/ChipSelect";
 import { routes } from "@/lib/routes";
 
 const specialties = [
@@ -13,6 +17,8 @@ const specialties = [
 ];
 
 export default function SpecialtiesPage() {
+  const [selected, setSelected] = useState<string[]>(["Anxiety & Stress", "Depression"]);
+
   return (
     <OnboardingStepPage
       stepId="specialties"
@@ -23,19 +29,9 @@ export default function SpecialtiesPage() {
       continueHref={routes.onboarding.payout}
       continueLabel="Continue to Payout Settings"
     >
-      <div className="flex flex-wrap gap-3">
-        {specialties.map((specialty) => (
-          <button
-            key={specialty}
-            type="button"
-            className="rounded-full border border-munity-input-border bg-munity-bg px-4 py-2 text-sm font-semibold text-munity-muted transition hover:border-munity-green hover:text-munity-green"
-          >
-            {specialty}
-          </button>
-        ))}
-      </div>
+      <ChipSelect options={specialties} value={selected} onChange={setSelected} />
       <p className="mt-6 text-sm text-munity-muted">
-        You can update your specialties anytime from your profile settings.
+        {selected.length} selected — you can update your specialties anytime from your profile settings.
       </p>
     </OnboardingStepPage>
   );

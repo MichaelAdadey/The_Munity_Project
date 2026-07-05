@@ -1,21 +1,52 @@
+"use client";
+
+import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, Clock, MoreVertical, Video } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useMemo, useState } from "react";
+import { Clock, MoreVertical, Video } from "lucide-react";
 import { TopNav } from "@/components/layout/TopNav";
 import { PatientSidebar } from "@/components/layout/Sidebars";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref } from "@/lib/routes";
 
-const moodBars = [
-  { height: "67%", opacity: "opacity-20" },
-  { height: "75%", opacity: "opacity-30" },
-  { height: "50%", opacity: "opacity-10" },
-  { height: "83%", opacity: "opacity-40" },
-  { height: "67%", opacity: "opacity-25" },
-  { height: "80%", opacity: "opacity-35" },
-  { height: "95%", opacity: "opacity-50" },
-];
+const moodPeriods = ["Last 7 Days", "Last 30 Days", "Last 90 Days"];
+
+const moodData: Record<string, { height: string; opacity: string }[]> = {
+  "Last 7 Days": [
+    { height: "55%", opacity: "opacity-30" },
+    { height: "70%", opacity: "opacity-40" },
+    { height: "62%", opacity: "opacity-35" },
+    { height: "78%", opacity: "opacity-45" },
+    { height: "85%", opacity: "opacity-50" },
+    { height: "72%", opacity: "opacity-38" },
+    { height: "90%", opacity: "opacity-55" },
+  ],
+  "Last 30 Days": [
+    { height: "67%", opacity: "opacity-20" },
+    { height: "75%", opacity: "opacity-30" },
+    { height: "50%", opacity: "opacity-10" },
+    { height: "83%", opacity: "opacity-40" },
+    { height: "67%", opacity: "opacity-25" },
+    { height: "80%", opacity: "opacity-35" },
+    { height: "95%", opacity: "opacity-50" },
+  ],
+  "Last 90 Days": [
+    { height: "45%", opacity: "opacity-15" },
+    { height: "58%", opacity: "opacity-22" },
+    { height: "62%", opacity: "opacity-28" },
+    { height: "70%", opacity: "opacity-32" },
+    { height: "76%", opacity: "opacity-36" },
+    { height: "88%", opacity: "opacity-42" },
+    { height: "92%", opacity: "opacity-48" },
+  ],
+};
 
 const activities = [
   {
@@ -44,8 +75,15 @@ interface PatientOverviewViewProps {
 }
 
 export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
+  const router = useRouter();
+  const { withLoading } = useLoading();
+  const [moodPeriod, setMoodPeriod] = useState("Last 30 Days");
+  const [notes, setNotes] = useState("");
+  const [booked, setBooked] = useState(false);
+
   const avatar = assets.avatars[patient.avatarKey];
   const clinicalNotesHref = patientNavHref(patient.slug, "Clinical Notes");
+  const moodBars = useMemo(() => moodData[moodPeriod], [moodPeriod]);
 
   return (
     <div className="min-h-screen bg-munity-bg">
@@ -62,7 +100,7 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
           }}
         />
 
-        <main className="relative flex-1 px-10 pb-16 pt-6">
+        <AnimatedPage className="relative flex-1 px-10 pb-16 pt-6">
           <section className="flex gap-8 rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
             <div className="relative size-32 shrink-0 overflow-hidden rounded-full shadow-[0_0_0_4px_rgba(214,231,161,0.3)]">
               <Image src={avatar} alt={patient.name} fill className="object-cover" />
@@ -81,18 +119,21 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    className="rounded-xl bg-munity-green px-5 py-4 text-sm font-bold text-white"
+                  <Button
+                    className="px-5 py-4"
+                    onClick={() =>
+                      withLoading(async () => {
+                        await new Promise((resolve) => setTimeout(resolve, 800));
+                        setBooked(true);
+                      }, "Booking session...")
+                    }
+                    disabled={booked}
                   >
-                    Book Session
-                  </button>
-                  <button
-                    type="button"
-                    className="rounded-xl border border-munity-gray px-3 py-3 text-munity-gray"
-                  >
+                    {booked ? "Session Booked ✓" : "Book Session"}
+                  </Button>
+                  <Button variant="outline" className="px-3 py-3">
                     <MoreVertical className="size-4" />
-                  </button>
+                  </Button>
                 </div>
               </div>
               <div className="grid grid-cols-4 gap-4 border-t border-munity-border pt-6">
@@ -117,16 +158,10 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                 <div>
                   <h2 className="text-base text-munity-text">Mood Trends</h2>
                   <p className="text-base text-munity-muted">
-                    Patient self-reported mood levels over the last 30 days
+                    Patient self-reported mood levels over the selected period
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 rounded-lg bg-[#efeded] px-4 py-2 text-base"
-                >
-                  Last 30 Days
-                  <ChevronDown className="size-5" />
-                </button>
+                <DropdownMenu value={moodPeriod} options={moodPeriods} onChange={setMoodPeriod} />
               </div>
               <div className="relative mt-8 flex h-64 items-end justify-between gap-2 border-b border-l border-munity-input-border px-2 pb-4">
                 {[...Array(4)].map((_, i) => (
@@ -137,10 +172,12 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                   />
                 ))}
                 {moodBars.map((bar, i) => (
-                  <div
-                    key={i}
+                  <motion.div
+                    key={`${moodPeriod}-${i}`}
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: bar.height, opacity: 1 }}
+                    transition={{ type: "spring", stiffness: 260, damping: 22, delay: i * 0.05 }}
                     className={`w-[70px] rounded-t-lg bg-munity-green ${bar.opacity}`}
-                    style={{ height: bar.height }}
                   />
                 ))}
               </div>
@@ -170,12 +207,17 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                     019-331
                   </p>
                 </div>
-                <Link
-                  href={clinicalNotesHref}
-                  className="block w-full rounded-xl bg-munity-lime-light py-3 text-center text-base font-bold text-munity-green"
+                <Button
+                  variant="lime"
+                  className="w-full"
+                  onClick={() =>
+                    withLoading(async () => {
+                      router.push(clinicalNotesHref);
+                    }, "Opening session notes...")
+                  }
                 >
                   Prepare Session Notes
-                </Link>
+                </Button>
               </div>
             </section>
 
@@ -186,8 +228,14 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
               </div>
               <div className="relative space-y-8 pl-12">
                 <div className="absolute bottom-2 left-4 top-2 w-0.5 bg-munity-input-border" />
-                {activities.map((item) => (
-                  <div key={item.date} className="relative">
+                {activities.map((item, i) => (
+                  <motion.div
+                    key={item.date}
+                    className="relative"
+                    initial={{ opacity: 0, x: -12 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.08 }}
+                  >
                     <div
                       className={`absolute -left-8 top-1 size-4 rounded-full shadow-[0_0_0_4px_white] ${item.dot}`}
                     />
@@ -198,12 +246,12 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                     >
                       {item.detail}
                     </p>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
               <Link
                 href={patientNavHref(patient.slug, "Progress")}
-                className="mt-8 block w-full text-center text-sm font-bold text-munity-green"
+                className="mt-8 block w-full text-center text-sm font-bold text-munity-green hover:underline"
               >
                 View All Activity
               </Link>
@@ -223,23 +271,29 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
               </div>
               <textarea
                 rows={4}
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
                 placeholder="Start typing private observations or reminders for next session..."
                 className="mt-6 w-full resize-none bg-transparent text-base text-munity-gray outline-none"
               />
               <div className="mt-6 flex justify-end gap-3">
-                <button type="button" className="px-4 py-2 text-sm font-bold text-munity-muted">
+                <Button variant="ghost" onClick={() => setNotes("")}>
                   Discard
-                </button>
-                <button
-                  type="button"
-                  className="rounded-xl bg-munity-green-dark px-6 py-2 text-sm font-bold text-white shadow-sm"
+                </Button>
+                <Button
+                  onClick={() =>
+                    withLoading(async () => {
+                      await new Promise((resolve) => setTimeout(resolve, 700));
+                    }, "Saving draft...")
+                  }
+                  disabled={!notes.trim()}
                 >
                   Save Draft
-                </button>
+                </Button>
               </div>
             </section>
           </div>
-        </main>
+        </AnimatedPage>
       </div>
     </div>
   );

@@ -1,6 +1,12 @@
-import Link from "next/link";
+"use client";
+
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { OnboardingSidebar } from "@/components/layout/Sidebars";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import type { OnboardingStepId } from "@/lib/routes";
 import { onboardingSteps } from "@/lib/routes";
 
@@ -27,45 +33,77 @@ export function OnboardingStepPage({
   continueLabel,
   footer,
 }: OnboardingStepPageProps) {
+  const router = useRouter();
+  const { withLoading } = useLoading();
   const stepIndex = onboardingSteps.findIndex((step) => step.id === stepId);
+
+  async function navigate(href: string, message: string) {
+    await withLoading(async () => {
+      router.push(href);
+    }, message);
+  }
 
   return (
     <div className="flex min-h-screen bg-munity-bg">
       <OnboardingSidebar activeStep={stepId} />
 
       <main className="flex flex-1 flex-col px-24 py-20">
-        <div className="mx-auto w-full max-w-3xl">
+        <AnimatedPage className="mx-auto w-full max-w-3xl">
           <header className="mb-10">
-            <p className="text-sm font-semibold tracking-wide text-munity-muted">
+            <motion.p
+              className="text-sm font-semibold tracking-wide text-munity-muted"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               Step {stepIndex + 1} of {onboardingSteps.length}
-            </p>
-            <h2 className="mt-2 text-[32px] font-bold text-munity-text">{title}</h2>
-            <p className="mt-3 text-lg leading-relaxed text-munity-muted">{description}</p>
+            </motion.p>
+            <motion.h2
+              className="mt-2 text-[32px] font-bold text-munity-text"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+            >
+              {title}
+            </motion.h2>
+            <motion.p
+              className="mt-3 text-lg leading-relaxed text-munity-muted"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              {description}
+            </motion.p>
           </header>
 
-          <div className="rounded-[20px] border border-munity-border bg-white px-8 pb-8 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+          <motion.div
+            className="rounded-[20px] border border-munity-border bg-white px-8 pb-8 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12, type: "spring", stiffness: 280, damping: 28 }}
+          >
             {children}
-          </div>
+          </motion.div>
 
           <div className="mt-10 flex items-center justify-between pb-6">
-            <Link
-              href={backHref}
-              className="flex items-center gap-2 px-10 py-3 text-sm font-semibold text-munity-green"
+            <Button
+              variant="ghost"
+              className="px-10"
+              onClick={() => navigate(backHref, "Going back...")}
             >
               <ArrowLeft className="size-3" />
               {backLabel}
-            </Link>
-            <Link
-              href={continueHref}
-              className="flex h-14 items-center gap-2 rounded-xl bg-munity-green px-8 text-sm font-semibold text-white"
+            </Button>
+            <Button
+              className="h-14 px-8"
+              onClick={() => navigate(continueHref, "Saving your progress...")}
             >
               {continueLabel}
               <ArrowRight className="size-3.5" />
-            </Link>
+            </Button>
           </div>
 
           {footer}
-        </div>
+        </AnimatedPage>
       </main>
     </div>
   );

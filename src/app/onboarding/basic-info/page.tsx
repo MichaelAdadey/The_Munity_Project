@@ -1,7 +1,18 @@
-import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+"use client";
+
 import { OnboardingStepPage } from "@/components/onboarding/OnboardingStepPage";
+import { Field } from "@/components/ui/Field";
+import { Select } from "@/components/ui/Select";
 import { routes } from "@/lib/routes";
+
+const stateOptions = [
+  { value: "", label: "Select state" },
+  { value: "CA", label: "California" },
+  { value: "NY", label: "New York" },
+  { value: "WA", label: "Washington" },
+  { value: "TX", label: "Texas" },
+  { value: "FL", label: "Florida" },
+];
 
 export default function BasicInfoPage() {
   return (
@@ -28,28 +39,13 @@ export default function BasicInfoPage() {
           <input type="tel" placeholder="(555) 123-4567" className="input-field" />
         </Field>
         <div className="md:col-span-2">
-          <Field label="Practice Location">
-            <select className="input-field appearance-none">
-              <option>Select state</option>
-              <option>California</option>
-              <option>New York</option>
-              <option>Washington</option>
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 size-5 -translate-y-1/2 text-munity-text" />
-          </Field>
+          <Select
+            label="Practice Location"
+            placeholder="Select state"
+            options={stateOptions.filter((option) => option.value !== "")}
+          />
         </div>
       </div>
     </OnboardingStepPage>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold tracking-wide text-munity-muted">
-        {label}
-      </label>
-      <div className="relative">{children}</div>
-    </div>
   );
 }

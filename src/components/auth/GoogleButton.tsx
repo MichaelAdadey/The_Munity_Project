@@ -1,6 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/Button";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { routes } from "@/lib/routes";
 
 interface GoogleButtonProps {
@@ -32,15 +34,20 @@ function GoogleIcon() {
 
 export function GoogleButton({ href = routes.dashboard }: GoogleButtonProps) {
   const router = useRouter();
+  const { withLoading } = useLoading();
 
   return (
-    <button
-      type="button"
-      onClick={() => router.push(href)}
-      className="flex h-[54px] w-full items-center justify-center gap-3 rounded-xl border border-munity-input-border bg-munity-sidebar text-sm font-semibold tracking-wide text-munity-text transition hover:border-munity-green/40"
+    <Button
+      variant="secondary"
+      className="h-[54px] w-full"
+      onClick={() =>
+        withLoading(async () => {
+          router.push(href);
+        }, "Connecting with Google...")
+      }
     >
       <GoogleIcon />
       Continue with Google
-    </button>
+    </Button>
   );
 }

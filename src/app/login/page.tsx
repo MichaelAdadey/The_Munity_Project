@@ -8,10 +8,14 @@ import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { routes } from "@/lib/routes";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { withLoading } = useLoading();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -25,7 +29,7 @@ export default function LoginPage() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-8">
+      <AnimatedPage className="flex w-full max-w-[480px] flex-col gap-8">
         <AuthBrandHeader />
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10 pb-10 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
@@ -33,7 +37,9 @@ export default function LoginPage() {
             className="flex flex-col gap-6"
             onSubmit={(event) => {
               event.preventDefault();
-              router.push(routes.dashboard);
+              withLoading(async () => {
+                router.push(routes.dashboard);
+              }, "Signing you in...");
             }}
           >
             <AuthField label="Email Address" icon={Mail}>
@@ -69,19 +75,16 @@ export default function LoginPage() {
             </div>
 
             <div className="flex flex-col gap-4 pt-2">
-              <button
-                type="submit"
-                className="h-[52px] rounded-xl bg-munity-green text-sm font-semibold tracking-wide text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:bg-munity-green-dark"
-              >
+              <Button type="submit" className="h-[52px] w-full">
                 Login
-              </button>
+              </Button>
 
               <AuthDivider />
               <GoogleButton />
             </div>
           </form>
         </div>
-      </div>
+      </AnimatedPage>
     </AuthShell>
   );
 }

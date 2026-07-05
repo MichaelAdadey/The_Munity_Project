@@ -1,4 +1,7 @@
+"use client";
+
 import { OnboardingStepPage } from "@/components/onboarding/OnboardingStepPage";
+import { Field } from "@/components/ui/Field";
 import { routes } from "@/lib/routes";
 
 export default function PayoutPage() {
@@ -30,16 +33,5 @@ export default function PayoutPage() {
         Your banking information is encrypted and stored securely. Payouts are processed weekly.
       </p>
     </OnboardingStepPage>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="mb-2 block text-sm font-semibold tracking-wide text-munity-muted">
-        {label}
-      </label>
-      <div className="relative">{children}</div>
-    </div>
   );
 }

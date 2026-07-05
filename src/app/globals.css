@@ -26,10 +26,44 @@ body {
 
 @layer components {
   .input-field {
-    @apply h-12 w-full rounded-xl border border-munity-input-border bg-munity-bg px-4 text-base outline-none focus:border-munity-green;
+    @apply h-12 w-full rounded-xl border border-munity-input-border bg-munity-bg px-4 text-base outline-none transition-all duration-200 focus:border-munity-green focus:shadow-[0_0_0_3px_rgba(62,82,25,0.12)];
   }
 
   .auth-input {
-    @apply h-[52px] w-full rounded-xl border border-munity-input-border bg-munity-sidebar pl-12 pr-4 text-base text-munity-text outline-none placeholder:text-munity-gray/60 focus:border-munity-green;
+    @apply h-[52px] w-full rounded-xl border border-munity-input-border bg-munity-sidebar pl-12 pr-4 text-base text-munity-text outline-none transition-all duration-200 placeholder:text-munity-gray/60 focus:border-munity-green focus:shadow-[0_0_0_3px_rgba(62,82,25,0.12)];
+  }
+
+  .loader-3d-scene {
+    perspective: 800px;
+    perspective-origin: center;
+  }
+
+  .loader-3d-ring {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+  }
+
+  .loader-3d-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 10px;
+    border: 2px solid rgba(62, 82, 25, 0.25);
+    background: linear-gradient(135deg, rgba(214, 231, 161, 0.9), rgba(62, 82, 25, 0.15));
+    backface-visibility: visible;
+  }
+
+  .loader-3d-face-front  { transform: translateZ(calc(var(--loader-depth, 24px))); }
+  .loader-3d-face-back   { transform: rotateY(180deg) translateZ(calc(var(--loader-depth, 24px))); }
+  .loader-3d-face-right  { transform: rotateY(90deg) translateZ(calc(var(--loader-depth, 24px))); }
+  .loader-3d-face-left   { transform: rotateY(-90deg) translateZ(calc(var(--loader-depth, 24px))); }
+  .loader-3d-face-top    { transform: rotateX(90deg) translateZ(calc(var(--loader-depth, 24px))); }
+  .loader-3d-face-bottom { transform: rotateX(-90deg) translateZ(calc(var(--loader-depth, 24px))); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-3d-ring {
+    animation: none !important;
   }
 }

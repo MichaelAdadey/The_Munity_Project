@@ -8,10 +8,14 @@ import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { routes } from "@/lib/routes";
 
 export default function SignupPage() {
   const router = useRouter();
+  const { withLoading } = useLoading();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -26,7 +30,7 @@ export default function SignupPage() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-8">
+      <AnimatedPage className="flex w-full max-w-[480px] flex-col gap-8">
         <AuthBrandHeader
           title="Join Munity"
           subtitle="Create your therapist account to get started"
@@ -37,7 +41,9 @@ export default function SignupPage() {
             className="flex flex-col gap-6"
             onSubmit={(event) => {
               event.preventDefault();
-              router.push(routes.onboarding.basicInfo);
+              withLoading(async () => {
+                router.push(routes.onboarding.basicInfo);
+              }, "Creating your account...");
             }}
           >
             <AuthField label="Full Name" icon={User}>
@@ -71,19 +77,16 @@ export default function SignupPage() {
             />
 
             <div className="flex flex-col gap-4 pt-2">
-              <button
-                type="submit"
-                className="h-[52px] rounded-xl bg-munity-green text-sm font-semibold tracking-wide text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:bg-munity-green-dark"
-              >
+              <Button type="submit" className="h-[52px] w-full">
                 Create Account
-              </button>
+              </Button>
 
               <AuthDivider />
               <GoogleButton href={routes.onboarding.basicInfo} />
             </div>
           </form>
         </div>
-      </div>
+      </AnimatedPage>
     </AuthShell>
   );
 }
@@ -130,12 +133,12 @@ function PasswordField({
           type={showPassword ? "text" : "password"}
           placeholder="••••••••"
           className="auth-input pr-12"
-          autoComplete={label === "Password" ? "new-password" : "new-password"}
+          autoComplete="new-password"
         />
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-4 top-1/2 -translate-y-1/2 text-munity-gray"
+          className="absolute right-4 top-1/2 -translate-y-1/2 text-munity-gray transition hover:text-munity-green"
           aria-label={showPassword ? "Hide password" : "Show password"}
         >
           {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}

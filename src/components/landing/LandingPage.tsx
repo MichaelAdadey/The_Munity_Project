@@ -3,14 +3,11 @@ import Link from "next/link";
 import {
   Activity,
   BookOpen,
-  ChevronLeft,
-  ChevronRight,
   Ghost,
   Lock,
   Moon,
   PenLine,
   Search,
-  Star,
   UserCheck,
   UserPlus,
   Users,
@@ -18,6 +15,7 @@ import {
 } from "lucide-react";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingHeader } from "@/components/landing/LandingHeader";
+import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
 import { assets } from "@/lib/assets";
 import { routes } from "@/lib/routes";
 
@@ -52,30 +50,6 @@ const journeySteps = [
   },
 ];
 
-const testimonials = [
-  {
-    quote:
-      '"Munity changed how I view my anxiety. The peer support groups made me realize I wasn\'t alone, and the transition to a professional therapist within the same app was seamless."',
-    name: "Sarah M.",
-    role: "Community Member since 2023",
-    avatarClass: "bg-[#d9eaa3]",
-  },
-  {
-    quote:
-      '"As a therapist, I find Munity\'s platform incredible for connecting with clients who are already engaged in their wellness journey. The tools available are clinical-grade."',
-    name: "Dr. James K.",
-    role: "Licensed Psychologist",
-    avatarClass: "bg-[#b6d088]",
-  },
-  {
-    quote:
-      '"The anonymity allowed me to speak my truth for the first time. The kindness of strangers here is what kept me going through my darkest months."',
-    name: "Anonymous Member",
-    role: "Health Advocate",
-    avatarClass: "bg-[#dbd9d9]",
-  },
-];
-
 const resourceTags = [
   { label: "Meditation", icon: Wind },
   { label: "Journaling", icon: PenLine },
@@ -93,7 +67,7 @@ export function LandingPage() {
         <StatsSection />
         <FeaturesSection />
         <JourneySection />
-        <TestimonialsSection />
+        <TestimonialsCarousel />
         <CtaSection />
       </main>
 
@@ -348,66 +322,6 @@ function JourneySection() {
             height={504}
             className="w-full rounded-2xl"
           />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function TestimonialsSection() {
-  return (
-    <section className="bg-munity-sidebar px-10 py-24">
-      <div className="mx-auto max-w-7xl">
-        <div className="flex items-end justify-between gap-6">
-          <div>
-            <h2 className="text-[32px] font-bold text-munity-text">Real Stories of Recovery</h2>
-            <p className="mt-2 text-base text-munity-muted">
-              Voices from our thriving community members.
-            </p>
-          </div>
-          <div className="hidden gap-4 sm:flex">
-            <button
-              type="button"
-              aria-label="Previous testimonial"
-              className="flex size-12 items-center justify-center rounded-full border border-munity-gray text-munity-gray"
-            >
-              <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              aria-label="Next testimonial"
-              className="flex size-12 items-center justify-center rounded-full border border-munity-gray text-munity-gray"
-            >
-              <ChevronRight className="size-4" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-12 flex gap-6 overflow-x-auto pb-4">
-          {testimonials.map((item) => (
-            <article
-              key={item.name}
-              className="flex min-w-[400px] flex-col justify-between rounded-3xl bg-white p-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
-            >
-              <div>
-                <div className="flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="size-5 fill-munity-green text-munity-green" />
-                  ))}
-                </div>
-                <p className="mt-4 text-base italic leading-relaxed text-munity-text">
-                  {item.quote}
-                </p>
-              </div>
-              <div className="mt-8 flex items-center gap-4">
-                <div className={`size-12 rounded-full ${item.avatarClass}`} />
-                <div>
-                  <p className="font-bold text-munity-text">{item.name}</p>
-                  <p className="text-xs font-medium text-munity-muted">{item.role}</p>
-                </div>
-              </div>
-            </article>
-          ))}
         </div>
       </div>
     </section>

@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { useState } from "react";
 import {
-  Calendar,
   Check,
   ChevronRight,
   Download,
@@ -10,9 +13,15 @@ import {
 } from "lucide-react";
 import { TopNav } from "@/components/layout/TopNav";
 import { PatientSidebar } from "@/components/layout/Sidebars";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { DropdownMenu } from "@/components/ui/DropdownMenu";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref, routes } from "@/lib/routes";
+
+const dateRanges = ["Last 30 Days", "Last 3 Months", "Last 6 Months", "Last 12 Months"];
 
 const themeTags = [
   { label: "Anxiety", className: "bg-munity-green text-white text-lg font-bold px-4 py-2" },
@@ -42,6 +51,8 @@ interface TherapeuticProgressViewProps {
 }
 
 export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProps) {
+  const { withLoading } = useLoading();
+  const [dateRange, setDateRange] = useState("Last 6 Months");
   const avatar = assets.avatars[patient.avatarKey];
 
   return (
@@ -59,7 +70,7 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
           }}
         />
 
-        <main className="flex-1 px-10 pb-24 pt-6">
+        <AnimatedPage className="flex-1 px-10 pb-24 pt-6">
           <div className="mb-8 flex items-center justify-between">
             <div>
               <nav className="mb-1 flex items-center gap-2 text-xs font-medium text-munity-muted">
@@ -76,20 +87,17 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
               <h1 className="text-[32px] font-bold text-munity-text">Therapeutic Progress</h1>
             </div>
             <div className="flex gap-3">
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-xl border border-munity-gray px-4 py-3 text-sm font-semibold text-munity-green"
-              >
-                <Calendar className="size-3.5" />
-                Last 6 Months
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-2 rounded-xl bg-munity-green-dark px-4 py-3 text-sm font-semibold text-white shadow-sm"
+              <DropdownMenu value={dateRange} options={dateRanges} onChange={setDateRange} />
+              <Button
+                onClick={() =>
+                  withLoading(async () => {
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                  }, "Generating report...")
+                }
               >
                 <Download className="size-3" />
                 Export Report
-              </button>
+              </Button>
             </div>
           </div>
 
@@ -181,8 +189,10 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
               </p>
               <div className="mt-6 flex h-48 items-end justify-center gap-3 px-2">
                 {attendanceBars.map((bar, i) => (
-                  <div
-                    key={i}
+                  <motion.div
+                    key={`${dateRange}-${i}`}
+                    initial={{ height: 0 }}
+                    animate={{ height: "auto" }}
                     className={`w-[18px] rounded-t-lg ${bar.color} ${bar.h}`}
                   />
                 ))}
@@ -293,7 +303,7 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
               </div>
             </section>
           </div>
-        </main>
+        </AnimatedPage>
       </div>
     </div>
   );

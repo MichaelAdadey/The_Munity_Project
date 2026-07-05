@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   Bell,
   Check,
@@ -11,6 +15,9 @@ import {
 } from "lucide-react";
 import { TopNav } from "@/components/layout/TopNav";
 import { PatientSidebar } from "@/components/layout/Sidebars";
+import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { Button } from "@/components/ui/Button";
+import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref, routes } from "@/lib/routes";
@@ -53,8 +60,12 @@ interface ClinicalNotesViewProps {
 }
 
 export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
+  const { withLoading } = useLoading();
+  const [activeSessionId, setActiveSessionId] = useState(12);
+  const [saved, setSaved] = useState(false);
   const avatar = assets.avatars[patient.avatarKey];
   const firstName = patient.name.split(" ")[0];
+  const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
 
   return (
     <div className="min-h-screen bg-munity-bg">
@@ -102,25 +113,34 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                 <input
                   type="search"
                   placeholder="Search notes..."
-                  className="w-full rounded-xl border border-munity-input-border bg-white py-3.5 pl-10 pr-4 text-base text-gray-500 outline-none"
+                  className="w-full rounded-xl border border-munity-input-border bg-white py-3.5 pl-10 pr-4 text-base text-gray-500 outline-none transition focus:border-munity-green focus:shadow-[0_0_0_3px_rgba(62,82,25,0.12)]"
                 />
               </div>
               <div className="flex flex-col gap-3 overflow-auto">
-                {sessions.map((session) => (
-                  <article
+                {sessions.map((session) => {
+                  const isActive = session.id === activeSessionId;
+                  return (
+                  <motion.button
                     key={session.id}
-                    className={`rounded-[20px] border bg-white p-[18px] shadow-[0_4px_10px_rgba(85,107,47,0.05)] ${
-                      session.active
+                    type="button"
+                    onClick={() => {
+                      setActiveSessionId(session.id);
+                      setSaved(false);
+                    }}
+                    whileHover={{ y: -2 }}
+                    whileTap={{ scale: 0.98 }}
+                    className={`rounded-[20px] border bg-white p-[18px] text-left shadow-[0_4px_10px_rgba(85,107,47,0.05)] ${
+                      isActive
                         ? "border-2 border-munity-green"
                         : "border-munity-input-border"
                     } ${session.faded ? "opacity-80" : ""}`}
                   >
                     <div className="flex items-center justify-between text-sm">
-                      <span
-                        className={`font-semibold tracking-wide ${
-                          session.active ? "text-munity-green" : "text-munity-muted"
-                        }`}
-                      >
+                    <span
+                      className={`font-semibold tracking-wide ${
+                        isActive ? "text-munity-green" : "text-munity-muted"
+                      }`}
+                    >
                         Session #{session.id}
                       </span>
                       <span className="text-xs font-medium text-munity-muted">{session.date}</span>
@@ -143,38 +163,40 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                         ))}
                       </div>
                     )}
-                  </article>
-                ))}
+                  </motion.button>
+                  );
+                })}
               </div>
             </aside>
 
-            <main className="flex flex-1 flex-col overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
+            <AnimatedPage className="flex flex-1 flex-col overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
               <div className="flex items-center justify-between border-b border-munity-input-border bg-munity-bg px-8 py-5">
                 <div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="font-semibold tracking-wide text-munity-green">Session #12</span>
+                    <span className="font-semibold tracking-wide text-munity-green">Session #{activeSession.id}</span>
                     <span className="text-munity-gray">•</span>
-                    <span className="font-semibold tracking-wide text-munity-muted">Oct 24, 2023</span>
+                    <span className="font-semibold tracking-wide text-munity-muted">{activeSession.date}</span>
                   </div>
                   <h1 className="text-2xl font-semibold text-munity-text">
-                    Addressing Anxiety Triggers
+                    {activeSession.title}
                   </h1>
                 </div>
                 <div className="flex gap-3">
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-munity-muted"
-                  >
+                  <Button variant="ghost">
                     <Printer className="size-4" />
                     Export
-                  </button>
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 rounded-xl bg-munity-green px-6 py-2 text-sm font-semibold text-white shadow-md"
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      withLoading(async () => {
+                        await new Promise((resolve) => setTimeout(resolve, 800));
+                        setSaved(true);
+                      }, "Saving changes...")
+                    }
                   >
                     <Save className="size-4" />
-                    Save Changes
-                  </button>
+                    {saved ? "Saved ✓" : "Save Changes"}
+                  </Button>
                 </div>
               </div>
 
@@ -257,7 +279,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                   </p>
                 </div>
               </div>
-            </main>
+            </AnimatedPage>
           </div>
         </div>
       </div>
