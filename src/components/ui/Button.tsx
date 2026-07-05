@@ -25,11 +25,13 @@ interface ButtonBaseProps {
 type ButtonAsButton = ButtonBaseProps &
   Omit<HTMLMotionProps<"button">, "children"> & {
     href?: undefined;
+    disabled?: boolean;
   };
 
 type ButtonAsLink = ButtonBaseProps &
   Omit<HTMLMotionProps<"a">, "children"> & {
     href: string;
+    disabled?: boolean;
   };
 
 export type ButtonProps = ButtonAsButton | ButtonAsLink;
