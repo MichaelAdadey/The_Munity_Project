@@ -5,7 +5,7 @@ import peer from "@/public/images/peer.png";
 import works from "@/public/images/works.png";
 import Button from "@/components/Button";
 
-const Home = () => {
+const Welcome = () => {
   return (
     <div>
       <div
@@ -341,4 +341,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Welcome;
