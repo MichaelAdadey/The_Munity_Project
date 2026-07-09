@@ -7,11 +7,11 @@ export const assets = {
     communityGraphic: "/landing/community-graphic.png",
     appMockup: "/landing/app-mockup.png",
   },
-  onboarding: {
+  therapistOnboarding: {
     trustBadges: [
-      "/onboarding/trust-badge-1.jpg",
-      "/onboarding/trust-badge-2.jpg",
-      "/onboarding/trust-badge-3.jpg",
+      "/therapistonboarding/trust-badge-1.jpg",
+      "/therapistonboarding/trust-badge-2.jpg",
+      "/therapistonboarding/trust-badge-3.jpg",
     ],
   },
   avatars: {

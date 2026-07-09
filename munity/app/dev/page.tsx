@@ -15,27 +15,27 @@ const screens = [
   {
     title: "Onboarding — Basic Info",
     subtitle: "Step 1 of 4",
-    href: routes.onboarding.basicInfo,
+    href: routes.therapistOnboarding.basicInfo,
   },
   {
     title: "Onboarding — Credentials",
     subtitle: "Step 2 of 4",
-    href: routes.onboarding.credentials,
+    href: routes.therapistOnboarding.credentials,
   },
   {
     title: "Onboarding — Specialties",
     subtitle: "Step 3 of 4",
-    href: routes.onboarding.specialties,
+    href: routes.therapistOnboarding.specialties,
   },
   {
     title: "Onboarding — Payout",
-    subtitle: "Step 4 of 4 → dashboard",
-    href: routes.onboarding.payout,
+    subtitle: "Step 4 of 4 → therapist dashboard",
+    href: routes.therapistOnboarding.payout,
   },
   {
     title: "Dashboard",
-    subtitle: "Clinical home — redirects to default patient",
-    href: routes.dashboard,
+    subtitle: "Therapist clinical home — schedule, caseload, and tasks",
+    href: routes.therapistDashboard,
   },
   ...patientSlugs.flatMap((slug) => {
     const patient = patientsBySlug[slug];

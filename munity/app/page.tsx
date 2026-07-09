@@ -1,12 +1,16 @@
 "use client"
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/navigation";
 import wellness from "@/public/images/wellness.png";
 import peer from "@/public/images/peer.png";
 import works from "@/public/images/works.png";
 import Button from "@/components/Button";
+import { routes } from "@/lib/routes";
 
 const Home = () => {
+  const router = useRouter();
+
   return (
     <div>
       <div
@@ -14,10 +18,18 @@ const Home = () => {
         className="flex justify-between px-6 py-3 items-center shadow-sm"
       >
         <div className="font-bold text-[#3E5219] text-[24px] font">Munity</div>
-        <Button
-          name="Login"
-          buttonStyles="bg-[#3E5219] text-[#fff] font-semibold text-[14px] w-[99px]"
-        />
+        <div className="flex items-center gap-3">
+          <Button
+            name="Join as a therapist"
+            onclick={() => router.push(routes.therapistOnboarding.basicInfo)}
+            buttonStyles="bg-[#D6E7A1] text-[#5A682F] font-semibold text-[14px] px-5"
+          />
+          <Button
+            name="Login"
+            onclick={() => router.push(routes.login)}
+            buttonStyles="bg-[#3E5219] text-[#fff] font-semibold text-[14px] w-[99px]"
+          />
+        </div>
       </div>
 
       <div id="description" className="flex justify-between py-20 px-10">

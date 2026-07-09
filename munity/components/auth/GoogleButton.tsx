@@ -32,7 +32,7 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleButton({ href = routes.dashboard }: GoogleButtonProps) {
+export function GoogleButton({ href = routes.therapistDashboard }: GoogleButtonProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
 

@@ -5,12 +5,12 @@ export const routes = {
   login: "/login",
   signup: "/signup",
   dev: "/dev",
-  dashboard: "/dashboard",
-  onboarding: {
-    basicInfo: "/onboarding/basic-info",
-    credentials: "/onboarding/credentials",
-    specialties: "/onboarding/specialties",
-    payout: "/onboarding/payout",
+  therapistDashboard: "/therapistdashboard",
+  therapistOnboarding: {
+    basicInfo: "/therapistonboarding/basic-info",
+    credentials: "/therapistonboarding/credentials",
+    specialties: "/therapistonboarding/specialties",
+    payout: "/therapistonboarding/payout",
   },
 } as const;
 
@@ -28,28 +28,28 @@ export const onboardingSteps: {
     number: 1,
     label: "Step 1",
     title: "Basic Info",
-    href: routes.onboarding.basicInfo,
+    href: routes.therapistOnboarding.basicInfo,
   },
   {
     id: "credentials",
     number: 2,
     label: "Step 2",
     title: "Professional Credentials",
-    href: routes.onboarding.credentials,
+    href: routes.therapistOnboarding.credentials,
   },
   {
     id: "specialties",
     number: 3,
     label: "Step 3",
     title: "Specialties & Expertise",
-    href: routes.onboarding.specialties,
+    href: routes.therapistOnboarding.specialties,
   },
   {
     id: "payout",
     number: 4,
     label: "Step 4",
     title: "Payout Settings",
-    href: routes.onboarding.payout,
+    href: routes.therapistOnboarding.payout,
   },
 ];
 
@@ -102,9 +102,9 @@ export function getPatient(slug: string): PatientRecord | null {
 
 export function patientRoutes(slug: PatientSlug) {
   return {
-    overview: `/patients/${slug}`,
-    clinicalNotes: `/patients/${slug}/clinical-notes`,
-    progress: `/patients/${slug}/progress`,
+    overview: `/therapistpatients/${slug}`,
+    clinicalNotes: `/therapistpatients/${slug}/clinical-notes`,
+    progress: `/therapistpatients/${slug}/progress`,
   };
 }
 
