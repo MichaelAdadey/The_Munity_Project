@@ -16,7 +16,7 @@ import {
 import { TopNav } from "@/components/layout/TopNav";
 import { PatientSidebar } from "@/components/layout/Sidebars";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/AppButton";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import type { PatientRecord } from "@/lib/routes";

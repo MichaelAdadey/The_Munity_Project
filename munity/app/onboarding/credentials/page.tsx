@@ -4,7 +4,7 @@ import { OnboardingStepPage } from "@/components/onboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { RangeField } from "@/components/ui/RangeField";
-import { Select } from "@/components/ui/Select";
+import { Select } from "@/components/ui/AppSelect";
 import { assets } from "@/lib/assets";
 import { routes } from "@/lib/routes";
 

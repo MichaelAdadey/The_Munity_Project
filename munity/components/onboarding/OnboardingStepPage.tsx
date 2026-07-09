@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { OnboardingSidebar } from "@/components/layout/Sidebars";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/components/ui/AppButton";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import type { OnboardingStepId } from "@/lib/routes";
 import { onboardingSteps } from "@/lib/routes";

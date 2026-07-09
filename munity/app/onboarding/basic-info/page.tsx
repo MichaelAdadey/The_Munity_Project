@@ -2,7 +2,7 @@
 
 import { OnboardingStepPage } from "@/components/onboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
-import { Select } from "@/components/ui/Select";
+import { Select } from "@/components/ui/AppSelect";
 import { routes } from "@/lib/routes";
 
 const stateOptions = [
