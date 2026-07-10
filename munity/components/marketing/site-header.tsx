@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { Logo } from '@/components/logo'
-import { Button } from '@/components/ui/Button'
+import { Button } from '@/components/ui/button'
 
 const links = [
   { href: '#features', label: 'Features' },

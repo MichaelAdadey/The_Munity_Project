@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/Button"
+import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Flame, Sparkles, Users, Wind } from "lucide-react"
 import { formatCount } from "@/lib/utils"
