@@ -51,6 +51,7 @@ const Home = () => {
             src={wellness}
             alt="Wellness"
             className="rounded-[40px]"
+            loading="eager"
           ></Image>
         </div>
       </div>
