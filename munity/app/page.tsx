@@ -5,8 +5,15 @@ import wellness from "@/public/images/wellness.png";
 import peer from "@/public/images/peer.png";
 import works from "@/public/images/works.png";
 import Button from "@/components/Button";
+import { useRouter } from "next/navigation";
 
 const Home = () => {
+  const router = useRouter();
+
+  const login = () => {
+    router.push("/login")
+  }
+
   return (
     <div>
       <div
@@ -17,6 +24,7 @@ const Home = () => {
         <Button
           name="Login"
           buttonStyles="bg-[#3E5219] text-[#fff] font-semibold text-[14px] w-[99px]"
+          onclick={login}
         />
       </div>
 
