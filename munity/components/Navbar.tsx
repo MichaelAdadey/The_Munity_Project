@@ -8,9 +8,9 @@ import React from "react";
 
 const Navbar = () => {
   const pageLink = [
-    { pageName: "Home", pageLink: "/Home" },
+    { pageName: "Home", pageLink: "/home" },
     { pageName: "Communities", pageLink: "/Communities" },
-    { pageName: "Resources", pageLink: "/Resources" },
+    { pageName: "Resources", pageLink: "/resources" },
     { pageName: "Therapy", pageLink: "/Therapy" },
   ];
   
