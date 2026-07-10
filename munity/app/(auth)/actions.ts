@@ -70,7 +70,7 @@ export async function signUp(
 /**
  * Google OAuth. Redirects to the provider's consent screen.
  */
-export async function signInWithGoogle(): Promise<AuthState> {
+export async function signInWithGoogle(): Promise<void> {
   if (!isSupabaseConfigured()) {
     redirect('/home')
   }
@@ -82,7 +82,7 @@ export async function signInWithGoogle(): Promise<AuthState> {
     options: { redirectTo: `${siteUrl}/auth/callback` },
   })
 
-  if (error) return { error: error.message }
+  if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`)
   if (data.url) redirect(data.url)
 }
 
