@@ -1,8 +1,7 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Bell, Settings } from "lucide-react";
-import { assets } from "@/lib/assets";
-import { defaultPatientSlug, patientRoutes, routes } from "@/lib/routes";
+import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMenu";
+import { routes } from "@/lib/routes";
 
 type NavItem = "Dashboard" | "Patients" | "Sessions" | "Analytics";
 
@@ -13,9 +12,9 @@ interface TopNavProps {
 
 const navItems: { label: NavItem; href: string }[] = [
   { label: "Dashboard", href: routes.therapistDashboard },
-  { label: "Patients", href: patientRoutes(defaultPatientSlug).overview },
-  { label: "Sessions", href: patientRoutes(defaultPatientSlug).clinicalNotes },
-  { label: "Analytics", href: patientRoutes(defaultPatientSlug).progress },
+  { label: "Patients", href: routes.therapistPatients },
+  { label: "Sessions", href: routes.therapistClinicalNotes },
+  { label: "Analytics", href: routes.therapistAnalytics },
 ];
 
 export function TopNav({ active = "Patients", showSearch = false }: TopNavProps) {
@@ -75,17 +74,7 @@ export function TopNav({ active = "Patients", showSearch = false }: TopNavProps)
           <button type="button" className="rounded-full p-2 text-munity-muted hover:bg-munity-sidebar">
             <Settings className="size-5" />
           </button>
-          <Link
-            href={routes.therapistDashboard}
-            className="relative size-9 overflow-hidden rounded-full border-2 border-[#eae8e7]"
-          >
-            <Image
-              src={assets.avatars.clinician}
-              alt="Clinician profile"
-              fill
-              className="object-cover"
-            />
-          </Link>
+          <ProfileAvatarMenu />
         </div>
       </div>
     </header>

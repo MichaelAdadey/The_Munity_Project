@@ -1,36 +1,129 @@
 "use client";
 
+import { useState } from "react";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
+import { ChipSelect } from "@/components/ui/ChipSelect";
+import { Select } from "@/components/ui/AppSelect";
+import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
 import { routes } from "@/lib/routes";
 
+const payoutMethodOptions = ["Mobile Money", "Bank Transfer"];
+
 export default function PayoutPage() {
+  const [payoutMethods, setPayoutMethods] = useState<string[]>([]);
+  const [mobileMoneyNetwork, setMobileMoneyNetwork] = useState("");
+  const [bankName, setBankName] = useState("");
+
+  const hasMobileMoney = payoutMethods.includes("Mobile Money");
+  const hasBank = payoutMethods.includes("Bank Transfer");
+
   return (
     <OnboardingStepPage
       stepId="payout"
       title="Payout Settings"
-      description="Connect your bank account to receive payments for sessions and community support."
+      description="Connect your Mobile Money and/or bank accounts to receive payments for sessions and community support in Ghana."
       backHref={routes.therapistOnboarding.specialties}
       backLabel="Back to Specialties"
-      continueHref={routes.therapistDashboard}
-      continueLabel="Finish & Go to Dashboard"
+      continueHref={routes.therapistCredentialAuth}
+      continueLabel="Submit Application"
+      validate={() => {
+        if (payoutMethods.length === 0) {
+          window.alert("Please select at least one payout method.");
+          return false;
+        }
+        if (hasMobileMoney && !mobileMoneyNetwork) {
+          window.alert("Please select your Mobile Money network.");
+          return false;
+        }
+        if (hasBank && !bankName) {
+          window.alert("Please select your bank.");
+          return false;
+        }
+        return true;
+      }}
     >
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Field label="Account Holder Name">
-          <input type="text" placeholder="Jane Smith" className="input-field" />
-        </Field>
-        <Field label="Bank Name">
-          <input type="text" placeholder="Chase Bank" className="input-field" />
-        </Field>
-        <Field label="Routing Number">
-          <input type="text" placeholder="021000021" className="input-field" />
-        </Field>
-        <Field label="Account Number">
-          <input type="text" placeholder="**** **** **** 1234" className="input-field" />
-        </Field>
+      <div>
+        <label className="mb-3 block text-sm font-semibold tracking-wide text-munity-muted">
+          Payout Methods
+        </label>
+        <ChipSelect
+          options={payoutMethodOptions}
+          value={payoutMethods}
+          onChange={setPayoutMethods}
+        />
+        <p className="mt-3 text-sm text-munity-muted">
+          Select all payment methods you want to use for payouts.
+        </p>
       </div>
-      <p className="mt-6 text-sm text-munity-muted">
-        Your banking information is encrypted and stored securely. Payouts are processed weekly.
+
+      {hasMobileMoney ? (
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Field label="Name on MoMo Account">
+              <input
+                type="text"
+                name="momoAccountName"
+                placeholder="Ama Mensah"
+                className="input-field"
+                required={hasMobileMoney}
+              />
+            </Field>
+          </div>
+          <Select
+            label="Mobile Money Network"
+            placeholder="Select network"
+            options={[...ghanaMobileMoneyProviders]}
+            value={mobileMoneyNetwork}
+            onChange={setMobileMoneyNetwork}
+          />
+          <Field label="MoMo Number">
+            <input
+              type="text"
+              name="momoNumber"
+              placeholder="024 123 4567"
+              className="input-field"
+              required={hasMobileMoney}
+            />
+          </Field>
+        </div>
+      ) : null}
+
+      {hasBank ? (
+        <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <Field label="Name on Bank Account">
+              <input
+                type="text"
+                name="bankAccountName"
+                placeholder="Ama Mensah"
+                className="input-field"
+                required={hasBank}
+              />
+            </Field>
+          </div>
+          <Select
+            label="Bank Name"
+            placeholder="Select bank"
+            options={[...ghanaBanks]}
+            value={bankName}
+            onChange={setBankName}
+          />
+          <Field label="Bank Account Number">
+            <input
+              type="text"
+              name="bankAccountNumber"
+              placeholder="1234567890"
+              className="input-field"
+              required={hasBank}
+            />
+          </Field>
+        </div>
+      ) : null}
+
+      <p className="mt-8 text-sm text-munity-muted">
+        Your payout details are encrypted and stored securely. Payouts are processed weekly in
+        Ghana cedis (GHS).
       </p>
     </OnboardingStepPage>
   );

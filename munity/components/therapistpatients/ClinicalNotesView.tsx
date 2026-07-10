@@ -4,14 +4,12 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
-  Bell,
   Check,
   Pencil,
   PlusCircle,
   Printer,
   Save,
   Search,
-  Settings,
 } from "lucide-react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
@@ -89,7 +87,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
           }
           mainClassName="flex flex-1 flex-col"
         >
-          <header className="flex h-16 items-center justify-between border-b border-munity-input-border/30 bg-munity-bg/80 px-10 backdrop-blur-md">
+          <header className="flex h-16 items-center border-b border-munity-input-border/30 bg-munity-bg/80 px-10 backdrop-blur-md">
             <div className="flex items-center gap-4">
               <div className="relative size-10 overflow-hidden rounded-full bg-munity-lime">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -101,14 +99,6 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                   Patient ID: {patient.clientId} • Last Session: Oct 24, 2023
                 </p>
               </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <button type="button" className="rounded-full p-2 text-munity-muted">
-                <Bell className="size-4" />
-              </button>
-              <button type="button" className="rounded-full p-2 text-munity-muted">
-                <Settings className="size-5" />
-              </button>
             </div>
           </header>
 

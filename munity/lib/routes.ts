@@ -3,9 +3,16 @@ import type { assets } from "@/lib/assets";
 export const routes = {
   home: "/",
   login: "/login",
+  therapistLogin: "/therapistlogin",
   signup: "/signup",
+  therapistSignup: "/therapistsignup",
   dev: "/dev",
   therapistDashboard: "/therapistdashboard",
+  therapistProfile: "/therapistprofile",
+  therapistPatients: "/therapistpatients",
+  therapistClinicalNotes: "/therapistclinicalnotes",
+  therapistAnalytics: "/therapistanalytics",
+  therapistCredentialAuth: "/therapistcredentialauth",
   therapistOnboarding: {
     basicInfo: "/therapistonboarding/basic-info",
     credentials: "/therapistonboarding/credentials",

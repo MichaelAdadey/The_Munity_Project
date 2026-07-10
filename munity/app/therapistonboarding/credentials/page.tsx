@@ -1,37 +1,40 @@
 "use client";
 
+import { useState } from "react";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { RangeField } from "@/components/ui/RangeField";
 import { Select } from "@/components/ui/AppSelect";
 import { assets } from "@/lib/assets";
+import {
+  ghanaLicenseTypes,
+  ghanaLicensingBodies,
+  ghanaRegions,
+} from "@/lib/ghana-therapist";
 import { routes } from "@/lib/routes";
 
-const licenseOptions = [
-  { value: "lcsw", label: "LCSW" },
-  { value: "lmft", label: "LMFT" },
-  { value: "phd", label: "PhD / PsyD" },
-  { value: "lpc", label: "LPC" },
-];
-
-const stateOptions = [
-  { value: "CA", label: "California" },
-  { value: "NY", label: "New York" },
-  { value: "WA", label: "Washington" },
-  { value: "TX", label: "Texas" },
-];
-
 export default function CredentialsPage() {
+  const [licenseType, setLicenseType] = useState("");
+  const [licensingBody, setLicensingBody] = useState("");
+  const [regionOfIssue, setRegionOfIssue] = useState("");
+
   return (
     <OnboardingStepPage
       stepId="credentials"
       title="Professional Credentials"
-      description="Please provide your licensing details. We verify all credentials to ensure the highest standard of care for our community."
+      description="Please provide your licensing details. We verify all credentials with recognised Ghanaian councils to ensure the highest standard of care for our community."
       backHref={routes.therapistOnboarding.basicInfo}
       backLabel="Back to Basic Info"
       continueHref={routes.therapistOnboarding.specialties}
       continueLabel="Continue to Specialties"
+      validate={() => {
+        if (!licenseType || !licensingBody || !regionOfIssue) {
+          window.alert("Please complete all credential fields.");
+          return false;
+        }
+        return true;
+      }}
       footer={
         <div className="relative flex items-center justify-center gap-8 opacity-40">
           <div aria-hidden className="pointer-events-none absolute inset-0 bg-white mix-blend-saturation" />
@@ -43,11 +46,36 @@ export default function CredentialsPage() {
       }
     >
       <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-        <Select label="License Type" placeholder="Select your license type" options={licenseOptions} />
-        <Field label="License Number">
-          <input type="text" placeholder="e.g. 123456789" className="input-field" />
+        <Select
+          label="License Type"
+          placeholder="Select your license type"
+          options={[...ghanaLicenseTypes]}
+          value={licenseType}
+          onChange={setLicenseType}
+        />
+        <Field label="Council Registration Number">
+          <input
+            type="text"
+            name="registrationNumber"
+            placeholder="e.g. GPC/CP/2024/0042"
+            className="input-field"
+            required
+          />
         </Field>
-        <Select label="State of Issue" placeholder="Select state" options={stateOptions} />
+        <Select
+          label="Licensing Body"
+          placeholder="Select council"
+          options={[...ghanaLicensingBodies]}
+          value={licensingBody}
+          onChange={setLicensingBody}
+        />
+        <Select
+          label="Region of Issue"
+          placeholder="Select region"
+          options={[...ghanaRegions]}
+          value={regionOfIssue}
+          onChange={setRegionOfIssue}
+        />
         <RangeField label="Years of Experience" min={0} max={20} defaultValue={5} />
       </div>
 
@@ -58,7 +86,7 @@ export default function CredentialsPage() {
           Verification of Credentials
         </label>
         <p className="mt-1 text-xs font-medium text-munity-muted">
-          Upload a copy of your current state license or certification document.
+          Upload a copy of your current council registration or certification document.
         </p>
         <FileUpload />
       </div>

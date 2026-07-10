@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { Check, Plus } from "lucide-react";
 import {
@@ -13,7 +15,8 @@ import {
   Settings,
 } from "lucide-react";
 import type { OnboardingStepId, PatientNavSection, PatientSlug } from "@/lib/routes";
-import { onboardingSteps, patientNavHref, patientRoutes, routes, defaultPatientSlug } from "@/lib/routes";
+import { onboardingSteps, patientNavHref, patientRoutes, routes } from "@/lib/routes";
+import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 
 export type PatientNavItem =
   | "Overview"
@@ -118,11 +121,15 @@ export function PatientSidebar({
 }
 
 interface OnboardingSidebarProps {
-  activeStep: OnboardingStepId;
+  activeStep?: OnboardingStepId;
+  allStepsComplete?: boolean;
 }
 
-export function OnboardingSidebar({ activeStep }: OnboardingSidebarProps) {
-  const activeIndex = onboardingSteps.findIndex((step) => step.id === activeStep);
+export function OnboardingSidebar({
+  activeStep,
+  allStepsComplete = false,
+}: OnboardingSidebarProps) {
+  const { isStepComplete } = useOnboardingProgress();
 
   return (
     <aside className="flex w-80 shrink-0 flex-col border-r border-munity-input-border/30 bg-munity-sidebar px-4 py-6">
@@ -135,8 +142,8 @@ export function OnboardingSidebar({ activeStep }: OnboardingSidebarProps) {
 
       <nav className="flex flex-col gap-4">
         {onboardingSteps.map((step, index) => {
-          const isActive = step.id === activeStep;
-          const isComplete = index < activeIndex;
+          const isActive = !allStepsComplete && step.id === activeStep;
+          const isComplete = allStepsComplete || isStepComplete(step.id);
 
           return (
             <div key={step.number} className="relative">
@@ -212,14 +219,14 @@ const therapistNavItems: {
   icon: React.ElementType;
 }[] = [
   { label: "Dashboard", href: routes.therapistDashboard, icon: LayoutGrid },
-  { label: "Appointments", href: routes.therapistDashboard, icon: Calendar },
+  { label: "Appointments", href: routes.therapistClinicalNotes, icon: Calendar },
   {
     label: "My Patients",
-    href: patientRoutes(defaultPatientSlug).overview,
+    href: routes.therapistPatients,
     icon: Users,
   },
   { label: "Availability", href: routes.therapistDashboard, icon: Clock },
-  { label: "Profile", href: routes.therapistDashboard, icon: User },
+  { label: "Profile", href: routes.therapistProfile, icon: User },
   { label: "Settings", href: routes.therapistDashboard, icon: Settings },
 ];
 

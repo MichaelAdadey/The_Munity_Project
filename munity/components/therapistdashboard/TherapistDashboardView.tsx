@@ -20,7 +20,7 @@ import { TopNav } from "@/components/therapistlayout/TopNav";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
+import { patientRoutes, patientSlugs, patientsBySlug, routes } from "@/lib/routes";
 
 const stats = [
   {
@@ -277,7 +277,7 @@ export function TherapistDashboardView() {
                     Active clients and their latest clinical signals
                   </p>
                 </div>
-                <Button variant="outline" href={patientRoutes("leo-richards").overview}>
+                <Button variant="outline" href={routes.therapistPatients}>
                   View All Patients
                 </Button>
               </div>

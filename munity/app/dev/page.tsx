@@ -11,7 +11,17 @@ import {
 const screens = [
   { title: "Landing Page", subtitle: "Public homepage", href: routes.home },
   { title: "Login", subtitle: "Sign in to your Munity account", href: routes.login },
+  {
+    title: "Therapist Login",
+    subtitle: "Sign in to your therapist account",
+    href: routes.therapistLogin,
+  },
   { title: "Sign Up", subtitle: "Create account → therapist onboarding", href: routes.signup },
+  {
+    title: "Therapist Sign Up",
+    subtitle: "Create a therapist account → onboarding",
+    href: routes.therapistSignup,
+  },
   {
     title: "Onboarding — Basic Info",
     subtitle: "Step 1 of 4",
@@ -29,13 +39,33 @@ const screens = [
   },
   {
     title: "Onboarding — Payout",
-    subtitle: "Step 4 of 4 → therapist dashboard",
+    subtitle: "Step 4 of 4 → credential authentication",
     href: routes.therapistOnboarding.payout,
+  },
+  {
+    title: "Credential Authentication",
+    subtitle: "Verify credentials after onboarding submission",
+    href: routes.therapistCredentialAuth,
   },
   {
     title: "Dashboard",
     subtitle: "Therapist clinical home — schedule, caseload, and tasks",
     href: routes.therapistDashboard,
+  },
+  {
+    title: "My Patients",
+    subtitle: "All active clients in your caseload",
+    href: routes.therapistPatients,
+  },
+  {
+    title: "Clinical Notes",
+    subtitle: "Session notes across your patient caseload",
+    href: routes.therapistClinicalNotes,
+  },
+  {
+    title: "Analytics",
+    subtitle: "Therapeutic progress across your caseload",
+    href: routes.therapistAnalytics,
   },
   ...patientSlugs.flatMap((slug) => {
     const patient = patientsBySlug[slug];

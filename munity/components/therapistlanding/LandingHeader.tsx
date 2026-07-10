@@ -10,10 +10,10 @@ export function LandingHeader() {
         </Link>
         <div className="flex items-center gap-3">
           <Link
-            href={routes.signup}
-            className="hidden h-[52px] items-center rounded-xl px-6 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/50 sm:flex"
+            href={routes.therapistSignup}
+            className="flex h-[52px] items-center rounded-xl bg-munity-lime px-5 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:bg-munity-lime-light"
           >
-            Join as Therapist
+            Join as a therapist
           </Link>
           <Link
             href={routes.login}
