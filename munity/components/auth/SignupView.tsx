@@ -4,12 +4,8 @@ import { useActionState, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import {
-  signInWithGoogleAsTherapist,
-  signUpAsTherapist,
-  type TherapistSignupState,
-} from "@/app/therapistsignup/actions";
+import { AlertCircle, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { signInWithGoogle, signUp, type AuthState } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -114,13 +110,10 @@ function isSupabaseConfiguredClient() {
   );
 }
 
-export function TherapistSignupView() {
+export function SignupView() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState<TherapistSignupState, FormData>(
-    signUpAsTherapist,
-    undefined,
-  );
+  const [state, formAction] = useActionState<AuthState, FormData>(signUp, undefined);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!isSupabaseConfiguredClient()) {
@@ -130,7 +123,7 @@ export function TherapistSignupView() {
         form.reportValidity();
         return;
       }
-      router.push(routes.therapistOnboarding.basicInfo);
+      router.push("/home");
     }
   }
 
@@ -140,7 +133,7 @@ export function TherapistSignupView() {
         <p className="text-base text-munity-muted">
           Already have a Munity account?{" "}
           <Link
-            href={routes.therapistLogin}
+            href={routes.login}
             className="text-sm font-bold tracking-[0.14px] text-munity-green hover:underline"
           >
             Login
@@ -160,6 +153,25 @@ export function TherapistSignupView() {
           ) : null}
 
           <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-6">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <AuthField
+                label="First Name"
+                id="first_name"
+                name="first_name"
+                placeholder="Alex"
+                icon={User}
+                autoComplete="given-name"
+              />
+              <AuthField
+                label="Last Name"
+                id="last_name"
+                name="last_name"
+                placeholder="Rivera"
+                icon={User}
+                autoComplete="family-name"
+              />
+            </div>
+
             <AuthField
               label="Email Address"
               id="email"
@@ -207,7 +219,7 @@ export function TherapistSignupView() {
             <AuthDivider />
           </div>
 
-          <form action={signInWithGoogleAsTherapist} className="mt-6">
+          <form action={signInWithGoogle} className="mt-6">
             <GoogleSubmitButton />
           </form>
         </div>

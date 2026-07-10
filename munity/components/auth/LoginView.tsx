@@ -5,11 +5,7 @@ import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import {
-  signInWithGoogleAsTherapist,
-  signUpAsTherapist,
-  type TherapistSignupState,
-} from "@/app/therapistsignup/actions";
+import { signIn, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -56,7 +52,7 @@ function GoogleSubmitButton() {
   );
 }
 
-function CreateAccountButton() {
+function LoginButton() {
   const { pending } = useFormStatus();
 
   return (
@@ -65,7 +61,7 @@ function CreateAccountButton() {
       className="h-12 w-full rounded-xl shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
       loading={pending}
     >
-      {pending ? "Creating account…" : "Create Account"}
+      {pending ? "Signing in…" : "Login"}
     </Button>
   );
 }
@@ -114,13 +110,10 @@ function isSupabaseConfiguredClient() {
   );
 }
 
-export function TherapistSignupView() {
+export function LoginView() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState<TherapistSignupState, FormData>(
-    signUpAsTherapist,
-    undefined,
-  );
+  const [state, formAction] = useActionState<AuthState, FormData>(signIn, undefined);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     if (!isSupabaseConfiguredClient()) {
@@ -130,7 +123,7 @@ export function TherapistSignupView() {
         form.reportValidity();
         return;
       }
-      router.push(routes.therapistOnboarding.basicInfo);
+      router.push("/home");
     }
   }
 
@@ -138,18 +131,21 @@ export function TherapistSignupView() {
     <AuthShell
       footer={
         <p className="text-base text-munity-muted">
-          Already have a Munity account?{" "}
+          New to Munity?{" "}
           <Link
-            href={routes.therapistLogin}
+            href={routes.signup}
             className="text-sm font-bold tracking-[0.14px] text-munity-green hover:underline"
           >
-            Login
+            Create Account
           </Link>
         </p>
       }
     >
       <div className="flex w-full max-w-[480px] flex-col gap-[31.5px]">
-        <AuthBrandHeader title="Welcome" subtitle="Start your journey with Munity" />
+        <AuthBrandHeader
+          title="Welcome Back"
+          subtitle="Continue your journey with Munity"
+        />
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-[41px] pb-[41px] pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
@@ -171,12 +167,20 @@ export function TherapistSignupView() {
             />
 
             <div className="flex flex-col gap-2">
-              <label
-                htmlFor="password"
-                className="px-1 text-sm font-semibold tracking-[0.14px] text-munity-text"
-              >
-                Password
-              </label>
+              <div className="flex items-center justify-between px-1">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-semibold tracking-[0.14px] text-munity-text"
+                >
+                  Password
+                </label>
+                <Link
+                  href="#"
+                  className="text-xs font-medium text-munity-green hover:underline"
+                >
+                  Forgot Password?
+                </Link>
+              </div>
               <div className="relative">
                 <Lock className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-munity-gray" />
                 <input
@@ -184,9 +188,8 @@ export function TherapistSignupView() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  autoComplete="new-password"
+                  autoComplete="current-password"
                   required
-                  minLength={8}
                   className="auth-input pr-12"
                 />
                 <button
@@ -200,14 +203,23 @@ export function TherapistSignupView() {
               </div>
             </div>
 
-            <CreateAccountButton />
+            <label className="flex items-center gap-2 px-1 text-sm text-munity-muted">
+              <input
+                type="checkbox"
+                name="remember"
+                className="size-4 rounded border-munity-input-border text-munity-green focus:ring-munity-green"
+              />
+              Remember Me
+            </label>
+
+            <LoginButton />
           </form>
 
           <div className="mt-6">
             <AuthDivider />
           </div>
 
-          <form action={signInWithGoogleAsTherapist} className="mt-6">
+          <form action={signInWithGoogle} className="mt-6">
             <GoogleSubmitButton />
           </form>
         </div>

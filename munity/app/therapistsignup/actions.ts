@@ -13,13 +13,8 @@ export async function signUpAsTherapist(
   _prev: TherapistSignupState,
   formData: FormData,
 ): Promise<TherapistSignupState> {
-  const fullName = String(formData.get("full_name") || "");
   const email = String(formData.get("email") || "");
   const password = String(formData.get("password") || "");
-
-  if (!fullName.trim()) {
-    return { error: "Please enter your full name." };
-  }
 
   if (!email || !password) {
     return { error: "Please enter your email and password." };
@@ -35,7 +30,7 @@ export async function signUpAsTherapist(
     email,
     password,
     options: {
-      data: { full_name: fullName, role: "therapist" },
+      data: { role: "therapist" },
       emailRedirectTo: `${siteUrl}${therapistOnboardingPath}`,
     },
   });

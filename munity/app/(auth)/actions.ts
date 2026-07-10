@@ -40,13 +40,20 @@ export async function signUp(
   _prev: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
-  const fullName = String(formData.get('full_name') || '')
+  const firstName = String(formData.get('first_name') || '').trim()
+  const lastName = String(formData.get('last_name') || '').trim()
   const email = String(formData.get('email') || '')
   const password = String(formData.get('password') || '')
+
+  if (!firstName || !lastName) {
+    return { error: 'Please enter your first and last name.' }
+  }
 
   if (!email || !password) {
     return { error: 'Please enter your email and password.' }
   }
+
+  const fullName = `${firstName} ${lastName}`
 
   if (!isSupabaseConfigured()) {
     redirect('/home')
@@ -58,7 +65,7 @@ export async function signUp(
     email,
     password,
     options: {
-      data: { full_name: fullName },
+      data: { full_name: fullName, first_name: firstName, last_name: lastName },
       emailRedirectTo: `${siteUrl}/home`,
     },
   })
