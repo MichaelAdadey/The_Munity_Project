@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/Button"
 import { Wind } from "lucide-react"
 import { cn } from "@/lib/utils"
 

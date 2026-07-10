@@ -7,7 +7,7 @@ import type { Post } from '@/lib/types'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/Button'
 import { cn, initials, timeAgo } from '@/lib/utils'
 
 export function PostCard({ post }: { post: Post }) {
