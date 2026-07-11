@@ -103,11 +103,11 @@ export function MemberDashboardView() {
             <div className="mt-3"><LivePulse label="Journey active" /></div>
           </div>
           <Link
-            href="/Therapy"
+            href={routes.sessions}
             className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
           >
             <Calendar className="size-4" />
-            Book a session
+            My sessions
           </Link>
         </header>
 

@@ -6,6 +6,7 @@ import { type ReactNode } from "react";
 import {
   Bookmark,
   BookOpen,
+  CalendarDays,
   Home,
   LayoutGrid,
   LifeBuoy,
@@ -26,6 +27,7 @@ export type MemberNavItem =
   | "Communities"
   | "Saved Posts"
   | "Therapy"
+  | "Sessions"
   | "Resources"
   | "Messages"
   | "Settings";
@@ -40,6 +42,7 @@ const memberNavItems: {
   { label: "Communities", href: routes.communities, icon: Users },
   { label: "Saved Posts", href: routes.saved, icon: Bookmark },
   { label: "Therapy", href: routes.therapy, icon: Stethoscope },
+  { label: "Sessions", href: routes.sessions, icon: CalendarDays },
   { label: "Resources", href: routes.resources, icon: BookOpen },
   { label: "Messages", href: routes.messages, icon: MessageCircle },
   { label: "Settings", href: routes.settings, icon: Settings },

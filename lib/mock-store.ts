@@ -17,6 +17,7 @@ import {
   seedSupportedPostIds,
   seedTherapists,
   type Booking,
+  type BookingPriority,
   type ChatMessage,
   type ChatThread,
   type CommunityRecord,
@@ -28,7 +29,24 @@ import {
   type TherapistRecord,
 } from "@/lib/mock-db";
 
-const STORAGE_KEY = "munity-mock-store-v2";
+const STORAGE_KEY = "munity-mock-store-v3";
+
+function normalizeBooking(booking: Booking): Booking {
+  return {
+    ...booking,
+    scheduledAt:
+      booking.scheduledAt ||
+      booking.createdAt ||
+      new Date().toISOString(),
+    priority: booking.priority ?? "normal",
+    archived: Boolean(booking.archived),
+  };
+}
+
+function mergeBookings(stored?: Booking[]): Booking[] {
+  if (!stored?.length) return structuredClone(seedBookings).map(normalizeBooking);
+  return stored.map(normalizeBooking);
+}
 
 function mergeReports(stored?: ModerationReport[]): ModerationReport[] {
   const byId = new Map((stored ?? []).map((report) => [report.id, report]));
@@ -171,6 +189,7 @@ function hydrate() {
       communities: seedCommunities,
       therapists: seedTherapists,
       reports: mergeReports(parsed.reports),
+      bookings: mergeBookings(parsed.bookings),
       profile: { ...seedMemberProfile, ...(parsed.profile ?? {}), cover: parsed.profile?.cover ?? seedMemberProfile.cover, avatar: parsed.profile?.avatar ?? seedMemberProfile.avatar },
       settings: { ...seedSettings, ...(parsed.settings ?? {}) },
       commentsByPost: parsed.commentsByPost ?? createSeedState().commentsByPost,
@@ -382,7 +401,11 @@ export const mockStore = {
     }));
     return community;
   },
-  bookSession(therapistId: string, when?: string) {
+  bookSession(
+    therapistId: string,
+    when?: string,
+    options?: { scheduledAt?: string; priority?: BookingPriority },
+  ) {
     const therapist = state.therapists.find((t) => t.id === therapistId);
     if (!therapist) return null;
     const booking: Booking = {
@@ -390,11 +413,46 @@ export const mockStore = {
       therapistId,
       therapistName: therapist.name,
       when: when ?? therapist.nextAvailable,
+      scheduledAt: options?.scheduledAt ?? new Date().toISOString(),
       status: "confirmed",
+      priority: options?.priority ?? "normal",
+      archived: false,
       createdAt: new Date().toISOString(),
     };
     setState((prev) => ({ ...prev, bookings: [booking, ...prev.bookings] }));
     return booking;
+  },
+  setBookingPriority(bookingId: string, priority: BookingPriority) {
+    setState((prev) => ({
+      ...prev,
+      bookings: prev.bookings.map((booking) =>
+        booking.id === bookingId ? { ...booking, priority } : booking,
+      ),
+    }));
+  },
+  archiveBooking(bookingId: string) {
+    setState((prev) => ({
+      ...prev,
+      bookings: prev.bookings.map((booking) =>
+        booking.id === bookingId
+          ? { ...booking, archived: true, status: booking.status === "confirmed" || booking.status === "pending" ? "completed" : booking.status }
+          : booking,
+      ),
+    }));
+  },
+  unarchiveBooking(bookingId: string) {
+    setState((prev) => ({
+      ...prev,
+      bookings: prev.bookings.map((booking) =>
+        booking.id === bookingId ? { ...booking, archived: false } : booking,
+      ),
+    }));
+  },
+  deleteBooking(bookingId: string) {
+    setState((prev) => ({
+      ...prev,
+      bookings: prev.bookings.filter((booking) => booking.id !== bookingId),
+    }));
   },
   ensureTherapistChat(therapistId: string) {
     const legacyChatIds: Record<string, string> = {

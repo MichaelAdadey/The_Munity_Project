@@ -31,6 +31,7 @@ export const routes = {
   therapistNotifications: "/therapistnotifications",
   communities: "/Communities",
   therapy: "/Therapy",
+  sessions: "/sessions",
   privacy: "/privacy",
   terms: "/terms",
   help: "/help",

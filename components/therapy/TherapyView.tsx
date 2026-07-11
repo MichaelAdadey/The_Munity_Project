@@ -508,8 +508,8 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
           latestBookingWhen={
             store.bookings.find((b) => b.therapistId === bookingTherapist.id)?.when
           }
-          onConfirm={(when) => {
-            mockStore.bookSession(bookingTherapist.id, when);
+          onConfirm={({ when, scheduledAt }) => {
+            mockStore.bookSession(bookingTherapist.id, when, { scheduledAt });
             setBookedTherapistId(bookingTherapist.id);
             flash(`Session booked with ${bookingTherapist.name} · ${when}`);
           }}

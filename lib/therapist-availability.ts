@@ -205,3 +205,21 @@ export function getUpcomingBookableDays(
 export function formatBookingWhen(dayLabel: string, time: string) {
   return `${dayLabel}, ${time}`;
 }
+
+/** Combine a calendar day with a display time like "03:00 PM" into an ISO string. */
+export function bookingScheduledAt(date: Date, time: string): string {
+  const match = time.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  const next = new Date(date);
+  if (!match) {
+    next.setHours(9, 0, 0, 0);
+    return next.toISOString();
+  }
+
+  let hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  const period = match[3]!.toUpperCase();
+  if (period === "PM" && hours < 12) hours += 12;
+  if (period === "AM" && hours === 12) hours = 0;
+  next.setHours(hours, minutes, 0, 0);
+  return next.toISOString();
+}

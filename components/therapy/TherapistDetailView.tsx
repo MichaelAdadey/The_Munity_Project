@@ -144,8 +144,8 @@ export function TherapistDetailView({
         rate={therapist.rate}
         alreadyBooked={booked}
         latestBookingWhen={latestBooking?.when}
-        onConfirm={(when) => {
-          mockStore.bookSession(therapist.id, when);
+        onConfirm={({ when, scheduledAt }) => {
+          mockStore.bookSession(therapist.id, when, { scheduledAt });
           flash(`Session booked with ${therapist.name} · ${when}`);
         }}
       />

@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Check, Clock3, X } from "lucide-react";
 import {
   AVAILABILITY_UPDATED_EVENT,
+  bookingScheduledAt,
   formatBookingWhen,
   getUpcomingBookableDays,
   type BookableDay,
@@ -18,7 +19,7 @@ type BookSessionSheetProps = {
   rate: number;
   alreadyBooked: boolean;
   latestBookingWhen?: string | null;
-  onConfirm: (when: string) => void;
+  onConfirm: (booking: { when: string; scheduledAt: string }) => void;
 };
 
 export function BookSessionSheet({
@@ -74,7 +75,10 @@ export function BookSessionSheet({
 
   function handleConfirm() {
     if (!selectedDay || !selectedTime) return;
-    onConfirm(formatBookingWhen(selectedDay.label, selectedTime));
+    onConfirm({
+      when: formatBookingWhen(selectedDay.label, selectedTime),
+      scheduledAt: bookingScheduledAt(selectedDay.date, selectedTime),
+    });
     onClose();
   }
 

@@ -16,6 +16,7 @@ const memberProtected = [
   '/saved',
   '/settings',
   '/notifications',
+  '/sessions',
 ]
 
 const therapistProtectedPrefixes = [

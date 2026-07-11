@@ -95,12 +95,18 @@ export type ChatMessage =
       time: string;
     };
 
+export type BookingPriority = "low" | "normal" | "high" | "urgent";
+
 export type Booking = {
   id: string;
   therapistId: string;
   therapistName: string;
   when: string;
+  /** ISO timestamp used to split upcoming vs past */
+  scheduledAt: string;
   status: "confirmed" | "pending" | "completed" | "cancelled";
+  priority: BookingPriority;
+  archived?: boolean;
   createdAt: string;
 };
 
@@ -607,16 +613,41 @@ export const seedBookings: Booking[] = [
     therapistId: "elena-aris",
     therapistName: "Dr. Elena Aris",
     when: "Today, 3:00 PM",
+    scheduledAt: "2026-07-11T15:00:00.000Z",
     status: "confirmed",
-    createdAt: "2026-07-09T12:00:00Z",
+    priority: "high",
+    createdAt: "2026-07-09T12:00:00.000Z",
   },
   {
     id: "b2",
     therapistId: "sarah-jenkins",
     therapistName: "Sarah Jenkins",
-    when: "Monday, 4:30 PM",
+    when: "Mon 13 Jul, 4:30 PM",
+    scheduledAt: "2026-07-13T16:30:00.000Z",
     status: "pending",
-    createdAt: "2026-07-10T09:00:00Z",
+    priority: "normal",
+    createdAt: "2026-07-10T09:00:00.000Z",
+  },
+  {
+    id: "b3",
+    therapistId: "marcus-thorne",
+    therapistName: "Marcus Thorne",
+    when: "Thu 2 Jul, 2:00 PM",
+    scheduledAt: "2026-07-02T14:00:00.000Z",
+    status: "completed",
+    priority: "normal",
+    createdAt: "2026-06-28T10:00:00.000Z",
+  },
+  {
+    id: "b4",
+    therapistId: "elena-vance",
+    therapistName: "Dr. Elena Vance",
+    when: "Fri 26 Jun, 10:00 AM",
+    scheduledAt: "2026-06-26T10:00:00.000Z",
+    status: "completed",
+    priority: "low",
+    archived: true,
+    createdAt: "2026-06-20T08:00:00.000Z",
   },
 ];
 

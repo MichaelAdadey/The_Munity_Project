@@ -13,6 +13,7 @@ const screens = [
   { title: "Member Home", subtitle: "Personalized peer support feed", href: routes.memberHome },
   { title: "Communities", subtitle: "Browse peer support communities", href: routes.communities },
   { title: "Therapy", subtitle: "Browse the therapy network", href: routes.therapy },
+  { title: "Sessions", subtitle: "Upcoming, past, and archived bookings", href: routes.sessions },
   { title: "Messages", subtitle: "Member conversations", href: routes.messages },
   { title: "Profile", subtitle: "Member profile and activity", href: routes.profile },
   { title: "Emergency Support", subtitle: "Immediate support resources", href: routes.emergency },
