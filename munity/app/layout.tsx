@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/ui/Providers";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
-import { redirect, useRouter } from "next/navigation";
+import { redirect  } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,10 +31,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // const supabase = await createClient()
+  // const {
+  //   data: { user },
+  // } = await supabase.auth.getUser();
 
   // if (!user) {
   //   redirect("/login");

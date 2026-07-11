@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import profile from "@/public/images/profile.jpg"
+import profile from "@/public/images/profile.jpg";
 import React from "react";
 
 const Navbar = () => {
   const pageLink = [
     { pageName: "Home", pageLink: "/home" },
-    { pageName: "Communities", pageLink: "/Communities" },
+    { pageName: "Communities", pageLink: "/communities" },
     { pageName: "Resources", pageLink: "/resources" },
-    { pageName: "Therapy", pageLink: "/Therapy" },
+    { pageName: "Therapy", pageLink: "/therapy" },
   ];
-  
+
   const pathname = usePathname();
 
   return (
@@ -24,7 +24,11 @@ const Navbar = () => {
           <ul className="text-[14px] space-x-6 flex items-center text-[#3E5219] ">
             {pageLink.map((item) => (
               <Link className="" key={item.pageName} href={`${item.pageLink}`}>
-                <li className={`pb-1 ${pathname === item.pageLink ? "border-b-2 border-[#3E5219]" : ""}`}>{item.pageName}</li>
+                <li
+                  className={`pb-1 ${pathname === item.pageLink ? "border-b-2 border-[#3E5219]" : ""}`}
+                >
+                  {item.pageName}
+                </li>
               </Link>
             ))}
           </ul>
@@ -34,7 +38,7 @@ const Navbar = () => {
       <div className="flex space-x-5 px-3">
         <div>not</div>
         <div className="h-7.5 w-7.5">
-            <Image src={profile} alt="Profile" className="rounded-full" />
+          <Image src={profile} alt="Profile" className="rounded-full" />
         </div>
       </div>
     </div>
