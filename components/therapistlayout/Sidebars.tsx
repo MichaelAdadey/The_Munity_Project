@@ -154,12 +154,21 @@ export function OnboardingSidebar({
               >
                 <div
                   className={`relative z-10 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-medium ${
-                    isComplete || isActive
+                    isComplete
                       ? "bg-munity-green text-white"
-                      : "bg-munity-divider text-munity-muted"
+                      : isActive
+                        ? "border-2 border-munity-green bg-white text-munity-green"
+                        : "bg-munity-divider text-munity-muted"
                   }`}
+                  aria-label={
+                    isComplete
+                      ? `${step.title} complete`
+                      : isActive
+                        ? `${step.title} in progress`
+                        : `${step.title} not started`
+                  }
                 >
-                  {isComplete ? <Check className="size-3" strokeWidth={3} /> : step.number}
+                  {isComplete ? <Check className="size-3.5" strokeWidth={3} /> : step.number}
                 </div>
                 <div>
                   <p

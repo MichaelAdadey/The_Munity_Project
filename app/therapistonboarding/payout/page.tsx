@@ -35,6 +35,28 @@ export default function PayoutPage() {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    saveOnboardingStepData("payout", {
+      payoutMethods,
+      mobileMoneyNetwork,
+      bankName,
+      momoAccountName,
+      momoNumber,
+      bankAccountName,
+      bankAccountNumber,
+    });
+  }, [
+    hydrated,
+    payoutMethods,
+    mobileMoneyNetwork,
+    bankName,
+    momoAccountName,
+    momoNumber,
+    bankAccountName,
+    bankAccountNumber,
+  ]);
+
   const hasMobileMoney = payoutMethods.includes("Mobile Money");
   const hasBank = payoutMethods.includes("Bank Transfer");
 
@@ -102,7 +124,8 @@ export default function PayoutPage() {
                 name="momoAccountName"
                 placeholder="Ama Mensah"
                 className="input-field"
-                defaultValue={momoAccountName}
+                value={momoAccountName}
+                onChange={(e) => setMomoAccountName(e.target.value)}
                 required={hasMobileMoney}
               />
             </Field>
@@ -120,7 +143,8 @@ export default function PayoutPage() {
               name="momoNumber"
               placeholder="024 123 4567"
               className="input-field"
-              defaultValue={momoNumber}
+              value={momoNumber}
+              onChange={(e) => setMomoNumber(e.target.value)}
               required={hasMobileMoney}
             />
           </Field>
@@ -136,7 +160,8 @@ export default function PayoutPage() {
                 name="bankAccountName"
                 placeholder="Ama Mensah"
                 className="input-field"
-                defaultValue={bankAccountName}
+                value={bankAccountName}
+                onChange={(e) => setBankAccountName(e.target.value)}
                 required={hasBank}
               />
             </Field>
@@ -154,7 +179,8 @@ export default function PayoutPage() {
               name="bankAccountNumber"
               placeholder="1234567890"
               className="input-field"
-              defaultValue={bankAccountNumber}
+              value={bankAccountNumber}
+              onChange={(e) => setBankAccountNumber(e.target.value)}
               required={hasBank}
             />
           </Field>

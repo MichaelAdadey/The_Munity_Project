@@ -23,6 +23,11 @@ export default function SpecialtiesPage() {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    saveOnboardingStepData("specialties", { specialties: selected });
+  }, [hydrated, selected]);
+
   const activeCategory =
     therapistSpecialtyCategories.find((category) => category.id === categoryId) ??
     therapistSpecialtyCategories[0];

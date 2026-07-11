@@ -51,5 +51,6 @@ export function useOnboardingProgress() {
     progressPercent,
     isStepComplete,
     markStepComplete,
+    refresh,
   };
 }

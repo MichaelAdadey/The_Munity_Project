@@ -1,6 +1,7 @@
 import type { OnboardingStepId } from "@/lib/routes";
+import { isOnboardingStepFilled } from "@/lib/onboarding-data";
 
-const STORAGE_KEY = "munity-onboarding-completed-steps";
+const STORAGE_KEY = "munity-onboarding-completed-steps-v2";
 export const ONBOARDING_PROGRESS_EVENT = "munity-onboarding-progress-updated";
 
 const formStepIds: OnboardingStepId[] = [
@@ -10,30 +11,31 @@ const formStepIds: OnboardingStepId[] = [
   "payout",
 ];
 
+/** Green checks / progress only count steps whose required fields are actually filled. */
 export function getCompletedSteps(): OnboardingStepId[] {
   if (typeof window === "undefined") {
     return [];
   }
 
+  const filled = formStepIds.filter((stepId) => isOnboardingStepFilled(stepId));
+
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-    const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed.filter((step): step is OnboardingStepId =>
-      formStepIds.includes(step as OnboardingStepId),
-    );
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(filled));
   } catch {
-    return [];
+    // Preview mode can continue without localStorage.
   }
+
+  return filled;
 }
 
 export function markStepComplete(stepId: OnboardingStepId) {
   if (typeof window === "undefined") {
+    return;
+  }
+
+  // Only persist a check when the step data is actually complete.
+  if (!isOnboardingStepFilled(stepId)) {
+    window.dispatchEvent(new CustomEvent(ONBOARDING_PROGRESS_EVENT));
     return;
   }
 
@@ -44,7 +46,7 @@ export function markStepComplete(stepId: OnboardingStepId) {
 }
 
 export function isStepComplete(stepId: OnboardingStepId) {
-  return getCompletedSteps().includes(stepId);
+  return isOnboardingStepFilled(stepId);
 }
 
 export function getApplicationProgressPercent() {

@@ -37,6 +37,26 @@ export default function CredentialsPage() {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    saveOnboardingStepData("credentials", {
+      licenseType,
+      licensingBody,
+      regionOfIssue,
+      registrationNumber,
+      yearsOfExperience,
+      documentName,
+    });
+  }, [
+    hydrated,
+    licenseType,
+    licensingBody,
+    regionOfIssue,
+    registrationNumber,
+    yearsOfExperience,
+    documentName,
+  ]);
+
   if (!hydrated) {
     return null;
   }
@@ -55,15 +75,18 @@ export default function CredentialsPage() {
           window.alert("Please complete all credential fields.");
           return false;
         }
+        if (!documentName) {
+          window.alert("Please upload your verification document.");
+          return false;
+        }
         return true;
       }}
-      onSave={(form) => {
-        const formData = new FormData(form);
+      onSave={() => {
         saveOnboardingStepData("credentials", {
           licenseType,
           licensingBody,
           regionOfIssue,
-          registrationNumber: String(formData.get("registrationNumber") || "").trim(),
+          registrationNumber,
           yearsOfExperience,
           documentName,
         });
@@ -92,7 +115,8 @@ export default function CredentialsPage() {
             name="registrationNumber"
             placeholder="e.g. GPC/CP/2024/0042"
             className="input-field"
-            defaultValue={registrationNumber}
+            value={registrationNumber}
+            onChange={(e) => setRegistrationNumber(e.target.value)}
             required
           />
         </Field>
@@ -131,9 +155,7 @@ export default function CredentialsPage() {
         {documentName ? (
           <p className="mt-2 text-sm text-munity-muted">Previously uploaded: {documentName}</p>
         ) : null}
-        <FileUpload
-          onFileChange={(file) => setDocumentName(file?.name ?? "")}
-        />
+        <FileUpload onFileChange={(file) => setDocumentName(file?.name ?? "")} />
       </div>
     </OnboardingStepPage>
   );

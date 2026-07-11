@@ -1,7 +1,7 @@
 import type { OnboardingStepId } from "@/lib/routes";
-import { ONBOARDING_PROGRESS_EVENT } from "@/lib/onboarding-progress";
 
-const DATA_STORAGE_KEY = "munity-onboarding-step-data";
+const DATA_STORAGE_KEY = "munity-onboarding-step-data-v2";
+const ONBOARDING_PROGRESS_EVENT = "munity-onboarding-progress-updated";
 
 export type BasicInfoData = {
   title: string;
@@ -47,6 +47,76 @@ export type OnboardingStepDataMap = {
 type StoredOnboardingData = Partial<{
   [K in OnboardingStepId]: OnboardingStepDataMap[K];
 }>;
+
+function hasText(value: string | undefined | null) {
+  return Boolean(value && value.trim());
+}
+
+export function isOnboardingStepFilled(
+  stepId: OnboardingStepId,
+  data?: OnboardingStepDataMap[OnboardingStepId] | null,
+): boolean {
+  const stepData = data === undefined ? getOnboardingStepData(stepId) : data;
+  if (!stepData) return false;
+
+  switch (stepId) {
+    case "basic-info": {
+      const d = stepData as BasicInfoData;
+      return (
+        hasText(d.title) &&
+        hasText(d.gender) &&
+        hasText(d.firstName) &&
+        hasText(d.lastName) &&
+        hasText(d.professionalTitle) &&
+        hasText(d.phone) &&
+        hasText(d.practiceLocation) &&
+        hasText(d.email)
+      );
+    }
+    case "credentials": {
+      const d = stepData as CredentialsData;
+      return (
+        hasText(d.licenseType) &&
+        hasText(d.registrationNumber) &&
+        hasText(d.licensingBody) &&
+        hasText(d.regionOfIssue) &&
+        hasText(d.documentName) &&
+        Number.isFinite(d.yearsOfExperience)
+      );
+    }
+    case "specialties": {
+      const d = stepData as SpecialtiesData;
+      return Array.isArray(d.specialties) && d.specialties.length > 0;
+    }
+    case "payout": {
+      const d = stepData as PayoutData;
+      if (!Array.isArray(d.payoutMethods) || d.payoutMethods.length === 0) return false;
+      const hasMobileMoney = d.payoutMethods.includes("Mobile Money");
+      const hasBank = d.payoutMethods.includes("Bank Transfer");
+      if (hasMobileMoney) {
+        if (
+          !hasText(d.momoAccountName) ||
+          !hasText(d.mobileMoneyNetwork) ||
+          !hasText(d.momoNumber)
+        ) {
+          return false;
+        }
+      }
+      if (hasBank) {
+        if (
+          !hasText(d.bankAccountName) ||
+          !hasText(d.bankName) ||
+          !hasText(d.bankAccountNumber)
+        ) {
+          return false;
+        }
+      }
+      return true;
+    }
+    default:
+      return false;
+  }
+}
 
 function readAll(): StoredOnboardingData {
   if (typeof window === "undefined") {

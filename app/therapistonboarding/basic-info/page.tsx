@@ -38,6 +38,30 @@ export default function BasicInfoPage() {
     setHydrated(true);
   }, []);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    saveOnboardingStepData("basic-info", {
+      title,
+      gender,
+      practiceLocation,
+      firstName,
+      lastName,
+      professionalTitle,
+      phone,
+      email,
+    });
+  }, [
+    hydrated,
+    title,
+    gender,
+    practiceLocation,
+    firstName,
+    lastName,
+    professionalTitle,
+    phone,
+    email,
+  ]);
+
   if (!hydrated) {
     return null;
   }
@@ -123,7 +147,8 @@ export default function BasicInfoPage() {
             name="firstName"
             placeholder="Ama"
             className="input-field"
-            defaultValue={firstName}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             required
           />
         </Field>
@@ -133,7 +158,8 @@ export default function BasicInfoPage() {
             name="lastName"
             placeholder="Mensah"
             className="input-field"
-            defaultValue={lastName}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             required
           />
         </Field>
@@ -143,7 +169,8 @@ export default function BasicInfoPage() {
             name="professionalTitle"
             placeholder="Registered Clinical Psychologist"
             className="input-field"
-            defaultValue={professionalTitle}
+            value={professionalTitle}
+            onChange={(e) => setProfessionalTitle(e.target.value)}
             required
           />
         </Field>
@@ -153,7 +180,8 @@ export default function BasicInfoPage() {
             name="phone"
             placeholder="+233 24 123 4567"
             className="input-field"
-            defaultValue={phone}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             required
           />
         </Field>
@@ -184,7 +212,8 @@ export default function BasicInfoPage() {
               placeholder="name@example.com"
               className="input-field"
               autoComplete="email"
-              defaultValue={email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
           </Field>
