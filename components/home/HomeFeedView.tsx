@@ -5,13 +5,13 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Bookmark,
   Heart,
   ImageIcon,
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
   Plus,
-  Share2,
   Smile,
   Sparkles,
   UserRound,
@@ -576,7 +576,9 @@ export function HomeFeedView() {
                       }}
                       className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-green"
                     >
-                      <Share2 className="size-4" />
+                      <Bookmark
+                        className={`size-4 ${store.savedPostIds.includes(post.id) ? "fill-current" : ""}`}
+                      />
                       {store.savedPostIds.includes(post.id) ? "Saved" : "Save"}
                     </button>
                   </div>
