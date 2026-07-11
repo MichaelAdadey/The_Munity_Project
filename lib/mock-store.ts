@@ -54,6 +54,7 @@ export type MockStoreState = {
   supportedPostIds: string[];
   commentsByPost: Record<string, FeedComment[]>;
   moodToday: string | null;
+  dailyReflection: string | null;
   settings: MemberSettingsState;
 };
 
@@ -100,6 +101,7 @@ function createSeedState(): MockStoreState {
       ],
     },
     moodToday: null,
+    dailyReflection: null,
     settings: { ...seedSettings },
   };
 }
@@ -179,6 +181,13 @@ export const mockStore = {
   },
   setMood(mood: string | null) {
     setState((prev) => ({ ...prev, moodToday: mood }));
+  },
+  saveDailyReflection(content: string) {
+    const trimmed = content.trim();
+    setState((prev) => ({
+      ...prev,
+      dailyReflection: trimmed || null,
+    }));
   },
   createPost(input: {
     content: string;

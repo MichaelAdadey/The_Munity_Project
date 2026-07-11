@@ -180,6 +180,8 @@ export function MemberProfileView() {
   const [view, setView] = useState("Weekly View");
   const [editOpen, setEditOpen] = useState(false);
   const [photoTarget, setPhotoTarget] = useState<PhotoTarget | null>(null);
+  const [reflectionOpen, setReflectionOpen] = useState(false);
+  const [reflectionDraft, setReflectionDraft] = useState("");
   const [fullName, setFullName] = useState(store.profile.fullName);
   const [username, setUsername] = useState(store.profile.username);
   const [title, setTitle] = useState(store.profile.title);
@@ -236,6 +238,31 @@ export function MemberProfileView() {
       if (typeof reader.result === "string") applyPhoto(reader.result);
     };
     reader.readAsDataURL(file);
+  }
+
+  function openReflection() {
+    setReflectionDraft(store.dailyReflection ?? "");
+    setReflectionOpen(true);
+  }
+
+  function saveReflection(shareToFeed: boolean) {
+    const text = reflectionDraft.trim();
+    if (!text) {
+      flash("Write a few words before saving");
+      return;
+    }
+    mockStore.saveDailyReflection(text);
+    if (shareToFeed) {
+      mockStore.createPost({
+        content: `Daily reflection: ${text}`,
+        feeling: "Grateful",
+        anonymous: false,
+      });
+      flash("Reflection saved and shared to Home");
+    } else {
+      flash("Reflection saved");
+    }
+    setReflectionOpen(false);
   }
 
   return (
@@ -487,11 +514,22 @@ export function MemberProfileView() {
                 &ldquo;What is one small win you achieved today, even if it feels
                 insignificant?&rdquo;
               </p>
+              {store.dailyReflection ? (
+                <div className="rounded-xl border border-munity-green/20 bg-[#fbf9f8] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-munity-green">
+                    Your reflection
+                  </p>
+                  <p className="mt-2 text-sm leading-relaxed text-munity-text">
+                    {store.dailyReflection}
+                  </p>
+                </div>
+              ) : null}
               <button
                 type="button"
+                onClick={openReflection}
                 className="rounded-xl border border-[#c5c8b8] bg-[#fbf9f8] py-3 text-sm font-semibold tracking-wide text-munity-text transition hover:bg-white"
               >
-                Write Reflection
+                {store.dailyReflection ? "Edit Reflection" : "Write Reflection"}
               </button>
             </section>
 
@@ -713,6 +751,50 @@ export function MemberProfileView() {
               className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
             >
               Cancel
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={reflectionOpen} onOpenChange={setReflectionOpen}>
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>Write reflection</DialogTitle>
+            <DialogDescription>
+              What is one small win you achieved today, even if it feels insignificant?
+            </DialogDescription>
+          </DialogHeader>
+          <textarea
+            value={reflectionDraft}
+            onChange={(e) => setReflectionDraft(e.target.value)}
+            rows={5}
+            placeholder="Today I…"
+            className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+          />
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setReflectionOpen(false)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => saveReflection(false)}
+              className="rounded-xl border border-munity-green bg-white px-4 py-2.5 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/30"
+            >
+              Save
+            </button>
+            <button
+              type="button"
+              onClick={() => saveReflection(true)}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            >
+              Save &amp; share
             </button>
           </DialogFooter>
         </DialogContent>
