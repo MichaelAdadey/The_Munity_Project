@@ -4,7 +4,6 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
-  ArrowDownRight,
   Check,
   ChevronRight,
   Download,
@@ -16,6 +15,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
@@ -80,6 +80,7 @@ interface TherapeuticProgressViewProps {
 
 export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProps) {
   const { withLoading } = useLoading();
+  const { flash } = useLiveToast();
   const [dateRange, setDateRange] = useState("Last 6 Months");
   const avatar = assets.avatars[patient.avatarKey];
   const maxThemeCount = themes[0]?.count ?? 1;
@@ -129,6 +130,7 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
                     onClick={() =>
                       withLoading(async () => {
                         await new Promise((resolve) => setTimeout(resolve, 1000));
+                        flash("Progress report is ready to download");
                       }, "Generating report...")
                     }
                   >
@@ -137,6 +139,8 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
                   </Button>
                 </div>
               </header>
+
+              <LiveTicker items={[`${patient.name}'s GAD-7 score is stable at 8.`, "Attendance updated after the latest session."]} />
 
               <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {summaryStats.map((stat, index) => (
@@ -171,10 +175,7 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
                         Self-reported GAD-7 scores from weekly check-ins
                       </p>
                     </div>
-                    <span className="inline-flex items-center gap-1.5 rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
-                      <ArrowDownRight className="size-3.5" />
-                      Improving
-                    </span>
+                    <LivePulse label="Improving" />
                   </div>
 
                   <div className="relative mt-8 h-56">

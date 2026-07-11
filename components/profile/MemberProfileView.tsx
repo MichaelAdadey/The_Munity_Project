@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ChevronDown,
   Flame,
@@ -11,10 +12,11 @@ import {
   MessageCircle,
   Pencil,
   Share2,
-  Sparkles,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { MunityLeafIcon } from "@/components/icons/MunityIcons";
+import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { useMockStore } from "@/lib/mock-store";
 
 type ProfileTab = "My Posts" | "Communities" | "Saved Resources";
@@ -113,6 +115,7 @@ function MoodLineChart() {
 
 export function MemberProfileView() {
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const [tab, setTab] = useState<ProfileTab>("My Posts");
   const [view, setView] = useState("Weekly View");
   const [search, setSearch] = useState("");
@@ -124,9 +127,9 @@ export function MemberProfileView() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-8">
+      <motion.div initial="hidden" animate="show" variants={liveStagger} className="mx-auto flex max-w-[1280px] flex-col gap-8">
         {/* Profile hero */}
-        <section className="overflow-hidden rounded-[20px] bg-[#e4e2e2] shadow-sm">
+        <motion.section variants={liveFadeUp} className="overflow-hidden rounded-[20px] bg-[#e4e2e2] shadow-sm">
           <div className="relative h-48 w-full md:h-64">
             <Image
               src="/images/profile/cover.png"
@@ -165,6 +168,7 @@ export function MemberProfileView() {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
+                  onClick={() => flash("Profile editing will be available soon")}
                   className="inline-flex h-11 items-center gap-2 rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                 >
                   <Pencil className="size-3.5" />
@@ -172,6 +176,7 @@ export function MemberProfileView() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => flash("Profile link copied")}
                   aria-label="Share profile"
                   className="flex size-11 items-center justify-center rounded-xl bg-munity-lime text-munity-olive-text transition hover:brightness-95"
                 >
@@ -192,7 +197,7 @@ export function MemberProfileView() {
               {store.profile.bio}
             </p>
           </div>
-        </section>
+        </motion.section>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
           {/* Left column */}
@@ -328,6 +333,7 @@ export function MemberProfileView() {
               <p className="mt-1 text-sm font-semibold uppercase tracking-[1.4px] text-white/80">
                 Day Wellness Streak
               </p>
+              <div className="mt-3"><LivePulse label="Streak active" /></div>
               <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
                 <div className="h-full w-4/5 rounded-full bg-munity-lime shadow-[0_0_15px_rgba(214,231,161,0.5)]" />
               </div>
@@ -338,7 +344,7 @@ export function MemberProfileView() {
 
             <section className="flex flex-col gap-4 rounded-[20px] bg-[#eae8e7] p-6">
               <div className="flex items-center gap-2">
-                <Sparkles className="size-5 text-munity-green" />
+                <MunityLeafIcon className="size-5 text-munity-green" />
                 <h3 className="text-sm font-semibold tracking-wide text-munity-green">
                   Daily Prompt
                 </h3>
@@ -407,7 +413,7 @@ export function MemberProfileView() {
             </div>
           </div>
         </footer>
-      </div>
+      </motion.div>
     </MemberAppShell>
   );
 }

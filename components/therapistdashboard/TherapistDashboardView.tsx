@@ -16,6 +16,7 @@ import {
   Video,
 } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, routes } from "@/lib/routes";
 
@@ -108,6 +109,8 @@ const statusDotClass = {
 } as const;
 
 export function TherapistDashboardView() {
+  const { flash } = useLiveToast();
+
   return (
     <TherapistAppShell
       active="Dashboard"
@@ -132,6 +135,14 @@ export function TherapistDashboardView() {
           View Log
         </Link>
       </section>
+
+      <LiveTicker
+        items={[
+          "Marcus completed a morning check-in · distress flag needs review.",
+          "A weekly summary is ready for your clinical review.",
+          "Leo Richards opened today’s workplace stress worksheet.",
+        ]}
+      />
 
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => {
@@ -162,7 +173,10 @@ export function TherapistDashboardView() {
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
         <section className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)] xl:col-span-2">
           <div className="flex items-center justify-between border-b border-munity-input-border px-6 py-6">
-            <h2 className="text-2xl font-semibold text-munity-text">Today&apos;s Schedule</h2>
+            <div className="flex items-center gap-3">
+              <h2 className="text-2xl font-semibold text-munity-text">Today&apos;s Schedule</h2>
+              <LivePulse label="2 today" />
+            </div>
             <Link
               href={routes.therapistAppointments}
               className="rounded-xl px-4 py-2 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/40"
@@ -218,6 +232,7 @@ export function TherapistDashboardView() {
 
                   <Link
                     href={session.actionHref}
+                    onClick={() => flash(`${session.action} opened for ${session.name}`)}
                     className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                   >
                     {session.action}

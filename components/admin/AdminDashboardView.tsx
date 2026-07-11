@@ -1,6 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState, type ElementType } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   Calendar,
@@ -11,6 +13,9 @@ import {
   Zap,
 } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
+import { LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import { useMockStore } from "@/lib/mock-store";
+import { routes } from "@/lib/routes";
 
 const kpis: {
   label: string;
@@ -187,16 +192,16 @@ function SessionDonut() {
   const stroke = 18;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
-  let offset = 0;
 
   return (
     <div className="relative mx-auto size-40">
       <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 size-full" aria-hidden>
-        {sessionTypes.map((segment) => {
+        {sessionTypes.map((segment, index) => {
           const length = (segment.percent / 100) * circumference;
           const dash = `${length} ${circumference - length}`;
-          const currentOffset = offset;
-          offset += length;
+          const currentOffset = sessionTypes
+            .slice(0, index)
+            .reduce((total, previous) => total + (previous.percent / 100) * circumference, 0);
           return (
             <circle
               key={segment.label}
@@ -221,17 +226,39 @@ function SessionDonut() {
   );
 }
 
-export function AdminDashboardView({ adminName }: { adminName: string }) {
+function AdminDashboardContent() {
+  const { reports } = useMockStore();
   const [range, setRange] = useState<"Weekly" | "Monthly">("Monthly");
+  const { flash } = useLiveToast();
+  const dashboardKpis = kpis.map((kpi) =>
+    kpi.label === "Safety Reports"
+      ? { ...kpi, value: String(reports.filter((report) => report.status !== "Resolved").length) }
+      : kpi,
+  );
 
   return (
-    <AdminAppShell adminName={adminName}>
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
+    <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
+        <LiveTicker
+          items={[
+            "18 members joined community conversations in the last hour.",
+            "Dr. Aris Thorne completed therapist verification.",
+            "Three moderation reports moved into review.",
+            "Session bookings are up 8% from this time last week.",
+          ]}
+        />
         {/* KPI row */}
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-          {kpis.map(({ label, value, trend, trendTone, icon: Icon, alert }) => (
-            <article
+        <motion.section
+          variants={liveStagger}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5"
+        >
+          {dashboardKpis.map(({ label, value, trend, trendTone, icon: Icon, alert }) => (
+            <motion.article
               key={label}
+              variants={liveFadeUp}
+              whileHover={{ y: -3 }}
+              transition={{ duration: 0.2 }}
               className={`rounded-[20px] border p-5 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-sm ${
                 alert
                   ? "border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.1)]"
@@ -260,9 +287,9 @@ export function AdminDashboardView({ adminName }: { adminName: string }) {
               </div>
               <p className="mt-3 text-base uppercase tracking-[0.8px] text-munity-muted">{label}</p>
               <p className="mt-1 text-2xl font-semibold text-munity-text">{value}</p>
-            </article>
+            </motion.article>
           ))}
-        </section>
+        </motion.section>
 
         {/* Charts row */}
         <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
@@ -279,7 +306,10 @@ export function AdminDashboardView({ adminName }: { adminName: string }) {
                   <button
                     key={option}
                     type="button"
-                    onClick={() => setRange(option)}
+                    onClick={() => {
+                      setRange(option);
+                      flash(`Growth chart updated to ${option.toLowerCase()} data.`);
+                    }}
                     className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
                       range === option
                         ? "bg-munity-green text-white shadow-sm"
@@ -378,12 +408,12 @@ export function AdminDashboardView({ adminName }: { adminName: string }) {
               <h2 className="text-2xl font-semibold leading-tight text-munity-text">
                 Most Active Communities
               </h2>
-              <button
-                type="button"
+              <Link
+                href={routes.adminCommunities}
                 className="shrink-0 text-sm font-semibold tracking-wide text-munity-green hover:underline"
               >
                 View All
-              </button>
+              </Link>
             </div>
             <div className="mt-6 flex flex-col gap-5">
               {communities.map((community) => (
@@ -435,7 +465,14 @@ export function AdminDashboardView({ adminName }: { adminName: string }) {
             </div>
           </article>
         </section>
-      </div>
+    </div>
+  );
+}
+
+export function AdminDashboardView({ adminName }: { adminName: string }) {
+  return (
+    <AdminAppShell adminName={adminName}>
+      <AdminDashboardContent />
     </AdminAppShell>
   );
 }

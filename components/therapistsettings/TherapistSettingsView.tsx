@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Bell, Lock, Moon, Shield } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 
 type ToggleKey = "emailAlerts" | "smsAlerts" | "crisisFlags" | "darkMode" | "twoFactor";
 
@@ -61,6 +62,7 @@ const settingsGroups: {
 ];
 
 export function TherapistSettingsView() {
+  const { flash } = useLiveToast();
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     emailAlerts: true,
     smsAlerts: false,
@@ -71,6 +73,7 @@ export function TherapistSettingsView() {
 
   function toggle(key: ToggleKey) {
     setToggles((current) => ({ ...current, [key]: !current[key] }));
+    flash(`${key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())} updated`);
   }
 
   return (
@@ -79,6 +82,7 @@ export function TherapistSettingsView() {
       title="Settings"
       subtitle="Manage notifications, security, and workspace preferences."
     >
+      <div className="flex justify-end"><LivePulse label="Preferences synced" /></div>
       <div className="flex flex-col gap-6">
         {settingsGroups.map((group) => {
           const Icon = group.icon;
@@ -141,6 +145,7 @@ export function TherapistSettingsView() {
               </p>
               <button
                 type="button"
+                onClick={() => flash("Password change flow opened")}
                 className="mt-4 rounded-xl border border-munity-input-border px-4 py-2.5 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/40"
               >
                 Change password

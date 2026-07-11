@@ -154,8 +154,11 @@ function getSnapshot(): MockStoreState {
   return state;
 }
 
+/** Must be a stable reference — React will loop if getServerSnapshot returns a new object each call. */
+const serverSnapshot: MockStoreState = createSeedState();
+
 function getServerSnapshot(): MockStoreState {
-  return createSeedState();
+  return serverSnapshot;
 }
 
 function subscribe(listener: () => void) {

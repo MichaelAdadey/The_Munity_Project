@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -16,6 +17,7 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { LiveToastProvider, useLiveToast } from "@/components/live/LiveFeedback";
 
 const crisisSteps = [
   {
@@ -94,8 +96,17 @@ const internationalLines = [
 ];
 
 export function EmergencySupportView() {
+  return (
+    <LiveToastProvider>
+      <EmergencySupportContent />
+    </LiveToastProvider>
+  );
+}
+
+function EmergencySupportContent() {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  const { flash } = useLiveToast();
 
   const filteredLines = internationalLines.filter((line) =>
     line.country.toLowerCase().includes(query.trim().toLowerCase()),
@@ -128,7 +139,7 @@ export function EmergencySupportView() {
         </div>
       </header>
 
-      <main className="mx-auto flex w-full max-w-[896px] flex-1 flex-col gap-10 px-6 pb-32 pt-16 lg:px-10">
+      <motion.main initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="mx-auto flex w-full max-w-[896px] flex-1 flex-col gap-10 px-6 pb-32 pt-16 lg:px-10">
         <section className="flex flex-col items-center gap-4 text-center">
           <h1 className="max-w-3xl text-4xl font-normal tracking-[-1.2px] text-munity-text md:text-5xl md:leading-tight">
             Immediate Support & Crisis Resources
@@ -207,6 +218,16 @@ export function EmergencySupportView() {
                 </div>
                 <div className="flex flex-col gap-3">
                   <p className="text-2xl font-bold text-munity-green">{line.contact}</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(line.contact);
+                      flash("Crisis contact copied");
+                    }}
+                    className="self-start text-xs font-semibold text-munity-green hover:underline"
+                  >
+                    Copy contact
+                  </button>
                   <a
                     href={line.href}
                     className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-6 py-3 text-base font-semibold text-white transition hover:brightness-95 ${
@@ -260,7 +281,7 @@ export function EmergencySupportView() {
             ) : null}
           </div>
         </section>
-      </main>
+      </motion.main>
 
       <div className="fixed inset-x-0 bottom-0 z-50 bg-munity-green px-6 py-4">
         <div className="mx-auto flex max-w-[896px] items-center justify-center gap-3 text-center text-white">

@@ -7,6 +7,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMenu";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { LiveToastProvider } from "@/components/live/LiveFeedback";
 
 const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
 
@@ -27,6 +28,7 @@ export function TherapistAppShell({
   children,
 }: TherapistAppShellProps) {
   return (
+    <LiveToastProvider>
     <SidebarProvider storageKey="munity-therapist-sidebar-open" expandedWidth={256}>
       <div className="min-h-screen bg-munity-bg">
         <CollapsibleSidebarLayout
@@ -65,5 +67,6 @@ export function TherapistAppShell({
         </CollapsibleSidebarLayout>
       </div>
     </SidebarProvider>
+    </LiveToastProvider>
   );
 }

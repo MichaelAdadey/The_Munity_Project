@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
+import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 import {
   DropdownMenu,
@@ -57,6 +58,7 @@ export function AdminAppShell({
   const [search, setSearch] = useState("");
 
   return (
+    <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] px-4 py-4 lg:flex">
         <Link href={routes.admin} className="mb-8 block px-4 pt-2">
@@ -154,5 +156,6 @@ export function AdminAppShell({
         <div className="px-6 py-8 lg:px-10">{children}</div>
       </div>
     </div>
+    </LiveToastProvider>
   );
 }

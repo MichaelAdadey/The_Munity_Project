@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes } from "@/lib/routes";
 
 export function SavedPostsView() {
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const savedPosts = store.posts.filter((post) => store.savedPostIds.includes(post.id));
   return (
     <MemberAppShell>
@@ -30,14 +33,15 @@ export function SavedPostsView() {
               href={routes.memberHome}
               className="text-sm font-semibold text-munity-green hover:underline"
             >
-              Browse resources
+              Browse Home feed
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {savedPosts.map((post) => (
-              <article
+              <motion.article
                 key={post.id}
+                variants={liveFadeUp}
                 className="group flex gap-4 rounded-[20px] border border-munity-border bg-white p-4 shadow-[0_4px_10px_rgba(85,107,47,0.05)] transition hover:border-munity-green/30 hover:bg-munity-lime/5"
               >
                 <div className="min-w-0 flex-1 py-1">
@@ -59,15 +63,18 @@ export function SavedPostsView() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => mockStore.toggleSavedPost(post.id)}
+                  onClick={() => {
+                    mockStore.toggleSavedPost(post.id);
+                    flash("Removed from saved posts");
+                  }}
                   className="mt-1 size-5 shrink-0 text-munity-green"
                   aria-label="Unsave post"
                 >
                   <Bookmark className="size-5 fill-current" />
                 </button>
-              </article>
+              </motion.article>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </MemberAppShell>

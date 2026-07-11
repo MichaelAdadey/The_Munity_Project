@@ -2,7 +2,8 @@ import Link from "next/link"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Flame, Sparkles, Users, Wind } from "lucide-react"
+import { Flame, Users, Wind } from "lucide-react"
+import { MunityLeafIcon } from "@/components/icons/MunityIcons"
 import { formatCount } from "@/lib/utils"
 import type { Community } from "@/lib/types"
 
@@ -38,7 +39,7 @@ export function HomeSidebar({ suggested }: { suggested: Community[] }) {
 
       <Card className="p-5">
         <div className="flex items-center gap-2">
-          <Sparkles className="size-5 text-primary" />
+          <MunityLeafIcon className="size-5 text-primary" />
           <h3 className="font-semibold">Suggested for you</h3>
         </div>
         <ul className="mt-4 space-y-4">

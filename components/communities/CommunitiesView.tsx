@@ -4,16 +4,18 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ElementType } from "react";
+import { motion } from "framer-motion";
 import {
   Briefcase,
   GraduationCap,
   Heart,
   Lightbulb,
   Plus,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LivePulse, LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import { MunityRingsIcon } from "@/components/icons/MunityIcons";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes } from "@/lib/routes";
 
@@ -41,13 +43,14 @@ const filterIcons: Record<string, ElementType> = {
   Depression: Heart,
   "Student Support": GraduationCap,
   Grief: Heart,
-  Neurodiversity: Sparkles,
+  Neurodiversity: MunityRingsIcon,
   "Workplace Stress": Briefcase,
 };
 
 export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
   const router = useRouter();
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const [activeFilter, setActiveFilter] = useState<CommunityFilter>("All");
   const [search, setSearch] = useState("");
 
@@ -91,20 +94,21 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               Join safe, moderated spaces where empathy is the standard. Connect with
               others walking a similar path.
             </p>
+            <div className="mt-4"><LivePulse label="Active spaces" count={store.memberships.length} /></div>
             <div className="mt-8 flex flex-wrap gap-4">
-              <button
+              <motion.button
                 type="button"
                 className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
               >
                 <Plus className="size-3.5" />
                 Create Community
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
                 className="rounded-xl border border-[#c5c8b8] bg-[rgba(251,249,248,0.5)] px-6 py-3 text-sm font-semibold tracking-wide text-munity-text backdrop-blur-sm transition hover:bg-white"
               >
                 How it works
-              </button>
+              </motion.button>
             </div>
           </div>
         </section>
@@ -114,10 +118,11 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
           {filters.map((filter) => {
             const active = activeFilter === filter;
             return (
-              <button
+              <motion.button
                 key={filter}
                 type="button"
                 onClick={() => setActiveFilter(filter)}
+                whileTap={{ scale: 0.95 }}
                 className={`shrink-0 rounded-full px-6 py-2 text-sm font-semibold tracking-wide transition ${
                   active
                     ? "bg-munity-green text-white shadow-sm"
@@ -125,19 +130,21 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 }`}
               >
                 {filter}
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <LiveTicker items={store.communities.slice(0, 3).map((community) => `${community.name} has ${community.membersLabel} connecting today.`)} />
+        <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((community) => {
             const Icon = filterIcons[community.filter] ?? Users;
             const joined = store.memberships.includes(community.id);
             return (
-              <article
+              <motion.article
                 key={community.id}
+                variants={liveFadeUp}
                 className="flex flex-col overflow-hidden rounded-[20px] border border-[#e5e5e1] bg-white"
               >
                 <div className="relative h-32 w-full">
@@ -185,6 +192,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                           return;
                         }
                         mockStore.toggleMembership(community.id);
+                        flash(joined ? `Left ${community.name}` : `Joined ${community.name}`);
                       }}
                       className="rounded-xl bg-munity-lime px-5 py-2 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:brightness-95"
                     >
@@ -193,7 +201,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                     </div>
                   </div>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
 
@@ -217,7 +225,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               Apply to Moderate
             </button>
           </article>
-        </div>
+        </motion.div>
 
         {visible.length === 0 ? (
           <p className="py-8 text-center text-sm text-munity-muted">

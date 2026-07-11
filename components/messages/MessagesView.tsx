@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Ban,
   BellOff,
@@ -17,6 +18,7 @@ import {
   Video,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
 
@@ -136,6 +138,7 @@ const sharedMedia = [
 
 export function MessagesView() {
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const [filter, setFilter] = useState<ChatFilter>("All");
   const [activeChatId, setActiveChatId] = useState("sarah");
   const [draft, setDraft] = useState("");
@@ -156,6 +159,7 @@ export function MessagesView() {
     if (!draft.trim()) return;
     mockStore.sendMessage(activeChatId, draft);
     setDraft("");
+    flash("Message sent");
   }
 
   return (
@@ -262,8 +266,7 @@ export function MessagesView() {
               </h2>
               {activeChat.online ? (
                 <p className="mt-0.5 flex items-center gap-1.5 text-xs font-medium text-[#16a34a]">
-                  <span className="size-1.5 rounded-full bg-[#22c55e]" />
-                  Active Now
+                  <LivePulse label="Active now" />
                 </p>
               ) : (
                 <p className="mt-0.5 text-xs font-medium text-munity-muted">Offline</p>
@@ -287,7 +290,8 @@ export function MessagesView() {
             </div>
           </div>
 
-          <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+          <AnimatePresence mode="wait">
+          <motion.div key={activeChat.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
             {activeMessages.length > 0 ? (
               activeMessages.map((message) => {
                 if (message.kind === "date") {
@@ -368,7 +372,8 @@ export function MessagesView() {
                 <p className="max-w-sm text-xs">No messages yet. Start the conversation below.</p>
               </div>
             )}
-          </div>
+          </motion.div>
+          </AnimatePresence>
 
           <div className="border-t border-[rgba(197,200,184,0.3)] bg-[#fbf9f8] px-4 py-4">
             <div className="flex items-center gap-3 rounded-2xl border border-[rgba(197,200,184,0.2)] bg-[#f5f3f3] p-2">
@@ -399,6 +404,7 @@ export function MessagesView() {
                 placeholder="Type a message..."
                 className="min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-munity-text outline-none placeholder:text-[rgba(69,72,60,0.5)]"
               />
+              {draft ? <span className="text-xs font-medium text-munity-muted">Typing…</span> : null}
               <button
                 type="button"
                 className="rounded-xl p-2 text-munity-muted transition hover:bg-white"

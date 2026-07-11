@@ -18,6 +18,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
+import { LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import { useMockStore } from "@/lib/mock-store";
@@ -76,11 +77,13 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const { sessionNotes } = useMockStore();
   const router = useRouter();
   const { withLoading } = useLoading();
+  const { flash } = useLiveToast();
   const [activeSessionId, setActiveSessionId] = useState<string | number>(12);
   const [saved, setSaved] = useState(false);
+  const [tasks, setTasks] = useState([true, false]);
   const avatar = assets.avatars[patient.avatarKey];
   const firstName = patient.name.split(" ")[0];
-  const persistedSessions = sessionNotes
+  const persistedSessions: NoteSession[] = sessionNotes
     .filter((note) => note.patientSlug === patient.slug)
     .map((note) => ({
       id: note.id,
@@ -224,6 +227,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                       withLoading(async () => {
                         await new Promise((resolve) => setTimeout(resolve, 800));
                         setSaved(true);
+                        flash("Clinical note changes saved");
                       }, "Saving changes...")
                     }
                   >
@@ -235,6 +239,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
 
               <div className="flex-1 overflow-auto px-8 py-8">
                 <div className="mx-auto max-w-3xl space-y-10">
+                  <LiveTicker items={[`${patient.name}'s latest note is open for review.`, "All changes are saved locally in this workspace."]} />
                   <section>
                     <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-green">
                       Session Summary
@@ -277,22 +282,25 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                       Next Steps &amp; Homework
                     </h3>
                     <div className="mt-3 space-y-3">
-                      <label className="flex items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3">
-                        <span className="flex size-[22px] items-center justify-center rounded bg-munity-green text-white">
-                          <Check className="size-4" strokeWidth={3} />
+                      <button type="button" onClick={() => { setTasks((items) => [!items[0], items[1]]); flash("Homework task updated"); }} className="flex w-full items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3 text-left">
+                        <span className={`flex size-[22px] items-center justify-center rounded ${tasks[0] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
+                          {tasks[0] ? <Check className="size-4" strokeWidth={3} /> : null}
                         </span>
                         <span className="text-base leading-relaxed">
                           Daily 5-minute boxed breathing during commute.
                         </span>
-                      </label>
-                      <label className="flex items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3">
-                        <span className="size-5 rounded border border-munity-input-border bg-white" />
+                      </button>
+                      <button type="button" onClick={() => { setTasks((items) => [items[0], !items[1]]); flash("Homework task updated"); }} className="flex w-full items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3 text-left">
+                        <span className={`flex size-[22px] items-center justify-center rounded ${tasks[1] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
+                          {tasks[1] ? <Check className="size-4" strokeWidth={3} /> : null}
+                        </span>
                         <span className="text-base leading-relaxed">
                           Journaling identifying 3 &quot;Evidence Against&quot; a negative thought.
                         </span>
-                      </label>
+                      </button>
                       <button
                         type="button"
+                        onClick={() => { setTasks((items) => [...items, false]); flash("New homework task added"); }}
                         className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-munity-green"
                       >
                         <PlusCircle className="size-4" />

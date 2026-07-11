@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import { MemberAvatarMenu } from "@/components/memberlayout/MemberAvatarMenu";
+import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 
 export type MemberNavItem =
@@ -75,34 +76,37 @@ export function MemberAppShell({
 
   if (!isLoggedIn) {
     return (
-      <div className="min-h-screen bg-munity-bg">
-        <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
-          <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
-            <Link href={routes.home} className="text-2xl font-bold text-munity-green">
-              Munity
-            </Link>
-            <div className="flex items-center gap-2">
-              <Link
-                href={routes.login}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-munity-green transition hover:bg-white"
-              >
-                Log in
+      <LiveToastProvider>
+        <div className="min-h-screen bg-munity-bg">
+          <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
+            <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
+              <Link href={routes.home} className="text-2xl font-bold text-munity-green">
+                Munity
               </Link>
-              <Link
-                href={routes.signup}
-                className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
-              >
-                Sign up
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={routes.login}
+                  className="rounded-xl px-4 py-2 text-sm font-semibold text-munity-green transition hover:bg-white"
+                >
+                  Log in
+                </Link>
+                <Link
+                  href={routes.signup}
+                  className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+                >
+                  Sign up
+                </Link>
+              </div>
             </div>
-          </div>
-        </header>
-        <div className="pt-16">{children}</div>
-      </div>
+          </header>
+          <div className="pt-16">{children}</div>
+        </div>
+      </LiveToastProvider>
     );
   }
 
   return (
+    <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] px-4 py-4 lg:flex">
         <Link href={routes.memberHome} className="mb-8 block px-4 pt-2">
@@ -168,5 +172,6 @@ export function MemberAppShell({
         {flush ? children : <div className="px-6 py-8 lg:px-10">{children}</div>}
       </div>
     </div>
+    </LiveToastProvider>
   );
 }

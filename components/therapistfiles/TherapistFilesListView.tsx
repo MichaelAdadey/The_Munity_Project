@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Download, FileText, FolderOpen, Search } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
 
@@ -73,6 +74,7 @@ const patients = patientSlugs.map((slug) => ({
 }));
 
 export function TherapistFilesListView() {
+  const { flash } = useLiveToast();
   return (
     <TherapistAppShell
       active="Files"
@@ -89,6 +91,7 @@ export function TherapistFilesListView() {
         </div>
       }
     >
+      <LiveTicker items={["A worksheet was shared with Leo Richards today.", "All clinical files are synchronized and encrypted."]} />
       <div className="flex flex-col gap-6">
         {patients.map((patient, index) => (
           <motion.section
@@ -108,9 +111,9 @@ export function TherapistFilesListView() {
                 </div>
                 <div>
                   <p className="font-semibold text-munity-text">{patient.name}</p>
-                  <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                  <div className="flex items-center gap-2"><p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                     {patient.clientId} · {patient.files.length} files
-                  </p>
+                  </p>{index === 0 ? <LivePulse label="Updated" /> : null}</div>
                 </div>
               </Link>
               <Link
@@ -140,6 +143,7 @@ export function TherapistFilesListView() {
                   </div>
                   <button
                     type="button"
+                    onClick={() => flash(`${file.name} download started`)}
                     className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
                     aria-label={`Download ${file.name}`}
                   >

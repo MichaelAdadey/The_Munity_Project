@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   Bookmark,
@@ -17,6 +18,8 @@ import {
   Wind,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import { mockStore, useMockStore } from "@/lib/mock-store";
 import {
   resourceCategoriesById,
   type ResourceCategory,
@@ -45,6 +48,8 @@ const savedItems = [
 export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   const [activeCategory, setActiveCategory] = useState<ResourceCategory>("Anxiety");
   const [query, setQuery] = useState("");
+  const store = useMockStore();
+  const { flash } = useLiveToast();
 
   const categoryContent = resourceCategoriesById[activeCategory];
   const search = query.trim().toLowerCase();
@@ -106,6 +111,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
             })}
           </div>
         </section>
+        <LiveTicker items={categoryContent.trending.map((item) => `${item.title} is trending with ${item.reads}.`)} />
 
         <div className="flex flex-col gap-8 xl:flex-row xl:items-start">
           <div className="flex min-w-0 flex-1 flex-col gap-12">
@@ -144,6 +150,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                   <div className="mt-6 flex items-center justify-between">
                     <button
                       type="button"
+                      onClick={() => flash(`${categoryContent.featured.title} is ready to ${categoryContent.featured.cta.toLowerCase()}`)}
                       className="rounded-xl bg-munity-green px-6 py-3 text-base text-white transition hover:bg-munity-green-dark"
                     >
                       {categoryContent.featured.cta}
@@ -151,10 +158,16 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                     {isLoggedIn ? (
                       <button
                         type="button"
+                        onClick={() => {
+                          const resourceId = categoryContent.featured.title;
+                          const saved = store.savedResourceIds.includes(resourceId);
+                          mockStore.toggleSavedResource(resourceId);
+                          flash(saved ? "Removed from saved resources" : "Saved for later");
+                        }}
                         className="rounded-full p-2 text-munity-muted hover:bg-munity-bg hover:text-munity-green"
                         aria-label="Save for later"
                       >
-                        <Bookmark className="size-5" />
+                        <Bookmark className={`size-5 ${store.savedResourceIds.includes(categoryContent.featured.title) ? "fill-current text-munity-green" : ""}`} />
                       </button>
                     ) : null}
                   </div>
@@ -180,10 +193,11 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                   No {activeCategory.toLowerCase()} resources match “{query}”.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
                   {filteredLatest.map((item) => (
-                    <article
+                    <motion.article
                       key={item.title}
+                      variants={liveFadeUp}
                       className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-sm"
                     >
                       <div className="relative h-48 w-full">
@@ -218,15 +232,16 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                         <p className="mt-3 text-sm leading-5 text-munity-muted">{item.excerpt}</p>
                         <button
                           type="button"
+                          onClick={() => flash(`${item.title} is ready to ${item.cta.toLowerCase()}`)}
                           className="mt-4 inline-flex items-center gap-1 text-base text-munity-green hover:underline"
                         >
                           {item.cta}
                           <ArrowRight className="size-2.5" />
                         </button>
                       </div>
-                    </article>
+                    </motion.article>
                   ))}
-                </div>
+                </motion.div>
               )}
             </section>
           </div>

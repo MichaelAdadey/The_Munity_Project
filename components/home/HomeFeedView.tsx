@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Bookmark,
   Heart,
@@ -13,13 +13,16 @@ import {
   MoreHorizontal,
   Plus,
   Smile,
-  Sparkles,
   UserRound,
+  Volume2,
+  VolumeX,
   Wind,
   X,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
+import { MunitySunIcon } from "@/components/icons/MunityIcons";
+import { startCalmAmbient } from "@/lib/calm-ambient";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
 
@@ -71,6 +74,8 @@ export function HomeFeedView() {
   const [breathing, setBreathing] = useState(false);
   const [breathPhase, setBreathPhase] = useState("Inhale");
   const [breathCount, setBreathCount] = useState(4);
+  const [audioMuted, setAudioMuted] = useState(false);
+  const ambientRef = useRef<ReturnType<typeof startCalmAmbient>>(null);
   const [momentIndex, setMomentIndex] = useState(0);
   const [activityIndex, setActivityIndex] = useState(0);
   const [onlineNow, setOnlineNow] = useState(128);
@@ -125,23 +130,45 @@ export function HomeFeedView() {
   }, [liveActivity.length]);
 
   useEffect(() => {
-    if (!breathing) return;
+    if (!breathing) {
+      ambientRef.current?.stop();
+      ambientRef.current = null;
+      return;
+    }
+
+    ambientRef.current = startCalmAmbient();
+    ambientRef.current?.setMuted(audioMuted);
+
     const phases = ["Inhale", "Hold", "Exhale", "Hold"] as const;
     let phase = 0;
     let count = 4;
     setBreathPhase(phases[0]);
     setBreathCount(4);
+    ambientRef.current?.setBreathGain(phases[0]);
+
     const timer = window.setInterval(() => {
       count -= 1;
       if (count <= 0) {
         phase = (phase + 1) % phases.length;
         count = 4;
         setBreathPhase(phases[phase]);
+        ambientRef.current?.setBreathGain(phases[phase]);
       }
       setBreathCount(count);
     }, 1000);
-    return () => window.clearInterval(timer);
+
+    return () => {
+      window.clearInterval(timer);
+      ambientRef.current?.stop();
+      ambientRef.current = null;
+    };
+    // audioMuted is applied separately so toggling mute doesn't restart the pad
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [breathing]);
+
+  useEffect(() => {
+    ambientRef.current?.setMuted(audioMuted);
+  }, [audioMuted]);
 
   function flash(message: string) {
     setToast(message);
@@ -336,7 +363,7 @@ export function HomeFeedView() {
                   {firstName}, how are you arriving today?
                 </h1>
               </div>
-              <Sparkles className="size-5 shrink-0 text-munity-green/70" />
+              <MunitySunIcon className="size-5 shrink-0 text-munity-green/70" />
             </div>
 
             <div className="flex gap-3 sm:gap-4">
@@ -805,6 +832,15 @@ export function HomeFeedView() {
               >
                 <X className="size-4" />
               </button>
+              <button
+                type="button"
+                onClick={() => setAudioMuted((value) => !value)}
+                className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-semibold text-munity-green shadow-sm"
+                aria-label={audioMuted ? "Unmute calm audio" : "Mute calm audio"}
+              >
+                {audioMuted ? <VolumeX className="size-3.5" /> : <Volume2 className="size-3.5" />}
+                {audioMuted ? "Muted" : "Sound on"}
+              </button>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-munity-muted">
                 Box breathing
               </p>
@@ -826,7 +862,7 @@ export function HomeFeedView() {
                 </div>
               </motion.div>
               <p className="mt-6 text-sm text-munity-muted">
-                Follow the circle. Four seconds each phase.
+                Follow the circle. Soft ambient audio swells with your breath.
               </p>
               <button
                 type="button"

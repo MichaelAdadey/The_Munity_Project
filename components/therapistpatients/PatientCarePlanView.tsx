@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import { CheckCircle2, Circle, Pencil } from "lucide-react";
+import { useState } from "react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
 import { CollapsibleSidebarLayout } from "@/components/therapistlayout/CollapsibleSidebarLayout";
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import type { PatientRecord, PatientSlug } from "@/lib/routes";
 
@@ -113,8 +115,12 @@ interface PatientCarePlanViewProps {
 }
 
 export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
+  const { flash } = useLiveToast();
   const avatar = assets.avatars[patient.avatarKey];
   const plan = plansByPatient[patient.slug];
+  const [completedGoals, setCompletedGoals] = useState(() =>
+    plan.goals.filter((goal) => goal.status === "completed").map((goal) => goal.title),
+  );
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
@@ -149,6 +155,7 @@ export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
                 </div>
                 <button
                   type="button"
+                  onClick={() => flash("Care plan editing opened")}
                   className="inline-flex items-center gap-2 rounded-xl border border-munity-border bg-white px-4 py-2.5 text-sm font-semibold text-munity-text transition hover:border-munity-green/40 hover:bg-munity-lime/10"
                 >
                   <Pencil className="size-4 text-munity-green" />
@@ -156,6 +163,7 @@ export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
                 </button>
               </header>
 
+              <div className="mb-5 flex items-center gap-3"><LivePulse label="Plan active" /><LiveTicker items={[`Next care-plan review is ${plan.nextReview}.`, "Goal progress updates are reflected immediately."]} /></div>
               <section className="mb-6 rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <div>
@@ -189,7 +197,9 @@ export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
               </section>
 
               <div className="flex flex-col gap-4">
-                {plan.goals.map((goal, index) => (
+                {plan.goals.map((goal, index) => {
+                  const isCompleted = completedGoals.includes(goal.title);
+                  return (
                   <motion.article
                     key={goal.title}
                     initial={{ opacity: 0, y: 10 }}
@@ -198,11 +208,9 @@ export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
                     className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
                   >
                     <div className="flex items-start gap-3">
-                      {goal.status === "completed" ? (
-                        <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-munity-green" />
-                      ) : (
-                        <Circle className="mt-0.5 size-5 shrink-0 text-munity-muted" />
-                      )}
+                      <button type="button" onClick={() => { setCompletedGoals((current) => isCompleted ? current.filter((title) => title !== goal.title) : [...current, goal.title]); flash(`${goal.title} marked ${isCompleted ? "active" : "complete"}`); }} aria-label={`Toggle ${goal.title}`}>
+                        {isCompleted ? <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-munity-green" /> : <Circle className="mt-0.5 size-5 shrink-0 text-munity-muted" />}
+                      </button>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h2 className="text-lg font-semibold text-munity-text">{goal.title}</h2>
@@ -217,7 +225,8 @@ export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
                       </div>
                     </div>
                   </motion.article>
-                ))}
+                  );
+                })}
               </div>
             </AnimatedPage>
           </CollapsibleSidebarLayout>

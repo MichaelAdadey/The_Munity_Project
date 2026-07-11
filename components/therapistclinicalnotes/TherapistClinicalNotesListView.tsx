@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, FileText, Search } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
 
@@ -87,6 +88,7 @@ export function TherapistClinicalNotesListView() {
         </div>
       }
     >
+      <LiveTicker items={["A new session note was saved today.", "Two notes need a final review before the next session."]} />
       <div className="flex flex-col gap-6">
         {patients.map((patient, index) => (
           <motion.section
@@ -110,6 +112,7 @@ export function TherapistClinicalNotesListView() {
                     {patient.clientId}
                   </p>
                 </div>
+                {index === 0 ? <LivePulse label="New note" /> : null}
               </Link>
               <Link
                 href={patientRoutes(patient.slug).clinicalNotes}

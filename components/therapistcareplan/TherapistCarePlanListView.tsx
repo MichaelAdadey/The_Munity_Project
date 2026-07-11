@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CheckCircle2, ChevronRight, Circle, Search, Target } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
 
@@ -105,6 +106,7 @@ export function TherapistCarePlanListView() {
         </div>
       }
     >
+      <LiveTicker items={["Leo Richards’ care-plan review is due Apr 15.", "A completed sleep goal was recorded for Elena Rodriguez."]} />
       <div className="flex flex-col gap-6">
         {patients.map((patient, index) => (
           <motion.section
@@ -129,14 +131,14 @@ export function TherapistCarePlanListView() {
                   </p>
                 </div>
               </Link>
-              <Link
+              <div className="flex items-center gap-3"><Link
                 href={patientRoutes(patient.slug).carePlan}
                 className="flex items-center gap-1 text-sm font-semibold text-munity-green hover:underline"
               >
                 <Target className="size-4" />
                 View care plan
                 <ChevronRight className="size-4" />
-              </Link>
+              </Link>{index === 0 ? <LivePulse label="Review due" /> : null}</div>
             </div>
 
             <p className="mt-4 text-sm text-munity-muted">

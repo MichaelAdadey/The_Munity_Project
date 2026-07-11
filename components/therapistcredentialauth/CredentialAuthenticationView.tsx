@@ -23,6 +23,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 
 const verificationChecklist = [
@@ -50,7 +51,7 @@ const secondaryInfo = [
   },
 ] as const;
 
-function ReviewStatusCard() {
+function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
   return (
     <>
       <motion.article
@@ -64,7 +65,7 @@ function ReviewStatusCard() {
             <span className="absolute inset-0 rounded-full border-4 border-munity-green/10" />
           </div>
 
-          <h1 className="text-base text-munity-green">Documents Successfully Uploaded</h1>
+          <div className="flex items-center gap-3"><h1 className="text-base text-munity-green">Documents Successfully Uploaded</h1><LivePulse label="Review active" /></div>
           <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
             Thank you for sharing your professional credentials. We are now verifying your
             information to ensure the highest standard of care for the Munity community.
@@ -121,6 +122,7 @@ function ReviewStatusCard() {
           <div className="flex flex-wrap justify-center gap-3">
             <Button
               href={routes.therapistDashboard}
+              onClick={onContinue}
               className="h-14 rounded-xl px-8 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
             >
               Continue to dashboard
@@ -165,6 +167,7 @@ function ReviewStatusCard() {
 
 export function CredentialAuthenticationView() {
   const [activeTab, setActiveTab] = useState<ApplicationTabId>("review");
+  const { flash } = useLiveToast();
 
   return (
     <SidebarProvider storageKey="munity-credential-sidebar-open" expandedWidth={288}>
@@ -187,7 +190,7 @@ export function CredentialAuthenticationView() {
           >
             <AnimatedPage className="flex w-full max-w-2xl flex-col gap-12">
               {activeTab === "review" ? (
-                <ReviewStatusCard />
+                <ReviewStatusCard onContinue={() => flash("Welcome to your clinical dashboard")} />
               ) : (
                 <motion.div
                   key={activeTab}
