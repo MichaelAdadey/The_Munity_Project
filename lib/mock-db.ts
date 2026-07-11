@@ -72,6 +72,7 @@ export type ChatThread = {
   time: string;
   avatar: string;
   filter: "Therapists" | "Groups";
+  therapistId?: string;
   online?: boolean;
   unread?: boolean;
 };
@@ -468,6 +469,7 @@ export const seedChats: ChatThread[] = [
     time: "2m",
     avatar: "/images/messages/sarah-list.jpg",
     filter: "Therapists",
+    therapistId: "sarah-jenkins",
     online: true,
   },
   {
@@ -494,6 +496,7 @@ export const seedChats: ChatThread[] = [
     time: "4h",
     avatar: "/images/messages/elena.jpg",
     filter: "Therapists",
+    therapistId: "elena-aris",
   },
   {
     id: "jordan",

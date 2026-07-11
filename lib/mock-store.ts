@@ -296,6 +296,47 @@ export const mockStore = {
       };
     });
   },
+  createCommunity(input: {
+    name: string;
+    description: string;
+    filter: CommunityRecord["filter"];
+    tag?: string;
+  }) {
+    const name = input.name.trim();
+    if (!name) return null;
+    const slugBase = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const slug = `${slugBase || "community"}-${Date.now().toString().slice(-4)}`;
+    const community: CommunityRecord = {
+      id: `c-${Date.now()}`,
+      slug,
+      name,
+      tag: input.tag?.trim() || input.filter,
+      description:
+        input.description.trim() ||
+        "A new peer space for shared support and gentle check-ins.",
+      longDescription:
+        input.description.trim() ||
+        "Created in the Munity preview. Members can join, share posts, and grow this space together.",
+      membersLabel: "1 member",
+      memberCount: 1,
+      image: "/images/communities/mindful-paths.png",
+      filter: input.filter,
+      verified: false,
+    };
+    setState((prev) => ({
+      ...prev,
+      communities: [community, ...prev.communities],
+      memberships: [...prev.memberships, community.id],
+      profile: {
+        ...prev.profile,
+        groupCount: prev.profile.groupCount + 1,
+      },
+    }));
+    return community;
+  },
   bookSession(therapistId: string, when?: string) {
     const therapist = state.therapists.find((t) => t.id === therapistId);
     if (!therapist) return null;
@@ -309,6 +350,76 @@ export const mockStore = {
     };
     setState((prev) => ({ ...prev, bookings: [booking, ...prev.bookings] }));
     return booking;
+  },
+  ensureTherapistChat(therapistId: string) {
+    const legacyChatIds: Record<string, string> = {
+      "sarah-jenkins": "sarah",
+      "elena-aris": "elena",
+    };
+    const legacyId = legacyChatIds[therapistId];
+    const existing = state.chats.find(
+      (chat) =>
+        chat.therapistId === therapistId ||
+        chat.id === therapistId ||
+        (legacyId != null && chat.id === legacyId),
+    );
+    if (existing) {
+      if (!existing.therapistId) {
+        setState((prev) => ({
+          ...prev,
+          chats: prev.chats.map((chat) =>
+            chat.id === existing.id ? { ...chat, therapistId } : chat,
+          ),
+        }));
+      }
+      return existing.id;
+    }
+
+    const therapist = state.therapists.find((item) => item.id === therapistId);
+    if (!therapist) return null;
+
+    const chatId = `therapist-${therapistId}`;
+    const displayName = therapist.name.startsWith("Dr.")
+      ? therapist.name
+      : therapist.credentials.toLowerCase().includes("md") ||
+          therapist.credentials.toLowerCase().includes("phd")
+        ? `Dr. ${therapist.name}`
+        : therapist.name;
+
+    const chat: ChatThread = {
+      id: chatId,
+      name: displayName,
+      preview: "Say hello to start the conversation.",
+      time: "now",
+      avatar: therapist.image,
+      filter: "Therapists",
+      therapistId,
+      online: true,
+    };
+
+    const intro: ChatMessage[] = [
+      { id: `d-${chatId}`, kind: "date", label: "Today" },
+      {
+        id: `m-${chatId}-intro`,
+        kind: "text",
+        from: "them",
+        content: `Hi, I'm ${displayName}. Feel free to share what's on your mind — we can go at your pace.`,
+        time: new Date().toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      },
+    ];
+
+    setState((prev) => ({
+      ...prev,
+      chats: [chat, ...prev.chats.filter((item) => item.id !== chatId)],
+      messages: {
+        ...prev.messages,
+        [chatId]: prev.messages[chatId] ?? intro,
+      },
+    }));
+    return chatId;
   },
   sendMessage(chatId: string, content: string) {
     const trimmed = content.trim();

@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Ban,
@@ -24,125 +25,36 @@ import { therapyPath } from "@/lib/routes";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
 
-type ChatItem = {
-  id: string;
-  name: string;
-  preview: string;
-  time: string;
-  avatar: string;
-  filter: "Therapists" | "Groups";
-  online?: boolean;
-  unread?: boolean;
-  unreadPreview?: boolean;
-  faded?: boolean;
-};
-
-const chats: ChatItem[] = [
-  {
-    id: "sarah",
-    name: "Dr. Sarah Jenkins",
-    preview: "That sounds like a great breakthrough. Let's discuss it...",
-    time: "2m",
-    avatar: "/images/messages/sarah-list.jpg",
-    filter: "Therapists",
-    online: true,
-  },
-  {
-    id: "anxiety",
-    name: "Anxiety Peer Support",
-    preview: "Mark sent a new message",
-    time: "15m",
-    avatar: "/images/messages/anxiety-group.jpg",
-    filter: "Groups",
-    unread: true,
-    unreadPreview: true,
-  },
-  {
-    id: "mindfulness",
-    name: "Daily Mindfulness",
-    preview: "New reflection prompt: What are you grateful for today?",
-    time: "1h",
-    avatar: "/images/messages/mindfulness.jpg",
-    filter: "Groups",
-  },
-  {
-    id: "elena",
-    name: "Elena Vance (Mentor)",
-    preview: "I'll be available for our session at 3 PM.",
-    time: "4h",
-    avatar: "/images/messages/elena.jpg",
-    filter: "Therapists",
-    faded: true,
-  },
-];
-
-type ThreadMessage =
-  | { id: string; kind: "date"; label: string }
-  | {
-      id: string;
-      kind: "text";
-      from: "them" | "me";
-      content: string;
-      time: string;
-    }
-  | {
-      id: string;
-      kind: "image";
-      from: "me";
-      image: string;
-      caption: string;
-      time: string;
-    };
-
-const sarahThread: ThreadMessage[] = [
-  { id: "d1", kind: "date", label: "Monday, Oct 21" },
-  {
-    id: "m1",
-    kind: "text",
-    from: "them",
-    content:
-      "Hello! How have you been feeling since our last session? I noticed your mood tracker showed some spikes in anxiety yesterday evening.",
-    time: "10:42 AM",
-  },
-  {
-    id: "m2",
-    kind: "text",
-    from: "me",
-    content:
-      "Hi Dr. Jenkins. Yes, it was a bit tough. I tried the breathing exercises we discussed, which helped a little, but I'm still feeling a bit overwhelmed by the new project at work.",
-    time: "10:45 AM",
-  },
-  {
-    id: "m3",
-    kind: "text",
-    from: "them",
-    content:
-      "That sounds like a great breakthrough using the exercises in the moment! Let's discuss it further. Would you like to try a short guided reflection now or wait until our call?",
-    time: "10:48 AM",
-  },
-  {
-    id: "m4",
-    kind: "image",
-    from: "me",
-    image: "/images/messages/shared-safe.png",
-    caption: "I found this image which reminds me of the 'safe place' we visualized.",
-    time: "10:52 AM",
-  },
-];
-
-const sharedMedia = [
-  "/images/messages/media-stones.jpg",
-  "/images/messages/media-brain.jpg",
-  "/images/messages/media-coffee.jpg",
-];
-
 export function MessagesView() {
   const store = useMockStore();
+  const searchParams = useSearchParams();
   const { flash } = useLiveToast();
   const [filter, setFilter] = useState<ChatFilter>("All");
-  const [activeChatId, setActiveChatId] = useState("sarah");
+  const [activeChatId, setActiveChatId] = useState(
+    () => store.chats[0]?.id ?? "sarah",
+  );
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    const therapistId = searchParams.get("therapist");
+    const chatId = searchParams.get("chat");
+
+    if (therapistId) {
+      const ensured = mockStore.ensureTherapistChat(therapistId);
+      if (ensured) {
+        setActiveChatId(ensured);
+        mockStore.markChatRead(ensured);
+        setFilter("Therapists");
+      }
+      return;
+    }
+
+    if (chatId) {
+      setActiveChatId(chatId);
+      mockStore.markChatRead(chatId);
+    }
+  }, [searchParams]);
 
   const filteredChats = store.chats.filter((chat) => {
     const matchesFilter = filter === "All" || chat.filter === filter;
@@ -154,10 +66,21 @@ export function MessagesView() {
   if (!activeChat) return null;
   const activeMessages = activeChat ? store.messages[activeChat.id] ?? [] : [];
   const showTherapistPanel = activeChat.filter === "Therapists";
+  const therapistProfileHref = activeChat.therapistId
+    ? therapyPath(activeChat.therapistId)
+    : null;
+  const therapistMeta = activeChat.therapistId
+    ? store.therapists.find((item) => item.id === activeChat.therapistId)
+    : undefined;
+  const sharedMedia = [
+    "/images/messages/media-stones.jpg",
+    "/images/messages/media-brain.jpg",
+    "/images/messages/media-coffee.jpg",
+  ];
 
   function sendMessage() {
     if (!draft.trim()) return;
-    mockStore.sendMessage(activeChatId, draft);
+    mockStore.sendMessage(activeChat.id, draft);
     setDraft("");
     flash("Message sent");
   }
@@ -338,7 +261,7 @@ export function MessagesView() {
                     {!isMe ? (
                       <div className="relative size-8 shrink-0 overflow-hidden rounded-full">
                         <Image
-                          src="/images/messages/sarah-chat.jpg"
+                          src={activeChat.avatar}
                           alt={activeChat.name}
                           fill
                           className="object-cover"
@@ -431,7 +354,7 @@ export function MessagesView() {
                 <div className="relative size-24">
                   <div className="relative size-24 overflow-hidden rounded-full border-4 border-white shadow-md">
                     <Image
-                      src="/images/messages/sarah-profile.jpg"
+                      src={activeChat.avatar}
                       alt={activeChat.name}
                       fill
                       className="object-cover"
@@ -445,15 +368,17 @@ export function MessagesView() {
                   {activeChat.name}
                 </h3>
                 <p className="mt-1 text-xs font-medium text-munity-muted">
-                  Licensed Clinical Psychologist
+                  {therapistMeta?.credentials ?? "Therapist"}
                 </p>
                 <div className="mt-4 flex items-center gap-2">
-                  <Link
-                    href={therapyPath(activeChat.id === "elena" ? "elena-aris" : "sarah-jenkins")}
-                    className="rounded-xl bg-munity-green px-4 py-3 text-xs font-medium text-white transition hover:bg-munity-green-dark"
-                  >
-                    View Profile
-                  </Link>
+                  {therapistProfileHref ? (
+                    <Link
+                      href={therapistProfileHref}
+                      className="rounded-xl bg-munity-green px-4 py-3 text-xs font-medium text-white transition hover:bg-munity-green-dark"
+                    >
+                      View Profile
+                    </Link>
+                  ) : null}
                   <button
                     type="button"
                     className="rounded-xl bg-munity-lime p-2 text-munity-olive-text transition hover:brightness-95"

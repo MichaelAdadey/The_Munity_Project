@@ -58,6 +58,16 @@ export function therapyPath(id: string) {
   return `${routes.therapy}/${id}`;
 }
 
+export function messagesPath(opts?: { therapistId?: string; chatId?: string }) {
+  if (opts?.therapistId) {
+    return `${routes.messages}?therapist=${encodeURIComponent(opts.therapistId)}`;
+  }
+  if (opts?.chatId) {
+    return `${routes.messages}?chat=${encodeURIComponent(opts.chatId)}`;
+  }
+  return routes.messages;
+}
+
 export type OnboardingStepId = "basic-info" | "credentials" | "specialties" | "payout";
 
 export const onboardingSteps: {

@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
-import { routes } from "@/lib/routes";
+import { messagesPath, routes } from "@/lib/routes";
 
 export function TherapistDetailView({
   id,
@@ -99,7 +99,11 @@ export function TherapistDetailView({
             </div>
             <div className="flex gap-3">
               <Link
-                href={isLoggedIn ? routes.messages : routes.login}
+                href={
+                  isLoggedIn
+                    ? messagesPath({ therapistId: therapist.id })
+                    : routes.login
+                }
                 className="rounded-xl border border-munity-green px-5 py-3 text-sm font-semibold text-munity-green"
               >
                 Message
