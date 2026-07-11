@@ -694,7 +694,10 @@ export const seedSessionNotes: SessionNoteRecord[] = [
 ];
 
 export const seedSavedPostIds = ["p2", "p5"];
-export const seedSavedResourceIds = ["r1", "r3"];
+export const seedSavedResourceIds = [
+  "res-morning-routine-for-mental-clarity",
+  "res-cognitive-reframing-workbook",
+];
 export const seedSupportedPostIds = ["p2"];
 
 export type MemberSettingsState = {

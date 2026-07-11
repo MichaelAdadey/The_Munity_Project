@@ -17,7 +17,15 @@ import { signOut } from "@/app/(auth)/actions";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
 import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
-import { useMockStore } from "@/lib/mock-store";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { mockStore, useMockStore } from "@/lib/mock-store";
 
 type ProfileTab = "My Posts" | "Communities" | "Saved Resources";
 
@@ -119,6 +127,33 @@ export function MemberProfileView() {
   const [tab, setTab] = useState<ProfileTab>("My Posts");
   const [view, setView] = useState("Weekly View");
   const [search, setSearch] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+  const [fullName, setFullName] = useState(store.profile.fullName);
+  const [username, setUsername] = useState(store.profile.username);
+  const [title, setTitle] = useState(store.profile.title);
+  const [bio, setBio] = useState(store.profile.bio);
+
+  function openEdit() {
+    setFullName(store.profile.fullName);
+    setUsername(store.profile.username);
+    setTitle(store.profile.title);
+    setBio(store.profile.bio);
+    setEditOpen(true);
+  }
+
+  function saveProfile() {
+    const nextName = fullName.trim() || store.profile.fullName;
+    const nextUsername = username.trim().replace(/^@/, "") || store.profile.username;
+    mockStore.updateProfile({
+      fullName: nextName,
+      username: nextUsername,
+      title: title.trim() || store.profile.title,
+      bio: bio.trim() || store.profile.bio,
+    });
+    mockStore.updateSettings({ displayName: nextName });
+    setEditOpen(false);
+    flash("Profile updated");
+  }
 
   return (
     <MemberAppShell
@@ -162,13 +197,16 @@ export function MemberProfileView() {
                 </h1>
                 <p className="mt-1 flex items-center gap-2 text-base text-munity-muted">
                   <MapPin className="size-3.5" />
-                  {store.profile.username}
+                  @{store.profile.username.replace(/^@/, "")}
+                </p>
+                <p className="mt-1 text-sm font-medium text-munity-olive-text">
+                  {store.profile.title}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => flash("Profile editing will be available soon")}
+                  onClick={openEdit}
                   className="inline-flex h-11 items-center gap-2 rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                 >
                   <Pencil className="size-3.5" />
@@ -414,6 +452,80 @@ export function MemberProfileView() {
           </div>
         </footer>
       </motion.div>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>Edit profile</DialogTitle>
+            <DialogDescription>
+              Update how you appear across Munity. Changes save in this preview.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Full name
+              </span>
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Username
+              </span>
+              <input
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Title
+              </span>
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Daily Mindful Warrior"
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Bio
+              </span>
+              <textarea
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                rows={4}
+                className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+              />
+            </label>
+          </div>
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveProfile}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            >
+              Save changes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MemberAppShell>
   );
 }
