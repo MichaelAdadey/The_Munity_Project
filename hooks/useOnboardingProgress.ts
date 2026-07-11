@@ -6,16 +6,21 @@ import {
   getCompletedSteps,
   markStepComplete as persistStepComplete,
   ONBOARDING_PROGRESS_EVENT,
+  resetStaleOnboardingStorage,
 } from "@/lib/onboarding-progress";
+import { isOnboardingStepFilled } from "@/lib/onboarding-data";
 import type { OnboardingStepId } from "@/lib/routes";
 
 export function useOnboardingProgress() {
   const [completedSteps, setCompletedSteps] = useState<OnboardingStepId[]>([]);
   const [progressPercent, setProgressPercent] = useState(0);
+  const [tick, setTick] = useState(0);
 
   const refresh = useCallback(() => {
+    resetStaleOnboardingStorage();
     setCompletedSteps(getCompletedSteps());
     setProgressPercent(getApplicationProgressPercent());
+    setTick((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -42,8 +47,10 @@ export function useOnboardingProgress() {
   );
 
   const isStepComplete = useCallback(
-    (stepId: OnboardingStepId) => completedSteps.includes(stepId),
-    [completedSteps],
+    (stepId: OnboardingStepId) => isOnboardingStepFilled(stepId),
+    // tick forces re-bind after storage updates so sidebars re-render correctly
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tick],
   );
 
   return {

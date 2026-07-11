@@ -1,8 +1,10 @@
 import type { OnboardingStepId } from "@/lib/routes";
 import { isOnboardingStepFilled } from "@/lib/onboarding-data";
 
-const STORAGE_KEY = "munity-onboarding-completed-steps-v2";
+const STORAGE_KEY = "munity-onboarding-completed-steps-v4";
 export const ONBOARDING_PROGRESS_EVENT = "munity-onboarding-progress-updated";
+const STORAGE_VERSION_KEY = "munity-onboarding-storage-version";
+const STORAGE_VERSION = "5";
 
 const formStepIds: OnboardingStepId[] = [
   "basic-info",
@@ -11,11 +13,38 @@ const formStepIds: OnboardingStepId[] = [
   "payout",
 ];
 
-/** Green checks / progress only count steps whose required fields are actually filled. */
+const KEYS_TO_CLEAR = [
+  "munity-onboarding-step-data",
+  "munity-onboarding-step-data-v2",
+  "munity-onboarding-step-data-v3",
+  "munity-onboarding-step-data-v4",
+  "munity-onboarding-completed-steps",
+  "munity-onboarding-completed-steps-v2",
+  "munity-onboarding-completed-steps-v3",
+  "munity-onboarding-completed-steps-v4",
+  "munity-onboarding-storage-reset-v3",
+];
+
+/** Clears stale onboarding keys whenever the storage schema version changes. */
+export function resetStaleOnboardingStorage() {
+  if (typeof window === "undefined") return;
+  try {
+    if (localStorage.getItem(STORAGE_VERSION_KEY) === STORAGE_VERSION) return;
+    KEYS_TO_CLEAR.forEach((key) => localStorage.removeItem(key));
+    localStorage.setItem(STORAGE_VERSION_KEY, STORAGE_VERSION);
+    window.dispatchEvent(new CustomEvent(ONBOARDING_PROGRESS_EVENT));
+  } catch {
+    // ignore
+  }
+}
+
+/** Green checks only when that step’s required fields are actually filled. */
 export function getCompletedSteps(): OnboardingStepId[] {
   if (typeof window === "undefined") {
     return [];
   }
+
+  resetStaleOnboardingStorage();
 
   const filled = formStepIds.filter((stepId) => isOnboardingStepFilled(stepId));
 
@@ -28,20 +57,20 @@ export function getCompletedSteps(): OnboardingStepId[] {
   return filled;
 }
 
-export function markStepComplete(stepId: OnboardingStepId) {
+export function markStepComplete(_stepId: OnboardingStepId) {
   if (typeof window === "undefined") {
     return;
   }
 
-  // Only persist a check when the step data is actually complete.
-  if (!isOnboardingStepFilled(stepId)) {
-    window.dispatchEvent(new CustomEvent(ONBOARDING_PROGRESS_EVENT));
+  // Completion is derived from filled fields — just notify listeners to re-check.
+  window.dispatchEvent(new CustomEvent(ONBOARDING_PROGRESS_EVENT));
+}
+
+export function markStepIncomplete(_stepId: OnboardingStepId) {
+  if (typeof window === "undefined") {
     return;
   }
 
-  const completed = new Set(getCompletedSteps());
-  completed.add(stepId);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...completed]));
   window.dispatchEvent(new CustomEvent(ONBOARDING_PROGRESS_EVENT));
 }
 

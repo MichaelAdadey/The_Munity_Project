@@ -1,6 +1,6 @@
 import type { OnboardingStepId } from "@/lib/routes";
 
-const DATA_STORAGE_KEY = "munity-onboarding-step-data-v2";
+const DATA_STORAGE_KEY = "munity-onboarding-step-data-v4";
 const ONBOARDING_PROGRESS_EVENT = "munity-onboarding-progress-updated";
 
 export type BasicInfoData = {
