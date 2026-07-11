@@ -22,7 +22,7 @@ function avatarForRole(role: MockRole) {
     case "admin":
       return "/images/admin/avatar.jpg";
     default:
-      return "/images/home-feed/alex.jpg";
+      return "/images/profile/avatar.jpg";
   }
 }
 

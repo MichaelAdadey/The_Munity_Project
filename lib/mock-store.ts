@@ -28,7 +28,7 @@ import {
   type TherapistRecord,
 } from "@/lib/mock-db";
 
-const STORAGE_KEY = "munity-mock-store-v1";
+const STORAGE_KEY = "munity-mock-store-v2";
 
 export type FeedComment = {
   id: string;
@@ -185,6 +185,7 @@ export const mockStore = {
     anonymous?: boolean;
     feeling?: string;
     communityId?: string | null;
+    image?: string | null;
   }) {
     const community = input.communityId
       ? state.communities.find((c) => c.id === input.communityId)
@@ -197,10 +198,10 @@ export const mockStore = {
       avatar: input.anonymous ? undefined : state.profile.avatar,
       time: "Just now",
       feeling: input.feeling ?? "Feeling Open",
-      content: input.content.trim(),
+      content: input.content.trim() || (input.image ? "Shared a moment." : ""),
       supports: 0,
       comments: 0,
-      image: null,
+      image: input.image ?? null,
       communityId: community?.id ?? null,
       communityName: community?.name ?? null,
       accent: Boolean(input.anonymous),

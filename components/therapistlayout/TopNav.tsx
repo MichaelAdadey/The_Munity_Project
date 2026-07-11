@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Bell, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMenu";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
+import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { routes } from "@/lib/routes";
 
 type NavItem = "Dashboard" | "Patients";
@@ -70,18 +71,14 @@ export function TopNav({ active = "Patients", showSearch = false }: TopNavProps)
                 </svg>
               </div>
             ) : null}
-            <button
-              type="button"
+            <NotificationsMenu role="therapist" />
+            <Link
+              href={routes.therapistSettings}
               className="rounded-full p-2 text-munity-muted hover:bg-munity-sidebar"
-            >
-              <Bell className="size-5" />
-            </button>
-            <button
-              type="button"
-              className="rounded-full p-2 text-munity-muted hover:bg-munity-sidebar"
+              aria-label="Settings"
             >
               <Settings className="size-5" />
-            </button>
+            </Link>
             <ProfileAvatarMenu />
           </div>
         </div>

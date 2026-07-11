@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bookmark,
   Heart,
@@ -25,6 +25,15 @@ import { MunitySunIcon } from "@/components/icons/MunityIcons";
 import { startCalmAmbient } from "@/lib/calm-ambient";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
+
+const demoPhotoLibrary = [
+  { id: "forest", src: "/images/home-feed/forest-walk.png", label: "Forest walk" },
+  { id: "stones", src: "/images/messages/media-stones.jpg", label: "Calm stones" },
+  { id: "coffee", src: "/images/messages/media-coffee.jpg", label: "Quiet coffee" },
+  { id: "brain", src: "/images/messages/media-brain.jpg", label: "Mind map" },
+  { id: "safe", src: "/images/messages/shared-safe.png", label: "Safe space" },
+  { id: "mindfulness", src: "/images/messages/mindfulness.jpg", label: "Mindfulness" },
+];
 
 const moods: { label: MoodLabel; bg: string }[] = [
   { label: "Happy", bg: "bg-[#f4f7e8]" },
@@ -68,6 +77,9 @@ export function HomeFeedView() {
   const [showMoods, setShowMoods] = useState(true);
   const [composerText, setComposerText] = useState("");
   const [anonymous, setAnonymous] = useState(store.settings.anonymousDefault);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [toast, setToast] = useState<string | null>(null);
@@ -180,14 +192,42 @@ export function HomeFeedView() {
   }
 
   function createPost() {
-    if (!composerText.trim()) return;
+    if (!composerText.trim() && !photoPreview) return;
     mockStore.createPost({
       content: composerText,
       anonymous,
       feeling: store.moodToday ? `Feeling ${store.moodToday}` : undefined,
+      image: photoPreview,
     });
     setComposerText("");
-    flash(anonymous ? "Posted anonymously" : "Shared with your communities");
+    setPhotoPreview(null);
+    setShowPhotoPicker(false);
+    flash(anonymous ? "Posted anonymously" : photoPreview ? "Photo shared with your communities" : "Shared with your communities");
+  }
+
+  function attachDemoPhoto(src: string) {
+    setPhotoPreview(src);
+    setShowPhotoPicker(false);
+    flash("Photo attached — add a caption or post");
+  }
+
+  function onPickDevicePhoto(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      flash("Please choose an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = typeof reader.result === "string" ? reader.result : null;
+      if (!result) return;
+      setPhotoPreview(result);
+      setShowPhotoPicker(false);
+      flash("Photo ready — add a caption or post");
+    };
+    reader.readAsDataURL(file);
   }
 
   function supportPost(postId: string) {
@@ -383,6 +423,45 @@ export function HomeFeedView() {
               />
             </div>
 
+            <AnimatePresence>
+              {photoPreview ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="relative mt-4 overflow-hidden rounded-2xl border border-munity-border">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={photoPreview}
+                      alt="Attachment preview"
+                      className="max-h-64 w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPhotoPreview(null);
+                        flash("Photo removed");
+                      }}
+                      className="absolute right-3 top-3 rounded-full bg-black/55 p-2 text-white backdrop-blur-sm"
+                      aria-label="Remove photo"
+                    >
+                      <X className="size-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            <input
+              ref={photoInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={onPickDevicePhoto}
+            />
+
             <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-munity-border/60 pt-4">
               <div className="flex flex-wrap gap-2">
                 <button
@@ -399,11 +478,15 @@ export function HomeFeedView() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => flash("Photo upload comes with the backend")}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#f5f3f3] px-3.5 py-2 text-xs font-semibold text-munity-muted transition hover:bg-munity-lime/40"
+                  onClick={() => setShowPhotoPicker((value) => !value)}
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                    showPhotoPicker || photoPreview
+                      ? "bg-munity-lime/60 text-munity-olive-text"
+                      : "bg-[#f5f3f3] text-munity-muted hover:bg-munity-lime/40"
+                  }`}
                 >
                   <ImageIcon className="size-3.5" />
-                  Photo
+                  {photoPreview ? "Photo ✓" : "Photo"}
                 </button>
                 <button
                   type="button"
@@ -422,12 +505,57 @@ export function HomeFeedView() {
                 type="button"
                 whileTap={{ scale: 0.96 }}
                 onClick={createPost}
-                disabled={!composerText.trim()}
+                disabled={!composerText.trim() && !photoPreview}
                 className="rounded-full bg-munity-green px-7 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark disabled:opacity-50"
               >
                 Post
               </motion.button>
             </div>
+
+            <AnimatePresence>
+              {showPhotoPicker ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 rounded-2xl bg-[#f5f3f3] p-4">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-munity-text">
+                        Add a photo to your post
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => photoInputRef.current?.click()}
+                        className="rounded-full bg-munity-green px-3.5 py-1.5 text-xs font-semibold text-white"
+                      >
+                        Upload from device
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+                      {demoPhotoLibrary.map((photo) => (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          onClick={() => attachDemoPhoto(photo.src)}
+                          className="group relative aspect-square overflow-hidden rounded-xl border border-munity-border bg-white"
+                          aria-label={`Attach ${photo.label}`}
+                        >
+                          <Image
+                            src={photo.src}
+                            alt={photo.label}
+                            fill
+                            className="object-cover transition group-hover:scale-105"
+                            sizes="96px"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
 
             <AnimatePresence>
               {showMoods ? (
@@ -548,7 +676,21 @@ export function HomeFeedView() {
 
                   {post.image ? (
                     <div className="relative mt-4 h-56 w-full overflow-hidden rounded-2xl sm:h-64">
-                      <Image src={post.image} alt="Post attachment" fill className="object-cover" />
+                      {post.image.startsWith("data:") ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={post.image}
+                          alt="Post attachment"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <Image
+                          src={post.image}
+                          alt="Post attachment"
+                          fill
+                          className="object-cover"
+                        />
+                      )}
                     </div>
                   ) : null}
 

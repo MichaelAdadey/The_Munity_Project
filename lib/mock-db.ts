@@ -144,7 +144,7 @@ export const seedMemberProfile: MemberProfile = {
   username: "arivera_mindful",
   title: "Daily Mindful Warrior",
   bio: "Navigating the journey to nurtured stability. Passionate about peer support, cognitive wellness, and early morning meditation.",
-  avatar: "/images/home-feed/alex.jpg",
+  avatar: "/images/profile/avatar.jpg",
   email: "alex.rivera@munity.app",
   dayStreak: 12,
   groupCount: 4,

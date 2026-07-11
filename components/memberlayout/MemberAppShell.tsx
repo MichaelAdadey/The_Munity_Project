@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode } from "react";
 import {
-  Bell,
   Bookmark,
   BookOpen,
   Home,
@@ -17,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { MemberAvatarMenu } from "@/components/memberlayout/MemberAvatarMenu";
+import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 
@@ -157,13 +157,7 @@ export function MemberAppShell({
               />
             </div>
           ) : null}
-          <button
-            type="button"
-            className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
-            aria-label="Notifications"
-          >
-            <Bell className="size-5" />
-          </button>
+          <NotificationsMenu role="member" />
           <MemberAvatarMenu />
         </div>
       </header>
