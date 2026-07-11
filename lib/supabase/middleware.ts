@@ -15,6 +15,7 @@ const memberProtected = [
   '/profile',
   '/saved',
   '/settings',
+  '/notifications',
 ]
 
 const therapistProtectedPrefixes = [
@@ -28,6 +29,7 @@ const therapistProtectedPrefixes = [
   '/therapistfiles',
   '/therapistcareplan',
   '/therapistprofile',
+  '/therapistnotifications',
 ]
 
 const adminProtectedPrefixes = ['/admin']

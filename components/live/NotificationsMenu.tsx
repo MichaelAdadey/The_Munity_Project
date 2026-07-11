@@ -3,8 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ElementType } from "react";
-import { Bell, CheckCheck, Heart, MessageCircle, ShieldAlert, Stethoscope } from "lucide-react";
+import { Bell, CheckCheck } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,112 +12,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useLiveToast } from "@/components/live/LiveFeedback";
-import { routes } from "@/lib/routes";
+import {
+  activityRouteForRole,
+  notificationsByRole,
+  type NotificationRole,
+} from "@/lib/notifications";
 
-export type NotificationRole = "member" | "therapist" | "admin";
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  detail: string;
-  time: string;
-  href: string;
-  icon: ElementType;
-  unread?: boolean;
-};
-
-const notificationsByRole: Record<NotificationRole, NotificationItem[]> = {
-  member: [
-    {
-      id: "m1",
-      title: "New reply in Mindful Paths",
-      detail: "Jordan left a supportive comment on your post.",
-      time: "2m",
-      href: routes.memberHome,
-      icon: Heart,
-      unread: true,
-    },
-    {
-      id: "m2",
-      title: "Message from Dr. Elena Aris",
-      detail: "Looking forward to our session at 3 PM.",
-      time: "18m",
-      href: routes.messages,
-      icon: MessageCircle,
-      unread: true,
-    },
-    {
-      id: "m3",
-      title: "Therapist availability",
-      detail: "Sarah Jenkins has an opening later today.",
-      time: "1h",
-      href: routes.therapy,
-      icon: Stethoscope,
-    },
-  ],
-  therapist: [
-    {
-      id: "t1",
-      title: "Session reminder",
-      detail: "Leo Richards starts in 30 minutes.",
-      time: "5m",
-      href: routes.therapistAppointments,
-      icon: Stethoscope,
-      unread: true,
-    },
-    {
-      id: "t2",
-      title: "New patient note request",
-      detail: "Elena Rodriguez updated her mood log.",
-      time: "40m",
-      href: routes.therapistPatients,
-      icon: Heart,
-      unread: true,
-    },
-    {
-      id: "t3",
-      title: "Care plan due",
-      detail: "Alex Mercer’s weekly review is ready.",
-      time: "2h",
-      href: routes.therapistCarePlan,
-      icon: MessageCircle,
-    },
-  ],
-  admin: [
-    {
-      id: "a1",
-      title: "Urgent moderation case",
-      detail: "Self-harm report #8492 needs review.",
-      time: "1m",
-      href: routes.adminModeration,
-      icon: ShieldAlert,
-      unread: true,
-    },
-    {
-      id: "a2",
-      title: "Community growth spike",
-      detail: "Grief Garden gained 120 members today.",
-      time: "25m",
-      href: routes.adminCommunities,
-      icon: Heart,
-      unread: true,
-    },
-    {
-      id: "a3",
-      title: "Therapist verification",
-      detail: "2 credential reviews are waiting.",
-      time: "3h",
-      href: routes.adminTherapy,
-      icon: Stethoscope,
-    },
-  ],
-};
+export type { NotificationRole };
 
 export function NotificationsMenu({ role }: { role: NotificationRole }) {
   const router = useRouter();
   const { flash } = useLiveToast();
-  const items = notificationsByRole[role];
-  const unreadCount = items.filter((item) => item.unread).length;
+  const items = notificationsByRole[role].slice(0, 4);
+  const unreadCount = notificationsByRole[role].filter((item) => item.unread).length;
+  const activityHref = activityRouteForRole(role);
 
   return (
     <DropdownMenu>
@@ -174,6 +81,9 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
                   <span className="mt-0.5 block text-xs leading-relaxed text-munity-muted">
                     {item.detail}
                   </span>
+                  <span className="mt-1 inline-flex rounded-full bg-[#f5f3f3] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-munity-muted">
+                    {item.category}
+                  </span>
                 </span>
                 {item.unread ? (
                   <span className="mt-1.5 size-2 shrink-0 rounded-full bg-munity-green" />
@@ -185,13 +95,7 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
         <DropdownMenuSeparator className="my-0 bg-munity-divider" />
         <div className="p-2">
           <Link
-            href={
-              role === "admin"
-                ? routes.adminModeration
-                : role === "therapist"
-                  ? routes.therapistDashboard
-                  : routes.messages
-            }
+            href={activityHref}
             className="block rounded-lg px-3 py-2 text-center text-xs font-semibold text-munity-green hover:bg-munity-lime/40"
           >
             View all activity

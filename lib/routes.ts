@@ -26,6 +26,8 @@ export const routes = {
   settings: "/settings",
   profile: "/profile",
   emergency: "/emergency",
+  notifications: "/notifications",
+  therapistNotifications: "/therapistnotifications",
   communities: "/Communities",
   therapy: "/Therapy",
   privacy: "/privacy",
@@ -39,6 +41,7 @@ export const routes = {
   adminTherapy: "/admin/therapy",
   adminResources: "/admin/resources",
   adminSettings: "/admin/settings",
+  adminNotifications: "/admin/notifications",
   therapistOnboarding: {
     basicInfo: "/therapistonboarding/basic-info",
     credentials: "/therapistonboarding/credentials",
