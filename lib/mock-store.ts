@@ -30,6 +30,41 @@ import {
 
 const STORAGE_KEY = "munity-mock-store-v2";
 
+function mergeReports(stored?: ModerationReport[]): ModerationReport[] {
+  const byId = new Map((stored ?? []).map((report) => [report.id, report]));
+  const merged = seedReports.map((seed) => {
+    const existing = byId.get(seed.id);
+    if (!existing) return structuredClone(seed);
+    return {
+      ...seed,
+      ...existing,
+      caseContent: existing.caseContent ?? seed.caseContent,
+      postedIn: existing.postedIn ?? seed.postedIn,
+      postedAgo: existing.postedAgo ?? seed.postedAgo,
+      sentiment: existing.sentiment ?? seed.sentiment,
+      prevFlags: existing.prevFlags ?? seed.prevFlags,
+      reporterTrust: existing.reporterTrust ?? seed.reporterTrust,
+      createdAt: existing.createdAt ?? seed.createdAt,
+    };
+  });
+
+  for (const report of stored ?? []) {
+    if (seedReports.some((seed) => seed.id === report.id)) continue;
+    merged.push({
+      ...report,
+      caseContent: report.caseContent ?? report.targetSnippet,
+      postedIn: report.postedIn ?? "Community feed",
+      postedAgo: report.postedAgo ?? "Recently",
+      sentiment: report.sentiment ?? "Under review",
+      prevFlags: report.prevFlags ?? 0,
+      reporterTrust: report.reporterTrust ?? 90,
+      createdAt: report.createdAt ?? new Date().toISOString(),
+    });
+  }
+
+  return merged;
+}
+
 export type FeedComment = {
   id: string;
   postId: string;
@@ -135,6 +170,7 @@ function hydrate() {
       ...parsed,
       communities: seedCommunities,
       therapists: seedTherapists,
+      reports: mergeReports(parsed.reports),
       profile: { ...seedMemberProfile, ...(parsed.profile ?? {}), cover: parsed.profile?.cover ?? seedMemberProfile.cover, avatar: parsed.profile?.avatar ?? seedMemberProfile.avatar },
       settings: { ...seedSettings, ...(parsed.settings ?? {}) },
       commentsByPost: parsed.commentsByPost ?? createSeedState().commentsByPost,
@@ -487,6 +523,21 @@ export const mockStore = {
       reports: prev.reports.map((report) =>
         report.id === reportId
           ? { ...report, status, urgent: status === "Pending Urgent" }
+          : report,
+      ),
+    }));
+  },
+  initiateWellnessCheck(reportId: string) {
+    setState((prev) => ({
+      ...prev,
+      reports: prev.reports.map((report) =>
+        report.id === reportId
+          ? {
+              ...report,
+              status: "In Review" as const,
+              urgent: report.severity === "CRITICAL",
+              resolution: "Wellness check initiated",
+            }
           : report,
       ),
     }));

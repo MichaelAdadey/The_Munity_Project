@@ -48,15 +48,20 @@ export function AdminAppShell({
   title = "Admin Dashboard",
   searchPlaceholder = "Search analytics...",
   actions,
+  searchValue,
+  onSearchChange,
 }: {
   children: ReactNode;
   adminName: string;
   title?: string;
   searchPlaceholder?: string;
   actions?: ReactNode;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }) {
   const pathname = usePathname();
-  const [search, setSearch] = useState("");
+  const [internalSearch, setInternalSearch] = useState("");
+  const search = searchValue ?? internalSearch;
 
   return (
     <LiveToastProvider>
@@ -105,7 +110,11 @@ export function AdminAppShell({
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                if (onSearchChange) onSearchChange(next);
+                else setInternalSearch(next);
+              }}
               placeholder={searchPlaceholder}
               className="h-9 w-56 rounded-full bg-[#f5f3f3] py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-gray-500 md:w-72"
             />

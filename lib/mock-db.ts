@@ -117,6 +117,13 @@ export type ModerationReport = {
   urgent?: boolean;
   resolution?: string;
   resolvedAt?: string;
+  caseContent: string;
+  postedIn: string;
+  postedAgo: string;
+  sentiment: string;
+  prevFlags: number;
+  reporterTrust: number;
+  createdAt: string;
 };
 
 export type SessionNoteRecord = {
@@ -625,6 +632,14 @@ export const seedReports: ModerationReport[] = [
     status: "Pending Urgent",
     severity: "CRITICAL",
     urgent: true,
+    caseContent:
+      "Everything just feels like too much today. I've tried reaching out to my usual circles but I don't think I can do this anymore. It's just too quiet and the weight is too heavy.",
+    postedIn: "General Support",
+    postedAgo: "14 minutes ago",
+    sentiment: "High Distress",
+    prevFlags: 0,
+    reporterTrust: 98,
+    createdAt: "2026-07-11T09:46:00Z",
   },
   {
     id: "8491",
@@ -636,6 +651,14 @@ export const seedReports: ModerationReport[] = [
     reasonTone: "lime",
     status: "In Review",
     severity: "LOW",
+    caseContent:
+      "Check my link for guaranteed wellness coins 💰 free crypto airdrop for members only — dm me for the invite code before it expires!!!",
+    postedIn: "Anxiety Relief",
+    postedAgo: "1 hour ago",
+    sentiment: "Promotional",
+    prevFlags: 3,
+    reporterTrust: 91,
+    createdAt: "2026-07-11T08:30:00Z",
   },
   {
     id: "8490",
@@ -647,6 +670,14 @@ export const seedReports: ModerationReport[] = [
     reasonTone: "neutral",
     status: "Pending",
     severity: "MEDIUM",
+    caseContent:
+      "Reported DM thread includes repeated personal attacks and pressure to leave the community after a disagreement in group chat.",
+    postedIn: "Direct Messages",
+    postedAgo: "3 hours ago",
+    sentiment: "Hostile",
+    prevFlags: 1,
+    reporterTrust: 94,
+    createdAt: "2026-07-11T06:40:00Z",
   },
   {
     id: "8489",
@@ -658,6 +689,14 @@ export const seedReports: ModerationReport[] = [
     reasonTone: "danger",
     status: "Pending",
     severity: "MEDIUM",
+    caseContent:
+      "You people are so dramatic. If you can't handle basic life maybe this platform isn't for you. Tired of the constant pity posts.",
+    postedIn: "Depression Support",
+    postedAgo: "5 hours ago",
+    sentiment: "Hostile",
+    prevFlags: 2,
+    reporterTrust: 96,
+    createdAt: "2026-07-11T04:50:00Z",
   },
   {
     id: "8488",
@@ -671,6 +710,52 @@ export const seedReports: ModerationReport[] = [
     severity: "LOW",
     resolution: "Warned",
     resolvedAt: "2026-07-08T16:00:00Z",
+    caseContent:
+      "Automated detection flagged five unsolicited DMs promoting an external coaching funnel within 12 minutes.",
+    postedIn: "Direct Messages",
+    postedAgo: "2 days ago",
+    sentiment: "Promotional",
+    prevFlags: 4,
+    reporterTrust: 100,
+    createdAt: "2026-07-08T14:00:00Z",
+  },
+  {
+    id: "8487",
+    reporter: "Elena_R",
+    reporterInitials: "ER",
+    target: "@QuietMind",
+    targetSnippet: 'Post: "Sharing meds without a script..."',
+    reason: "Misinformation",
+    reasonTone: "neutral",
+    status: "Pending",
+    severity: "MEDIUM",
+    caseContent:
+      "Sharing meds without a script is fine if it helps someone get through the week. Here's what worked for me and where to get it cheap.",
+    postedIn: "Medication Experiences",
+    postedAgo: "Yesterday",
+    sentiment: "Risky Advice",
+    prevFlags: 0,
+    reporterTrust: 89,
+    createdAt: "2026-07-10T18:20:00Z",
+  },
+  {
+    id: "8486",
+    reporter: "Leo_R",
+    reporterInitials: "LR",
+    target: "@SparkNotesBot",
+    targetSnippet: "Comment flood across 8 threads",
+    reason: "Spam",
+    reasonTone: "lime",
+    status: "In Review",
+    severity: "LOW",
+    caseContent:
+      "Identical promotional comments posted across eight community threads directing users to an external Telegram channel.",
+    postedIn: "Multiple communities",
+    postedAgo: "Yesterday",
+    sentiment: "Promotional",
+    prevFlags: 1,
+    reporterTrust: 87,
+    createdAt: "2026-07-10T15:10:00Z",
   },
 ];
 
