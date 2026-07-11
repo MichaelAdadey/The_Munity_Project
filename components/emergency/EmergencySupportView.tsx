@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -579,13 +578,14 @@ function EmergencySupportContent() {
               Nearby Help
             </h3>
             <div className="overflow-hidden rounded-[24px] border border-[#e4e2e2] bg-white shadow-sm">
-              <div className="relative h-48 w-full bg-[#e8ebe0] md:h-56">
-                <Image
-                  src="/images/emergency/nearby-map.png"
-                  alt="Map showing nearby wellness support locations"
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 1200px) 100vw, 700px"
+              <div className="relative h-52 w-full overflow-hidden bg-[#e8ebe0] md:h-64">
+                <iframe
+                  title="Nearby wellness support map"
+                  src="https://maps.google.com/maps?q=Northside+General+Hospital&z=14&output=embed"
+                  className="absolute inset-0 h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  allowFullScreen
                 />
               </div>
               <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-start sm:justify-between">
@@ -595,7 +595,7 @@ function EmergencySupportContent() {
                     <p className="font-semibold text-munity-text">Northside General Wellness</p>
                     <p className="mt-0.5 text-sm text-munity-muted">0.8 miles away · Open 24/7</p>
                     <a
-                      href="https://maps.google.com/?q=Northside+General+Wellness"
+                      href="https://www.google.com/maps/search/?api=1&query=Northside+General+Hospital"
                       target="_blank"
                       rel="noreferrer"
                       className="mt-2 inline-block text-sm font-semibold text-munity-green underline decoration-munity-green/30 underline-offset-2 hover:decoration-munity-green"
@@ -738,7 +738,7 @@ function EmergencySupportContent() {
       </div>
 
       <div className="z-50 shrink-0 border-t border-munity-green-dark/20 bg-munity-green px-6 py-4">
-        <div className="flex w-full items-center gap-3 text-left text-white lg:px-4">
+        <div className="flex w-full items-center gap-3 text-left text-white lg:px-2">
           <CheckCircle2 className="size-5 shrink-0" />
           <p className="text-sm font-medium md:text-base">
             You are taking a brave step by seeking support. Help is on the way.
