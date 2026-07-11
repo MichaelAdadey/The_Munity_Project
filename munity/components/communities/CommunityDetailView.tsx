@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Heart, MessageCircle, Users } from "lucide-react";
+import { motion } from "framer-motion";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { routes } from "@/lib/routes";
 
@@ -16,6 +18,7 @@ export function CommunityDetailView({
 }) {
   const router = useRouter();
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const community = store.communities.find((item) => item.slug === slug);
 
   if (!community) {
@@ -39,14 +42,14 @@ export function CommunityDetailView({
 
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>
-      <div className="mx-auto max-w-4xl">
+      <motion.div initial="hidden" animate="show" variants={liveStagger} className="mx-auto max-w-4xl">
         <Link
           href={routes.communities}
           className="inline-flex items-center gap-2 text-sm font-semibold text-munity-green hover:underline"
         >
           <ArrowLeft className="size-4" /> Back to communities
         </Link>
-        <section className="mt-6 overflow-hidden rounded-[20px] border border-munity-border bg-white">
+        <motion.section variants={liveFadeUp} className="mt-6 overflow-hidden rounded-[20px] border border-munity-border bg-white">
           <div
             className="h-40 bg-cover bg-center"
             style={{ backgroundImage: `url(${community.image})` }}
@@ -67,6 +70,7 @@ export function CommunityDetailView({
                   <Users className="size-4" />
                   {community.membersLabel}
                 </p>
+                <span className="ml-3"><LivePulse label="Active now" count={Math.max(2, Math.round(community.memberCount / 40))} /></span>
               </div>
               <button
                 type="button"
@@ -76,6 +80,7 @@ export function CommunityDetailView({
                     return;
                   }
                   mockStore.toggleMembership(community.id);
+                  flash(joined ? `Left ${community.name}` : `Joined ${community.name}`);
                 }}
                 className="rounded-xl bg-munity-green px-5 py-3 text-sm font-semibold text-white"
               >
@@ -83,13 +88,16 @@ export function CommunityDetailView({
               </button>
             </div>
           </div>
-        </section>
-        <section className="mt-6 space-y-4">
+        </motion.section>
+        <motion.section variants={liveFadeUp} className="mt-6 space-y-4">
           <h2 className="text-xl font-semibold text-munity-text">Community posts</h2>
           {posts.length ? (
             posts.map((post) => (
-              <article
+              <motion.article
                 key={post.id}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
                 className="rounded-[20px] border border-munity-border bg-white p-5"
               >
                 <p className="font-semibold text-munity-text">{post.author}</p>
@@ -107,15 +115,15 @@ export function CommunityDetailView({
                     {post.comments}
                   </span>
                 </div>
-              </article>
+              </motion.article>
             ))
           ) : (
             <p className="rounded-[20px] bg-white p-6 text-munity-muted">
               No posts in this community yet.
             </p>
           )}
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
     </MemberAppShell>
   );
 }

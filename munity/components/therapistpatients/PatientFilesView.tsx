@@ -2,11 +2,13 @@
 
 import { motion } from "framer-motion";
 import { Download, FileText, Upload } from "lucide-react";
+import { useState } from "react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
 import { CollapsibleSidebarLayout } from "@/components/therapistlayout/CollapsibleSidebarLayout";
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import type { PatientRecord, PatientSlug } from "@/lib/routes";
 
@@ -88,8 +90,10 @@ interface PatientFilesViewProps {
 }
 
 export function PatientFilesView({ patient }: PatientFilesViewProps) {
+  const { flash } = useLiveToast();
   const avatar = assets.avatars[patient.avatarKey];
   const files = filesByPatient[patient.slug];
+  const [uploading, setUploading] = useState(false);
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
@@ -124,13 +128,15 @@ export function PatientFilesView({ patient }: PatientFilesViewProps) {
                 </div>
                 <button
                   type="button"
+                  onClick={() => { setUploading(true); window.setTimeout(() => { setUploading(false); flash("File upload is ready"); }, 500); }}
                   className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
                 >
                   <Upload className="size-4" />
-                  Upload file
+                  {uploading ? "Preparing upload…" : "Upload file"}
                 </button>
               </header>
 
+              <div className="mb-5 flex items-center justify-between gap-3"><LiveTicker items={[`${files.length} files are available for ${patient.name}.`, "Clinical documents are encrypted and access-controlled."]} /><LivePulse label="Synced" /></div>
               <div className="flex flex-col gap-3">
                 {files.map((file, index) => (
                   <motion.div
@@ -154,6 +160,7 @@ export function PatientFilesView({ patient }: PatientFilesViewProps) {
                     </span>
                     <button
                       type="button"
+                      onClick={() => flash(`${file.name} download started`)}
                       className="inline-flex items-center gap-2 rounded-xl border border-munity-border px-3 py-2 text-sm font-semibold text-munity-text transition hover:border-munity-green/40 hover:bg-munity-lime/10"
                     >
                       <Download className="size-4 text-munity-green" />

@@ -381,3 +381,105 @@ export const resourceCategoriesById: Record<ResourceCategory, CategoryResourceBu
 export const resourceCategoryLabels = Object.keys(
   resourceCategoriesById,
 ) as ResourceCategory[];
+
+export function resourceIdFromTitle(title: string) {
+  return `res-${title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+}
+
+export type CatalogResource = {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  image: string;
+  cta: string;
+  type: "Article" | "Video" | "Guide" | "Exercise" | "Trending";
+  category: ResourceCategory;
+  video: boolean;
+  badge?: string;
+};
+
+export function getResourceCatalog(): CatalogResource[] {
+  const items: CatalogResource[] = [
+    {
+      id: resourceIdFromTitle("Morning Routine for Mental Clarity"),
+      title: "Morning Routine for Mental Clarity",
+      description:
+        "A gentle morning sequence for focus, hydration, light movement, and a short intention-setting practice.",
+      duration: "8 min read",
+      image: images.side1,
+      cta: "Start Reading",
+      type: "Guide",
+      category: "Stress",
+      video: false,
+    },
+    {
+      id: resourceIdFromTitle("Cognitive Reframing Workbook"),
+      title: "Cognitive Reframing Workbook",
+      description:
+        "Worksheets to catch unhelpful thoughts, test the evidence, and write balanced alternatives you can reuse.",
+      duration: "18 min guide",
+      image: images.side2,
+      cta: "Open Workbook",
+      type: "Guide",
+      category: "Anxiety",
+      video: false,
+    },
+  ];
+
+  for (const category of resourceCategoryLabels) {
+    const bundle = resourceCategoriesById[category];
+    items.push({
+      id: resourceIdFromTitle(bundle.featured.title),
+      title: bundle.featured.title,
+      description: bundle.featured.description,
+      duration: bundle.featured.duration,
+      image: bundle.featured.image,
+      cta: bundle.featured.cta,
+      type: "Guide",
+      category,
+      video: false,
+      badge: bundle.featured.badge,
+    });
+
+    for (const item of bundle.latest) {
+      items.push({
+        id: resourceIdFromTitle(item.title),
+        title: item.title,
+        description: item.excerpt,
+        duration: item.duration,
+        image: item.image,
+        cta: item.cta,
+        type: item.type,
+        category,
+        video: item.video,
+      });
+    }
+
+    for (const trend of bundle.trending) {
+      items.push({
+        id: resourceIdFromTitle(trend.title),
+        title: trend.title,
+        description: `${trend.reads}. A short, practical piece curated for ${category.toLowerCase()} support.`,
+        duration: "6 min read",
+        image: images.side1,
+        cta: "Read More",
+        type: "Trending",
+        category,
+        video: false,
+      });
+    }
+  }
+
+  return items;
+}
+
+export function findCatalogResource(idOrTitle: string) {
+  const catalog = getResourceCatalog();
+  const byId = catalog.find((item) => item.id === idOrTitle);
+  if (byId) return byId;
+  return catalog.find((item) => item.title === idOrTitle) ?? null;
+}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
@@ -30,6 +31,7 @@ const defaultAvailability: Record<(typeof weekDays)[number], string[]> = {
 
 export function TherapistAvailabilityView() {
   const [availability, setAvailability] = useState(defaultAvailability);
+  const { flash } = useLiveToast();
 
   function toggleSlot(day: (typeof weekDays)[number], slot: string) {
     setAvailability((current) => {
@@ -39,6 +41,7 @@ export function TherapistAvailabilityView() {
         : [...daySlots, slot];
       return { ...current, [day]: next };
     });
+    flash(`${day} at ${slot} ${availability[day].includes(slot) ? "closed" : "opened"}`);
   }
 
   return (
@@ -50,13 +53,14 @@ export function TherapistAvailabilityView() {
       <section className="rounded-[20px] border border-munity-input-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-munity-text">Weekly schedule</h2>
+            <div className="flex items-center gap-3"><h2 className="text-lg font-semibold text-munity-text">Weekly schedule</h2><LivePulse label="Updating" /></div>
             <p className="mt-1 text-sm text-munity-muted">
               Tap a slot to open or close it. Changes apply to future bookings.
             </p>
           </div>
           <button
             type="button"
+            onClick={() => flash("Availability saved for future bookings")}
             className="rounded-xl bg-munity-green px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
           >
             Save availability

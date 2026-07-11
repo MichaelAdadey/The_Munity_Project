@@ -3,7 +3,9 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
+import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { assets } from "@/lib/assets";
 import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
@@ -39,6 +41,12 @@ const patients = patientSlugs.map((slug) => ({
 }));
 
 export function TherapistPatientsListView() {
+  const [query, setQuery] = useState("");
+  const visiblePatients = useMemo(
+    () => patients.filter((patient) => patient.name.toLowerCase().includes(query.toLowerCase())),
+    [query],
+  );
+
   return (
     <TherapistAppShell
       active="Patients"
@@ -50,13 +58,26 @@ export function TherapistPatientsListView() {
           <input
             type="search"
             placeholder="Search patients..."
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
             className="h-10 w-full rounded-full border border-munity-input-border bg-[#efeded] py-2 pl-10 pr-4 text-sm font-medium text-munity-text outline-none focus:border-munity-green"
           />
         </div>
       }
     >
+      <LiveTicker
+        items={[
+          "Leo Richards completed a mood check-in · 8/10.",
+          "Elena Rodriguez has a session tomorrow at 1:00 PM.",
+          "Alex Mercer’s care-plan review is due this week.",
+        ]}
+      />
+      <div className="flex items-center gap-2 text-sm text-munity-muted">
+        <LivePulse label="Active caseload" count={visiblePatients.length} />
+        <span>{visiblePatients.length} matching patients</span>
+      </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {patients.map((patient, index) => (
+        {visiblePatients.map((patient, index) => (
           <motion.div
             key={patient.slug}
             initial={{ opacity: 0, y: 12 }}
@@ -104,6 +125,11 @@ export function TherapistPatientsListView() {
           </motion.div>
         ))}
       </div>
+      {visiblePatients.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+          No patients match “{query}”. Try another name or clear your search.
+        </motion.div>
+      ) : null}
     </TherapistAppShell>
   );
 }

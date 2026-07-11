@@ -67,7 +67,12 @@ export function Button({
   if (href) {
     return (
       <motion.span {...motionProps} className="inline-flex">
-        <Link href={href} className={classes} aria-disabled={isDisabled}>
+        <Link
+          href={href}
+          className={classes}
+          aria-disabled={isDisabled}
+          {...(props as HTMLMotionProps<"a">)}
+        >
           {content}
         </Link>
       </motion.span>

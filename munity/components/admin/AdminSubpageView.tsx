@@ -1,7 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
+import { LiveTicker, liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
 import { useMockStore } from "@/lib/mock-store";
 
 type AdminSection = "communities" | "growth" | "therapy" | "resources" | "settings";
@@ -18,14 +20,10 @@ const resources = [
   { title: "Building a sleep routine", type: "Worksheet", status: "Draft" },
 ];
 
-export function AdminSubpageView({
-  adminName,
-  section,
-}: {
-  adminName: string;
-  section: AdminSection;
-}) {
+function AdminSubpageContent({ section }: { section: AdminSection }) {
   const { communities, therapists } = useMockStore();
+  const { flash } = useLiveToast();
+  const [resourceItems, setResourceItems] = useState(resources);
   const [preferences, setPreferences] = useState({
     crisisAlerts: true,
     weeklyDigest: true,
@@ -39,11 +37,20 @@ export function AdminSubpageView({
         <div className="grid gap-4 md:grid-cols-2">
           {communities.map((community) => (
             <article key={community.id} className="rounded-2xl border border-munity-border bg-white p-5">
-              <p className="text-lg font-semibold text-munity-text">{community.name}</p>
-              <p className="mt-1 text-sm text-munity-muted">{community.membersLabel} · {community.tag}</p>
-              <p className="mt-4 text-sm text-munity-muted">
-                {community.verified ? "Verified community" : "Verification pending"}
-              </p>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-lg font-semibold text-munity-text">{community.name}</p>
+                  <p className="mt-1 text-sm text-munity-muted">{community.membersLabel} · {community.tag}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => flash(`Opening activity for ${community.name}.`)}
+                  className="rounded-lg bg-munity-lime/60 px-3 py-1.5 text-xs font-semibold text-munity-olive-text transition hover:bg-munity-lime"
+                >
+                  View activity
+                </button>
+              </div>
+              <p className="mt-4 text-sm text-munity-muted">{community.verified ? "Verified community" : "Verification pending"}</p>
             </article>
           ))}
         </div>
@@ -60,6 +67,13 @@ export function AdminSubpageView({
               <p className="mt-2 text-sm text-munity-muted">{metric.detail}</p>
             </article>
           ))}
+          <button
+            type="button"
+            onClick={() => flash("Growth insights refreshed with the latest platform activity.")}
+            className="rounded-2xl border border-dashed border-munity-border bg-white/60 p-6 text-left text-sm font-semibold text-munity-green transition hover:bg-munity-lime/30"
+          >
+            Refresh growth insights
+          </button>
         </div>
       ),
     },
@@ -76,6 +90,13 @@ export function AdminSubpageView({
               <span className="rounded-full bg-munity-lime px-3 py-1 text-sm font-semibold text-munity-olive-text">
                 {therapist.rating.toFixed(1)} rating
               </span>
+              <button
+                type="button"
+                onClick={() => flash(`Availability review started for ${therapist.name}.`)}
+                className="rounded-lg border border-munity-border px-3 py-1.5 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/30"
+              >
+                Review availability
+              </button>
             </div>
           ))}
         </div>
@@ -85,13 +106,28 @@ export function AdminSubpageView({
       title: "Resource Overview",
       body: (
         <div className="overflow-hidden rounded-2xl border border-munity-border bg-white">
-          {resources.map((resource) => (
+          {resourceItems.map((resource) => (
             <div key={resource.title} className="flex items-center justify-between gap-4 border-b border-munity-border p-5 last:border-0">
               <div>
                 <p className="font-semibold text-munity-text">{resource.title}</p>
                 <p className="text-sm text-munity-muted">{resource.type}</p>
               </div>
-              <span className="text-sm font-semibold text-munity-green">{resource.status}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-semibold text-munity-muted">{resource.status}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextStatus = resource.status === "Published" ? "Draft" : "Published";
+                    setResourceItems((current) =>
+                      current.map((item) => (item.title === resource.title ? { ...item, status: nextStatus } : item)),
+                    );
+                    flash(`${resource.title} is now ${nextStatus.toLowerCase()}.`);
+                  }}
+                  className="text-sm font-semibold text-munity-green hover:underline"
+                >
+                  {resource.status === "Published" ? "Unpublish" : "Publish"}
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -107,7 +143,10 @@ export function AdminSubpageView({
               <input
                 type="checkbox"
                 checked={enabled}
-                onChange={() => setPreferences((current) => ({ ...current, [key]: !current[key as keyof typeof current] }))}
+                onChange={() => {
+                  setPreferences((current) => ({ ...current, [key]: !current[key as keyof typeof current] }));
+                  flash(`${key.replace(/([A-Z])/g, " $1")} ${enabled ? "disabled" : "enabled"}.`);
+                }}
                 className="size-5 accent-munity-green"
               />
             </label>
@@ -118,11 +157,44 @@ export function AdminSubpageView({
   }[section];
 
   return (
-    <AdminAppShell adminName={adminName} title={content.title}>
-      <div className="mx-auto max-w-6xl">
+    <motion.div
+      variants={liveFadeUp}
+      initial="hidden"
+      animate="show"
+      transition={{ duration: 0.35 }}
+      className="mx-auto max-w-6xl"
+    >
+        <LiveTicker
+          items={[
+            "Platform activity is syncing across admin workspaces.",
+            "A new member milestone was reached in a support community.",
+            "Resource engagement increased during the last hour.",
+          ]}
+        />
         <p className="mb-6 text-base text-munity-muted">Preview data for the Munity admin backend handoff.</p>
         {content.body}
-      </div>
+    </motion.div>
+  );
+}
+
+export function AdminSubpageView({
+  adminName,
+  section,
+}: {
+  adminName: string;
+  section: AdminSection;
+}) {
+  const title = {
+    communities: "Community Management",
+    growth: "Platform Growth",
+    therapy: "Therapy Network",
+    resources: "Resource Overview",
+    settings: "Admin Settings",
+  }[section];
+
+  return (
+    <AdminAppShell adminName={adminName} title={title}>
+      <AdminSubpageContent section={section} />
     </AdminAppShell>
   );
 }

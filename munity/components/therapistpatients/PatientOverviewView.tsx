@@ -12,6 +12,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
@@ -79,6 +80,7 @@ interface PatientOverviewViewProps {
 export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
+  const { flash } = useLiveToast();
   const [moodPeriod, setMoodPeriod] = useState("Last 30 Days");
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState(false);
@@ -132,6 +134,7 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                       withLoading(async () => {
                         await new Promise((resolve) => setTimeout(resolve, 800));
                         setBooked(true);
+                        flash(`Session booked with ${patient.name}`);
                       }, "Booking session...")
                     }
                     disabled={booked}
@@ -158,6 +161,14 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
               </div>
             </div>
           </section>
+
+          <LiveTicker
+            items={[
+              `${patient.name} logged a journal entry this morning.`,
+              `Mood trend is stable across the ${moodPeriod.toLowerCase()}.`,
+              "Next session preparation is ready to review.",
+            ]}
+          />
 
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)] lg:col-span-2">
@@ -198,7 +209,7 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
             <section className="relative flex flex-col justify-between overflow-hidden rounded-[20px] bg-munity-green p-8 shadow-lg">
               <div>
                 <p className="text-base uppercase tracking-[0.16em] text-munity-lime-light">
-                  Upcoming Session
+                  <span className="flex items-center gap-2">Upcoming Session <LivePulse label="confirmed" /></span>
                 </p>
                 <h3 className="mt-4 text-base text-white">Tomorrow</h3>
                 <p className="text-base text-white">10:30 AM — 11:30 AM</p>
@@ -291,6 +302,7 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                   onClick={() =>
                     withLoading(async () => {
                       await new Promise((resolve) => setTimeout(resolve, 700));
+                      flash("Private clinician draft saved");
                     }, "Saving draft...")
                   }
                   disabled={!notes.trim()}

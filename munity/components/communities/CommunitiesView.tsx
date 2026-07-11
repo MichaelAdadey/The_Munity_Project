@@ -4,17 +4,28 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState, type ElementType } from "react";
+import { motion } from "framer-motion";
 import {
   Briefcase,
   GraduationCap,
   Heart,
   Lightbulb,
   Plus,
-  Sparkles,
   Users,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LivePulse, LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import { MunityRingsIcon } from "@/components/icons/MunityIcons";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { mockStore, useMockStore } from "@/lib/mock-store";
+import type { CommunityRecord } from "@/lib/mock-db";
 import { communityPath, routes } from "@/lib/routes";
 
 type CommunityFilter =
@@ -36,20 +47,55 @@ const filters: CommunityFilter[] = [
   "Workplace Stress",
 ];
 
+const createFilters: CommunityRecord["filter"][] = [
+  "Anxiety",
+  "Depression",
+  "Student Support",
+  "Grief",
+  "Neurodiversity",
+  "Workplace Stress",
+  "Mindfulness",
+];
+
 const filterIcons: Record<string, ElementType> = {
   Anxiety: Lightbulb,
   Depression: Heart,
   "Student Support": GraduationCap,
   Grief: Heart,
-  Neurodiversity: Sparkles,
+  Neurodiversity: MunityRingsIcon,
   "Workplace Stress": Briefcase,
 };
+
+const howItWorksSteps = [
+  {
+    title: "Browse or create",
+    body: "Find a moderated space that fits your path, or start one for others like you.",
+  },
+  {
+    title: "Join and check in",
+    body: "Membership is gentle and optional. Share when you're ready — anonymity is always available.",
+  },
+  {
+    title: "Stay supported",
+    body: "Trained moderators keep empathy as the standard. Flag anything that feels off.",
+  },
+];
 
 export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
   const router = useRouter();
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const [activeFilter, setActiveFilter] = useState<CommunityFilter>("All");
   const [search, setSearch] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [howOpen, setHowOpen] = useState(false);
+  const [moderateOpen, setModerateOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [tag, setTag] = useState("");
+  const [topic, setTopic] = useState<CommunityRecord["filter"]>("Anxiety");
+  const [moderateFocus, setModerateFocus] = useState("");
+  const [moderateWhy, setModerateWhy] = useState("");
 
   const visible = useMemo(() => {
     return store.communities.filter((community) => {
@@ -64,6 +110,49 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
       return matchesFilter && matchesSearch;
     });
   }, [activeFilter, search, store.communities]);
+
+  function requireLogin() {
+    if (isLoggedIn) return true;
+    router.push(routes.login);
+    return false;
+  }
+
+  function resetCreateForm() {
+    setName("");
+    setDescription("");
+    setTag("");
+    setTopic("Anxiety");
+  }
+
+  function handleCreate() {
+    if (!requireLogin()) return;
+    const community = mockStore.createCommunity({
+      name,
+      description,
+      filter: topic,
+      tag,
+    });
+    if (!community) {
+      flash("Add a community name to continue");
+      return;
+    }
+    flash(`Created ${community.name}`);
+    resetCreateForm();
+    setCreateOpen(false);
+    router.push(communityPath(community.slug));
+  }
+
+  function handleModerateApply() {
+    if (!requireLogin()) return;
+    if (!moderateFocus.trim()) {
+      flash("Tell us which space you'd like to moderate");
+      return;
+    }
+    flash("Moderator application submitted — we'll review it soon");
+    setModerateFocus("");
+    setModerateWhy("");
+    setModerateOpen(false);
+  }
 
   return (
     <MemberAppShell
@@ -91,20 +180,28 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               Join safe, moderated spaces where empathy is the standard. Connect with
               others walking a similar path.
             </p>
+            <div className="mt-4"><LivePulse label="Active spaces" count={store.memberships.length} /></div>
             <div className="mt-8 flex flex-wrap gap-4">
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => {
+                  if (!requireLogin()) return;
+                  setCreateOpen(true);
+                }}
                 className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
               >
                 <Plus className="size-3.5" />
                 Create Community
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.97 }}
+                onClick={() => setHowOpen(true)}
                 className="rounded-xl border border-[#c5c8b8] bg-[rgba(251,249,248,0.5)] px-6 py-3 text-sm font-semibold tracking-wide text-munity-text backdrop-blur-sm transition hover:bg-white"
               >
                 How it works
-              </button>
+              </motion.button>
             </div>
           </div>
         </section>
@@ -114,10 +211,11 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
           {filters.map((filter) => {
             const active = activeFilter === filter;
             return (
-              <button
+              <motion.button
                 key={filter}
                 type="button"
                 onClick={() => setActiveFilter(filter)}
+                whileTap={{ scale: 0.95 }}
                 className={`shrink-0 rounded-full px-6 py-2 text-sm font-semibold tracking-wide transition ${
                   active
                     ? "bg-munity-green text-white shadow-sm"
@@ -125,19 +223,21 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 }`}
               >
                 {filter}
-              </button>
+              </motion.button>
             );
           })}
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <LiveTicker items={store.communities.slice(0, 3).map((community) => `${community.name} has ${community.membersLabel} connecting today.`)} />
+        <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {visible.map((community) => {
             const Icon = filterIcons[community.filter] ?? Users;
             const joined = store.memberships.includes(community.id);
             return (
-              <article
+              <motion.article
                 key={community.id}
+                variants={liveFadeUp}
                 className="flex flex-col overflow-hidden rounded-[20px] border border-[#e5e5e1] bg-white"
               >
                 <div className="relative h-32 w-full">
@@ -185,6 +285,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                           return;
                         }
                         mockStore.toggleMembership(community.id);
+                        flash(joined ? `Left ${community.name}` : `Joined ${community.name}`);
                       }}
                       className="rounded-xl bg-munity-lime px-5 py-2 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:brightness-95"
                     >
@@ -193,7 +294,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                     </div>
                   </div>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
 
@@ -211,13 +312,17 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
             </div>
             <button
               type="button"
+              onClick={() => {
+                if (!requireLogin()) return;
+                setModerateOpen(true);
+              }}
               className="inline-flex items-center gap-2 rounded-xl bg-munity-lime px-5 py-2.5 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:brightness-95"
             >
               <Plus className="size-3.5" />
               Apply to Moderate
             </button>
           </article>
-        </div>
+        </motion.div>
 
         {visible.length === 0 ? (
           <p className="py-8 text-center text-sm text-munity-muted">
@@ -250,6 +355,208 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
           </div>
         </footer>
       </div>
+
+      <Dialog
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) resetCreateForm();
+        }}
+      >
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>Create a community</DialogTitle>
+            <DialogDescription>
+              Start a moderated peer space. You&apos;ll join as the first member.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Name
+              </span>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="e.g. Evening Calm Check-ins"
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Topic
+              </span>
+              <select
+                value={topic}
+                onChange={(e) => setTopic(e.target.value as CommunityRecord["filter"])}
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+              >
+                {createFilters.map((filter) => (
+                  <option key={filter} value={filter}>
+                    {filter}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Short tag
+              </span>
+              <input
+                value={tag}
+                onChange={(e) => setTag(e.target.value)}
+                placeholder="Optional label"
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Description
+              </span>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="What kind of support will this space hold?"
+                className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+          </div>
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(false)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            >
+              Create space
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={howOpen} onOpenChange={setHowOpen}>
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>How communities work</DialogTitle>
+            <DialogDescription>
+              Safe, moderated peer spaces — empathy first, pressure never.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="space-y-4">
+            {howItWorksSteps.map((step, index) => (
+              <li key={step.title} className="flex gap-3">
+                <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-munity-lime text-xs font-bold text-munity-olive-text">
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-munity-text">{step.title}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-munity-muted">
+                    {step.body}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ol>
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setHowOpen(false)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Close
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setHowOpen(false);
+                if (!requireLogin()) return;
+                setCreateOpen(true);
+              }}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            >
+              Create a space
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={moderateOpen}
+        onOpenChange={(open) => {
+          setModerateOpen(open);
+          if (!open) {
+            setModerateFocus("");
+            setModerateWhy("");
+          }
+        }}
+      >
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>Apply to moderate</DialogTitle>
+            <DialogDescription>
+              Moderators help keep spaces kind and on-track. This is a preview — your
+              application is stored locally for the demo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Space or topic
+              </span>
+              <input
+                value={moderateFocus}
+                onChange={(e) => setModerateFocus(e.target.value)}
+                placeholder="e.g. Anxiety Allies"
+                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold tracking-wide text-munity-muted">
+                Why you&apos;d like to help
+              </span>
+              <textarea
+                value={moderateWhy}
+                onChange={(e) => setModerateWhy(e.target.value)}
+                rows={3}
+                placeholder="Optional — a few words about your experience or interest"
+                className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+              />
+            </label>
+          </div>
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setModerateOpen(false)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleModerateApply}
+              className="rounded-xl bg-munity-lime px-4 py-2.5 text-sm font-semibold text-munity-olive-text transition hover:brightness-95"
+            >
+              Submit application
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MemberAppShell>
   );
 }

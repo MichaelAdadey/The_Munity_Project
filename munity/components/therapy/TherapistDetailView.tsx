@@ -4,9 +4,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
+import { motion } from "framer-motion";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
-import { routes } from "@/lib/routes";
+import { messagesPath, routes } from "@/lib/routes";
 
 export function TherapistDetailView({
   id,
@@ -17,6 +19,7 @@ export function TherapistDetailView({
 }) {
   const router = useRouter();
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const therapist = store.therapists.find((item) => item.id === id);
   const booked = store.bookings.some((booking) => booking.therapistId === id);
 
@@ -38,7 +41,7 @@ export function TherapistDetailView({
 
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>
-      <div className="mx-auto max-w-4xl">
+      <motion.div initial="hidden" animate="show" variants={liveFadeUp} className="mx-auto max-w-4xl">
         <Link
           href={routes.therapy}
           className="inline-flex items-center gap-2 text-sm font-semibold text-munity-green hover:underline"
@@ -96,7 +99,11 @@ export function TherapistDetailView({
             </div>
             <div className="flex gap-3">
               <Link
-                href={isLoggedIn ? routes.messages : routes.login}
+                href={
+                  isLoggedIn
+                    ? messagesPath({ therapistId: therapist.id })
+                    : routes.login
+                }
                 className="rounded-xl border border-munity-green px-5 py-3 text-sm font-semibold text-munity-green"
               >
                 Message
@@ -109,6 +116,7 @@ export function TherapistDetailView({
                     return;
                   }
                   mockStore.bookSession(therapist.id);
+                  flash(`Session booked with ${therapist.name}`);
                 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-5 py-3 text-sm font-semibold text-white"
               >
@@ -118,7 +126,7 @@ export function TherapistDetailView({
             </div>
           </div>
         </section>
-      </div>
+      </motion.div>
     </MemberAppShell>
   );
 }

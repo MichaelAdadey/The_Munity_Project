@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   ArrowRight,
   BookOpen,
@@ -10,40 +11,15 @@ import {
   CheckCircle2,
   Flame,
   MessageCircle,
-  Sparkles,
   Stethoscope,
   TrendingUp,
   Users,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { MunityRiseIcon } from "@/components/icons/MunityIcons";
+import { LivePulse, LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import { useMockStore } from "@/lib/mock-store";
 import { routes } from "@/lib/routes";
-
-const stats = [
-  {
-    label: "Day streak",
-    value: "12",
-    detail: "Keep going — you’re on a roll",
-    icon: Flame,
-  },
-  {
-    label: "Mood average",
-    value: "7.4",
-    detail: "+0.6 vs last week",
-    icon: TrendingUp,
-  },
-  {
-    label: "Sessions done",
-    value: "8",
-    detail: "2 remaining this month",
-    icon: Stethoscope,
-  },
-  {
-    label: "Communities",
-    value: "4",
-    detail: "3 new posts today",
-    icon: Users,
-  },
-];
 
 const weekMood = [
   { day: "Mon", score: 6 },
@@ -95,7 +71,20 @@ const activity = [
 ];
 
 export function MemberDashboardView() {
-  const maxMood = Math.max(...weekMood.map((d) => d.score));
+  const store = useMockStore();
+  const { flash } = useLiveToast();
+  const [completedGoals, setCompletedGoals] = useState(() => new Set(goals.filter((goal) => goal.done).map((goal) => goal.title)));
+  const stats = [
+    { label: "Day streak", value: String(store.profile.dayStreak), detail: "Keep going — you’re on a roll", icon: Flame },
+    { label: "Mood average", value: store.moodToday ? "8.0" : "7.4", detail: store.moodToday ? "Today’s check-in logged" : "+0.6 vs last week", icon: TrendingUp },
+    { label: "Sessions booked", value: String(store.bookings.length), detail: "Your next session is confirmed", icon: Stethoscope },
+    { label: "Communities", value: String(store.memberships.length), detail: "Your spaces are active", icon: Users },
+  ];
+  const liveItems = [
+    `${store.memberships.length} communities are in your circle today.`,
+    store.bookings[0] ? `${store.bookings[0].therapistName} is booked for ${store.bookings[0].when}.` : "New therapist availability was just added.",
+    store.moodToday ? `Your ${store.moodToday} check-in is helping build your streak.` : "A quick check-in can keep your wellness streak going.",
+  ];
 
   return (
     <MemberAppShell>
@@ -111,6 +100,7 @@ export function MemberDashboardView() {
             <p className="mt-1 text-base text-munity-muted">
               Here’s how your wellness journey is going this week.
             </p>
+            <div className="mt-3"><LivePulse label="Journey active" /></div>
           </div>
           <Link
             href="/Therapy"
@@ -121,14 +111,15 @@ export function MemberDashboardView() {
           </Link>
         </header>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <LiveTicker items={liveItems} />
+
+        <motion.section variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <motion.article
                 key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                variants={liveFadeUp}
                 transition={{ delay: index * 0.04 }}
                 className="rounded-[20px] border border-munity-border bg-white p-5 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
               >
@@ -147,7 +138,7 @@ export function MemberDashboardView() {
               </motion.article>
             );
           })}
-        </section>
+        </motion.section>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
           <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-3">
@@ -159,24 +150,35 @@ export function MemberDashboardView() {
                 </p>
               </div>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
-                <Sparkles className="size-3.5" />
+                <MunityRiseIcon className="size-3.5" />
                 Trending up
               </span>
             </div>
 
-            <div className="mt-8 flex h-40 items-end justify-between gap-3">
-              {weekMood.map((day, index) => (
-                <div key={day.day} className="flex flex-1 flex-col items-center gap-2">
-                  <motion.div
-                    initial={{ scaleY: 0 }}
-                    animate={{ scaleY: 1 }}
-                    transition={{ delay: index * 0.05, duration: 0.35 }}
-                    style={{ originY: 1, height: `${(day.score / maxMood) * 100}%` }}
-                    className="w-full max-w-[36px] rounded-t-lg bg-munity-green"
-                  />
-                  <span className="text-xs font-semibold text-munity-muted">{day.day}</span>
-                </div>
-              ))}
+            <div className="mt-8 flex h-48 items-end gap-2 sm:gap-3">
+              {weekMood.map((day, index) => {
+                const heightPct = Math.max(12, (day.score / 10) * 100);
+                return (
+                  <div
+                    key={day.day}
+                    className="flex h-full min-w-0 flex-1 flex-col items-center gap-2"
+                  >
+                    <div className="relative flex w-full flex-1 items-end justify-center">
+                      <motion.div
+                        initial={{ height: 0, opacity: 0.4 }}
+                        animate={{ height: `${heightPct}%`, opacity: 1 }}
+                        transition={{ delay: index * 0.06, duration: 0.5, ease: "easeOut" }}
+                        className="w-full max-w-[40px] rounded-t-xl bg-gradient-to-t from-munity-green to-[#b6d088] shadow-[0_4px_12px_rgba(62,82,25,0.18)]"
+                        title={`${day.day}: ${day.score}/10`}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <p className="text-[11px] font-bold text-munity-green">{day.score}</p>
+                      <p className="text-xs font-semibold text-munity-muted">{day.day}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
@@ -205,15 +207,31 @@ export function MemberDashboardView() {
           <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
             <h2 className="text-xl font-semibold text-munity-text">This week’s goals</h2>
             <div className="mt-5 flex flex-col gap-4">
-              {goals.map((goal) => (
+              {goals.map((goal) => {
+                const done = completedGoals.has(goal.title);
+                return (
                 <div key={goal.title}>
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                      {goal.done ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCompletedGoals((current) => {
+                            const next = new Set(current);
+                            if (next.has(goal.title)) next.delete(goal.title);
+                            else next.add(goal.title);
+                            return next;
+                          });
+                          flash(done ? "Goal reopened" : "Goal completed — great work!");
+                        }}
+                        aria-label={`${done ? "Mark incomplete" : "Complete"}: ${goal.title}`}
+                      >
+                      {done ? (
                         <CheckCircle2 className="size-4 text-munity-green" />
                       ) : (
                         <span className="size-4 rounded-full border-2 border-munity-divider" />
                       )}
+                      </button>
                       <p className="text-sm font-medium text-munity-text">{goal.title}</p>
                     </div>
                     <span className="text-xs font-semibold text-munity-muted">
@@ -227,16 +245,17 @@ export function MemberDashboardView() {
                     />
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           </section>
 
           <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
             <h2 className="text-xl font-semibold text-munity-text">Recent activity</h2>
             <div className="mt-5 flex flex-col gap-4">
-              {activity.map((item) => (
-                <div
+              {activity.map((item, index) => (
+                <Link
                   key={item.title}
+                  href={[routes.memberHome, routes.messages, routes.resources][index]}
                   className="border-b border-munity-border pb-4 last:border-0 last:pb-0"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -246,7 +265,7 @@ export function MemberDashboardView() {
                     </div>
                     <span className="shrink-0 text-xs text-munity-muted">{item.time}</span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </section>

@@ -2,6 +2,7 @@
 
 import { Bell, Lock, Moon, Shield, User } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 
 const sections = [
@@ -91,6 +92,7 @@ function Toggle({
 
 export function MemberSettingsView() {
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const settingKeys: Record<string, Exclude<keyof typeof store.settings, "displayName">> = {
     "Session reminders": "pushNotifications",
     "Community replies": "emailNotifications",
@@ -161,7 +163,10 @@ export function MemberSettingsView() {
                         on={settingKeys[toggle.label] ? store.settings[settingKeys[toggle.label]] : toggle.defaultOn}
                         onToggle={() => {
                           const key = settingKeys[toggle.label];
-                          if (key) mockStore.updateSettings({ [key]: !store.settings[key] });
+                          if (key) {
+                            mockStore.updateSettings({ [key]: !store.settings[key] });
+                            flash("Saved preference");
+                          }
                         }}
                       />
                     ))}

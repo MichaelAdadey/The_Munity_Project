@@ -28,7 +28,15 @@ import {
   type TherapistRecord,
 } from "@/lib/mock-db";
 
-const STORAGE_KEY = "munity-mock-store-v1";
+const STORAGE_KEY = "munity-mock-store-v2";
+
+export type FeedComment = {
+  id: string;
+  postId: string;
+  author: string;
+  content: string;
+  time: string;
+};
 
 export type MockStoreState = {
   profile: MemberProfile;
@@ -44,6 +52,7 @@ export type MockStoreState = {
   savedPostIds: string[];
   savedResourceIds: string[];
   supportedPostIds: string[];
+  commentsByPost: Record<string, FeedComment[]>;
   moodToday: string | null;
   settings: MemberSettingsState;
 };
@@ -63,6 +72,33 @@ function createSeedState(): MockStoreState {
     savedPostIds: [...seedSavedPostIds],
     savedResourceIds: [...seedSavedResourceIds],
     supportedPostIds: [...seedSupportedPostIds],
+    commentsByPost: {
+      p1: [
+        {
+          id: "c-p1-1",
+          postId: "p1",
+          author: "Jordan Lee",
+          content: "5-4-3-2-1 saved me in a grocery store last week. Proud of you.",
+          time: "1h ago",
+        },
+        {
+          id: "c-p1-2",
+          postId: "p1",
+          author: "Priya Nair",
+          content: "Progress on hard days counts twice. Sending calm your way.",
+          time: "45m ago",
+        },
+      ],
+      p2: [
+        {
+          id: "c-p2-1",
+          postId: "p2",
+          author: "Alex Rivera",
+          content: "Trying this tomorrow morning — phone stays in the kitchen.",
+          time: "3h ago",
+        },
+      ],
+    },
     moodToday: null,
     settings: { ...seedSettings },
   };
@@ -99,6 +135,7 @@ function hydrate() {
       therapists: seedTherapists,
       profile: { ...seedMemberProfile, ...(parsed.profile ?? {}) },
       settings: { ...seedSettings, ...(parsed.settings ?? {}) },
+      commentsByPost: parsed.commentsByPost ?? createSeedState().commentsByPost,
     };
   } catch {
     state = createSeedState();
@@ -117,8 +154,11 @@ function getSnapshot(): MockStoreState {
   return state;
 }
 
+/** Must be a stable reference — React will loop if getServerSnapshot returns a new object each call. */
+const serverSnapshot: MockStoreState = createSeedState();
+
 function getServerSnapshot(): MockStoreState {
-  return createSeedState();
+  return serverSnapshot;
 }
 
 function subscribe(listener: () => void) {
@@ -145,6 +185,7 @@ export const mockStore = {
     anonymous?: boolean;
     feeling?: string;
     communityId?: string | null;
+    image?: string | null;
   }) {
     const community = input.communityId
       ? state.communities.find((c) => c.id === input.communityId)
@@ -157,10 +198,10 @@ export const mockStore = {
       avatar: input.anonymous ? undefined : state.profile.avatar,
       time: "Just now",
       feeling: input.feeling ?? "Feeling Open",
-      content: input.content.trim(),
+      content: input.content.trim() || (input.image ? "Shared a moment." : ""),
       supports: 0,
       comments: 0,
-      image: null,
+      image: input.image ?? null,
       communityId: community?.id ?? null,
       communityName: community?.name ?? null,
       accent: Boolean(input.anonymous),
@@ -187,6 +228,29 @@ export const mockStore = {
         ),
       };
     });
+  },
+  addComment(postId: string, content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const comment: FeedComment = {
+      id: `c-${Date.now()}`,
+      postId,
+      author: state.profile.fullName,
+      content: trimmed,
+      time: "Just now",
+    };
+    setState((prev) => ({
+      ...prev,
+      commentsByPost: {
+        ...prev.commentsByPost,
+        [postId]: [...(prev.commentsByPost[postId] ?? []), comment],
+      },
+      posts: prev.posts.map((post) =>
+        post.id === postId
+          ? { ...post, comments: post.comments + 1 }
+          : post,
+      ),
+    }));
   },
   toggleSavedPost(postId: string) {
     setState((prev) => ({
@@ -232,6 +296,47 @@ export const mockStore = {
       };
     });
   },
+  createCommunity(input: {
+    name: string;
+    description: string;
+    filter: CommunityRecord["filter"];
+    tag?: string;
+  }) {
+    const name = input.name.trim();
+    if (!name) return null;
+    const slugBase = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+    const slug = `${slugBase || "community"}-${Date.now().toString().slice(-4)}`;
+    const community: CommunityRecord = {
+      id: `c-${Date.now()}`,
+      slug,
+      name,
+      tag: input.tag?.trim() || input.filter,
+      description:
+        input.description.trim() ||
+        "A new peer space for shared support and gentle check-ins.",
+      longDescription:
+        input.description.trim() ||
+        "Created in the Munity preview. Members can join, share posts, and grow this space together.",
+      membersLabel: "1 member",
+      memberCount: 1,
+      image: "/images/communities/mindful-paths.png",
+      filter: input.filter,
+      verified: false,
+    };
+    setState((prev) => ({
+      ...prev,
+      communities: [community, ...prev.communities],
+      memberships: [...prev.memberships, community.id],
+      profile: {
+        ...prev.profile,
+        groupCount: prev.profile.groupCount + 1,
+      },
+    }));
+    return community;
+  },
   bookSession(therapistId: string, when?: string) {
     const therapist = state.therapists.find((t) => t.id === therapistId);
     if (!therapist) return null;
@@ -245,6 +350,76 @@ export const mockStore = {
     };
     setState((prev) => ({ ...prev, bookings: [booking, ...prev.bookings] }));
     return booking;
+  },
+  ensureTherapistChat(therapistId: string) {
+    const legacyChatIds: Record<string, string> = {
+      "sarah-jenkins": "sarah",
+      "elena-aris": "elena",
+    };
+    const legacyId = legacyChatIds[therapistId];
+    const existing = state.chats.find(
+      (chat) =>
+        chat.therapistId === therapistId ||
+        chat.id === therapistId ||
+        (legacyId != null && chat.id === legacyId),
+    );
+    if (existing) {
+      if (!existing.therapistId) {
+        setState((prev) => ({
+          ...prev,
+          chats: prev.chats.map((chat) =>
+            chat.id === existing.id ? { ...chat, therapistId } : chat,
+          ),
+        }));
+      }
+      return existing.id;
+    }
+
+    const therapist = state.therapists.find((item) => item.id === therapistId);
+    if (!therapist) return null;
+
+    const chatId = `therapist-${therapistId}`;
+    const displayName = therapist.name.startsWith("Dr.")
+      ? therapist.name
+      : therapist.credentials.toLowerCase().includes("md") ||
+          therapist.credentials.toLowerCase().includes("phd")
+        ? `Dr. ${therapist.name}`
+        : therapist.name;
+
+    const chat: ChatThread = {
+      id: chatId,
+      name: displayName,
+      preview: "Say hello to start the conversation.",
+      time: "now",
+      avatar: therapist.image,
+      filter: "Therapists",
+      therapistId,
+      online: true,
+    };
+
+    const intro: ChatMessage[] = [
+      { id: `d-${chatId}`, kind: "date", label: "Today" },
+      {
+        id: `m-${chatId}-intro`,
+        kind: "text",
+        from: "them",
+        content: `Hi, I'm ${displayName}. Feel free to share what's on your mind — we can go at your pace.`,
+        time: new Date().toLocaleTimeString([], {
+          hour: "numeric",
+          minute: "2-digit",
+        }),
+      },
+    ];
+
+    setState((prev) => ({
+      ...prev,
+      chats: [chat, ...prev.chats.filter((item) => item.id !== chatId)],
+      messages: {
+        ...prev.messages,
+        [chatId]: prev.messages[chatId] ?? intro,
+      },
+    }));
+    return chatId;
   },
   sendMessage(chatId: string, content: string) {
     const trimmed = content.trim();

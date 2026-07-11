@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronRight, Search, TrendingDown, TrendingUp, Users } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
 
@@ -95,6 +96,7 @@ export function TherapistAnalyticsListView() {
         </div>
       }
     >
+      <LiveTicker items={["Caseload mood average improved by 0.4 this month.", "One patient care-plan review is due this week."]} />
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {overviewStats.map((stat, index) => {
           const Icon = stat.icon;
@@ -108,7 +110,7 @@ export function TherapistAnalyticsListView() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-munity-muted">{stat.label}</p>
+                  <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-munity-muted">{stat.label}</p>{index === 0 ? <LivePulse label="Live" /> : null}</div>
                   <p className="mt-2 text-3xl font-bold text-munity-text">{stat.value}</p>
                   <p className="mt-1 text-sm text-munity-green">{stat.detail}</p>
                 </div>

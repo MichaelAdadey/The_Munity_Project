@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Clock, MessageSquare, Search, Video } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes } from "@/lib/routes";
 
@@ -62,6 +63,7 @@ const appointments = [
 ] as const;
 
 export function TherapistAppointmentsView() {
+  const { flash } = useLiveToast();
   return (
     <TherapistAppShell
       active="Appointments"
@@ -78,6 +80,7 @@ export function TherapistAppointmentsView() {
         </div>
       }
     >
+      <LiveTicker items={["Marcus completed pre-session check-in.", "Tomorrow’s calendar has two video sessions.", "A text consultation is waiting at 4:30 PM."]} />
       <div className="flex flex-col gap-8">
         {appointments.map((group, groupIndex) => (
           <section
@@ -85,7 +88,7 @@ export function TherapistAppointmentsView() {
             className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)]"
           >
             <div className="border-b border-munity-input-border px-6 py-5">
-              <h2 className="text-xl font-semibold text-munity-text">{group.day}</h2>
+              <div className="flex items-center gap-3"><h2 className="text-xl font-semibold text-munity-text">{group.day}</h2><LivePulse label={`${group.items.length} sessions`} /></div>
             </div>
             <div>
               {group.items.map((session, index) => {
@@ -134,6 +137,7 @@ export function TherapistAppointmentsView() {
 
                     <Link
                       href={session.href}
+                      onClick={() => flash(`${session.action} opened for ${session.name}`)}
                       className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                     >
                       {session.action}

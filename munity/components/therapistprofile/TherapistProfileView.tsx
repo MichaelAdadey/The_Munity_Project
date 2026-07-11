@@ -12,9 +12,10 @@ import {
   Pencil,
   Phone,
   Shield,
-  Sparkles,
 } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { MunityLeafIcon } from "@/components/icons/MunityIcons";
+import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { Button } from "@/components/ui/AppButton";
 import { assets } from "@/lib/assets";
 import {
@@ -94,6 +95,7 @@ function VerificationBadge({ status }: { status: TherapistProfile["verificationS
 export function TherapistProfileView() {
   const profile = currentTherapistProfile;
   const displayName = getTherapistDisplayName(profile);
+  const { flash } = useLiveToast();
 
   return (
     <TherapistAppShell
@@ -101,6 +103,7 @@ export function TherapistProfileView() {
       title="Profile"
       subtitle="Your public therapist profile and practice details."
     >
+      <LiveTicker items={["Your public profile is visible to patients.", "Credential verification remains in progress."]} />
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -120,6 +123,7 @@ export function TherapistProfileView() {
               <div className="flex flex-wrap items-center gap-3">
                 <h2 className="text-3xl font-bold text-munity-text">{displayName}</h2>
                 <VerificationBadge status={profile.verificationStatus} />
+                <LivePulse label="Profile live" />
               </div>
               <p className="mt-1 text-base font-medium text-munity-green">
                 {profile.professionalTitle}
@@ -137,6 +141,7 @@ export function TherapistProfileView() {
             </div>
             <Button
               href={routes.therapistOnboarding.basicInfo}
+              onClick={() => flash("Profile editor opened")}
               variant="outline"
               className="shrink-0"
             >
@@ -201,7 +206,7 @@ export function TherapistProfileView() {
                 key={specialty}
                 className="inline-flex items-center gap-1.5 rounded-full bg-munity-lime/50 px-3 py-1.5 text-sm font-semibold text-munity-olive-text"
               >
-                <Sparkles className="size-3.5 text-munity-green" />
+                <MunityLeafIcon className="size-3.5 text-munity-green" />
                 {specialty}
               </span>
             ))}

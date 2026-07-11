@@ -10,6 +10,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { Select } from "@/components/ui/AppSelect";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
@@ -50,6 +51,7 @@ interface NewSessionNoteViewProps {
 export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
+  const { flash } = useLiveToast();
   const avatar = assets.avatars[patient.avatarKey];
   const notesHref = patientRoutes(patient.slug).clinicalNotes;
 
@@ -68,6 +70,7 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
 
   function addHomework() {
     setHomework((prev) => [...prev, ""]);
+    flash("Homework task added");
   }
 
   function removeHomework(index: number) {
@@ -93,6 +96,7 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
         sessionDate,
       });
       await new Promise((resolve) => setTimeout(resolve, 900));
+      flash(`Session note for ${patient.name} saved`);
       router.push(notesHref);
     }, "Saving session note...");
   }
@@ -134,6 +138,7 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <p className="mt-1 text-base text-munity-muted">
                     Record today’s session for {patient.name}
                   </p>
+                  <div className="mt-3"><LivePulse label="Draft autosaved" /></div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Button variant="outline" onClick={() => router.push(notesHref)}>

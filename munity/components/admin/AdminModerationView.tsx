@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowUpDown,
@@ -18,6 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
+import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import type { ModerationReport } from "@/lib/mock-db";
 
@@ -32,8 +34,9 @@ function statusMatchesTab(status: ModerationReport["status"], tab: ReportTab) {
   return status === "Resolved";
 }
 
-export function AdminModerationView({ adminName }: { adminName: string }) {
+function AdminModerationContent() {
   const { reports } = useMockStore();
+  const { flash } = useLiveToast();
   const [tab, setTab] = useState<ReportTab>("All Reports");
   const [selectedId, setSelectedId] = useState("8492");
   const [page, setPage] = useState(1);
@@ -50,15 +53,11 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
   const resolveSelected = (resolution: string) => {
     if (!selected) return;
     mockStore.resolveReport(selected.id, resolution);
+    flash(`${resolution} applied to report #${selected.id}.`);
   };
 
   return (
-    <AdminAppShell
-      adminName={adminName}
-      title="Moderation Center"
-      searchPlaceholder="Search reports, users, or keywords..."
-    >
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
+    <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
         {/* Stats */}
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-[20px] border border-[rgba(197,200,184,0.3)] bg-white p-6 shadow-[0px_4px_10px_rgba(85,107,47,0.05)]">
@@ -75,7 +74,9 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
             <p className="text-base uppercase tracking-[0.8px] text-munity-muted">Pending Review</p>
             <div className="mt-1 flex items-end justify-between gap-3">
               <p className="text-5xl font-bold tracking-[-0.96px] text-[#474836]">{pendingReports}</p>
-              <Hourglass className="mb-2 size-8 text-munity-muted" />
+              <div className="mb-2">
+                <LivePulse label="Pending" count={pendingReports} />
+              </div>
             </div>
           </article>
 
@@ -158,9 +159,11 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
                 {visible.map((report) => {
                   const selectedRow = selected?.id === report.id;
                   return (
-                    <tr
+                    <motion.tr
                       key={report.id}
                       onClick={() => setSelectedId(report.id)}
+                      animate={{ backgroundColor: selectedRow ? "rgba(214, 231, 161, 0.22)" : "rgba(255, 255, 255, 0)" }}
+                      transition={{ duration: 0.2 }}
                       className={`cursor-pointer border-b border-[rgba(197,200,184,0.2)] transition hover:bg-[#f5f3f3]/60 ${
                         report.urgent ? "bg-[rgba(255,218,214,0.03)]" : ""
                       } ${selectedRow ? "ring-1 ring-inset ring-munity-green/20" : ""}`}
@@ -241,7 +244,7 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
                           <MoreHorizontal className="size-5" />
                         </button>
                       </td>
-                    </tr>
+                    </motion.tr>
                   );
                 })}
               </tbody>
@@ -355,7 +358,10 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (selected) mockStore.updateReportStatus(selected.id, "In Review");
+                    if (selected) {
+                      mockStore.updateReportStatus(selected.id, "In Review");
+                      flash(`Report #${selected.id} is now in review.`);
+                    }
                   }}
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-munity-green px-4 py-3 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/40"
                 >
@@ -426,7 +432,18 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
             </div>
           </div>
         </footer>
-      </div>
+    </div>
+  );
+}
+
+export function AdminModerationView({ adminName }: { adminName: string }) {
+  return (
+    <AdminAppShell
+      adminName={adminName}
+      title="Moderation Center"
+      searchPlaceholder="Search reports, users, or keywords..."
+    >
+      <AdminModerationContent />
     </AdminAppShell>
   );
 }

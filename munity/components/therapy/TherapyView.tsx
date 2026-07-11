@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Check,
   ChevronDown,
@@ -13,6 +14,7 @@ import {
   Star,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { routes, therapyPath } from "@/lib/routes";
 
@@ -61,6 +63,7 @@ function matchesName(therapist: { name: string; credentials: string; tags: strin
 export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
   const router = useRouter();
   const store = useMockStore();
+  const { flash } = useLiveToast();
   const [nameQuery, setNameQuery] = useState("");
   const [selectedSpecs, setSelectedSpecs] = useState<Specialization[]>([]);
   const [language, setLanguage] = useState("English");
@@ -293,6 +296,7 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
               <p className="text-sm font-semibold tracking-wide text-munity-muted">
                 Showing {resultCount} results
               </p>
+              <LivePulse label="Available now" count={resultCount} />
               <div className="flex items-center gap-2">
                 <span className="text-xs font-medium text-munity-text">Sort by:</span>
                 <div className="relative">
@@ -313,10 +317,11 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE).map((therapist) => (
-                <article
+                <motion.article
                   key={therapist.id}
+                  variants={liveFadeUp}
                   className="flex flex-col gap-4 rounded-[20px] border border-[#e5e5e1] bg-white p-6 shadow-[0px_4px_10px_rgba(85,107,47,0.05)]"
                 >
                   <div className="flex gap-4">
@@ -392,15 +397,16 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
                         }
                         mockStore.bookSession(therapist.id);
                         setBookedTherapistId(therapist.id);
+                        flash(`Session booked with ${therapist.name}`);
                       }}
                       className="rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                     >
                       {bookedTherapistId === therapist.id ? "Booked ✓" : "Book Session"}
                     </button>
                   </div>
-                </article>
+                </motion.article>
               ))}
-            </div>
+            </motion.div>
 
             {filtered.length === 0 ? (
               <p className="py-10 text-center text-sm text-munity-muted">

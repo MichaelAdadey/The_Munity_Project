@@ -1,16 +1,39 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes } from "@/lib/routes";
 
 export function SavedPostsView() {
   const store = useMockStore();
-  const savedPosts = store.posts.filter((post) => store.savedPostIds.includes(post.id));
+  const { flash } = useLiveToast();
+  const [search, setSearch] = useState("");
+
+  const savedPosts = useMemo(() => {
+    const saved = store.posts.filter((post) => store.savedPostIds.includes(post.id));
+    const query = search.trim().toLowerCase();
+    if (!query) return saved;
+    return saved.filter(
+      (post) =>
+        post.content.toLowerCase().includes(query) ||
+        post.author.toLowerCase().includes(query) ||
+        post.feeling.toLowerCase().includes(query) ||
+        (post.communityName?.toLowerCase().includes(query) ?? false),
+    );
+  }, [search, store.posts, store.savedPostIds]);
+
   return (
-    <MemberAppShell>
+    <MemberAppShell
+      showSearch
+      searchPlaceholder="Search saved posts..."
+      searchValue={search}
+      onSearchChange={setSearch}
+    >
       <div className="mx-auto max-w-5xl">
         <header className="mb-8">
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
@@ -25,19 +48,34 @@ export function SavedPostsView() {
         {savedPosts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-[20px] border border-munity-border bg-white px-6 py-16 text-center shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
             <Bookmark className="size-8 text-munity-muted" />
-            <p className="text-sm text-munity-muted">No saved posts yet</p>
-            <Link
-              href={routes.memberHome}
-              className="text-sm font-semibold text-munity-green hover:underline"
-            >
-              Browse resources
-            </Link>
+            <p className="text-sm text-munity-muted">
+              {search.trim()
+                ? `No saved posts match “${search.trim()}”.`
+                : "No saved posts yet"}
+            </p>
+            {search.trim() ? (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-sm font-semibold text-munity-green hover:underline"
+              >
+                Clear search
+              </button>
+            ) : (
+              <Link
+                href={routes.memberHome}
+                className="text-sm font-semibold text-munity-green hover:underline"
+              >
+                Browse Home feed
+              </Link>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-2">
             {savedPosts.map((post) => (
-              <article
+              <motion.article
                 key={post.id}
+                variants={liveFadeUp}
                 className="group flex gap-4 rounded-[20px] border border-munity-border bg-white p-4 shadow-[0_4px_10px_rgba(85,107,47,0.05)] transition hover:border-munity-green/30 hover:bg-munity-lime/5"
               >
                 <div className="min-w-0 flex-1 py-1">
@@ -59,15 +97,18 @@ export function SavedPostsView() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => mockStore.toggleSavedPost(post.id)}
+                  onClick={() => {
+                    mockStore.toggleSavedPost(post.id);
+                    flash("Removed from saved posts");
+                  }}
                   className="mt-1 size-5 shrink-0 text-munity-green"
                   aria-label="Unsave post"
                 >
                   <Bookmark className="size-5 fill-current" />
                 </button>
-              </article>
+              </motion.article>
             ))}
-          </div>
+          </motion.div>
         )}
       </div>
     </MemberAppShell>

@@ -1,11 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useState } from "react";
 import {
-  Bell,
   BookOpen,
   LayoutGrid,
   LifeBuoy,
@@ -18,6 +16,8 @@ import {
   Users,
 } from "lucide-react";
 import { signOut } from "@/app/(auth)/actions";
+import { LiveToastProvider } from "@/components/live/LiveFeedback";
+import { NotificationsMenu, ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { routes } from "@/lib/routes";
 import {
   DropdownMenu,
@@ -57,6 +57,7 @@ export function AdminAppShell({
   const [search, setSearch] = useState("");
 
   return (
+    <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] px-4 py-4 lg:flex">
         <Link href={routes.admin} className="mb-8 block px-4 pt-2">
@@ -106,26 +107,13 @@ export function AdminAppShell({
               className="h-9 w-56 rounded-full bg-[#f5f3f3] py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-gray-500 md:w-72"
             />
           </div>
-          <button
-            type="button"
-            className="relative rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
-            aria-label="Notifications"
-          >
-            <Bell className="size-5" />
-            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-[#ba1a1a]" />
-          </button>
+          <NotificationsMenu role="admin" />
           <DropdownMenu>
             <DropdownMenuTrigger
-              className="relative size-9 overflow-hidden rounded-full border-2 border-munity-lime outline-none transition hover:ring-2 hover:ring-munity-green/20"
+              className="rounded-full border-2 border-munity-lime outline-none transition hover:ring-2 hover:ring-munity-green/20"
               aria-label="Open admin menu"
             >
-              <Image
-                src="/images/admin/avatar.jpg"
-                alt={adminName}
-                fill
-                className="object-cover"
-                sizes="36px"
-              />
+              <ProfileAvatar src="/images/admin/avatar.jpg" alt={adminName} size={36} />
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
@@ -154,5 +142,6 @@ export function AdminAppShell({
         <div className="px-6 py-8 lg:px-10">{children}</div>
       </div>
     </div>
+    </LiveToastProvider>
   );
 }

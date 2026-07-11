@@ -72,6 +72,7 @@ export type ChatThread = {
   time: string;
   avatar: string;
   filter: "Therapists" | "Groups";
+  therapistId?: string;
   online?: boolean;
   unread?: boolean;
 };
@@ -144,7 +145,7 @@ export const seedMemberProfile: MemberProfile = {
   username: "arivera_mindful",
   title: "Daily Mindful Warrior",
   bio: "Navigating the journey to nurtured stability. Passionate about peer support, cognitive wellness, and early morning meditation.",
-  avatar: "/images/home-feed/alex.jpg",
+  avatar: "/images/profile/avatar.jpg",
   email: "alex.rivera@munity.app",
   dayStreak: 12,
   groupCount: 4,
@@ -468,6 +469,7 @@ export const seedChats: ChatThread[] = [
     time: "2m",
     avatar: "/images/messages/sarah-list.jpg",
     filter: "Therapists",
+    therapistId: "sarah-jenkins",
     online: true,
   },
   {
@@ -494,6 +496,7 @@ export const seedChats: ChatThread[] = [
     time: "4h",
     avatar: "/images/messages/elena.jpg",
     filter: "Therapists",
+    therapistId: "elena-aris",
   },
   {
     id: "jordan",
@@ -691,7 +694,10 @@ export const seedSessionNotes: SessionNoteRecord[] = [
 ];
 
 export const seedSavedPostIds = ["p2", "p5"];
-export const seedSavedResourceIds = ["r1", "r3"];
+export const seedSavedResourceIds = [
+  "res-morning-routine-for-mental-clarity",
+  "res-cognitive-reframing-workbook",
+];
 export const seedSupportedPostIds = ["p2"];
 
 export type MemberSettingsState = {

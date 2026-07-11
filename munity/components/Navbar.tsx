@@ -5,7 +5,11 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import profile from "@/public/images/profile.jpg";
 
-/** Lightweight top bar — navigation lives in MemberAppShell sidebar. */
+/**
+ * Lightweight top bar without page links.
+ * Keep this — member navigation lives in MemberAppShell’s sidebar.
+ * Do not restore main’s inline Home/Communities/Resources/Therapy links.
+ */
 const Navbar = () => {
   return (
     <div className="flex justify-between p-4 shadow-sm">
@@ -16,7 +20,10 @@ const Navbar = () => {
         <button type="button" aria-label="Notifications">
           <Bell className="size-5 text-[#3E5219]" />
         </button>
-        <Link href="/profile" className="relative size-7.5 overflow-hidden rounded-full">
+        <Link
+          href="/profile"
+          className="relative size-7.5 overflow-hidden rounded-full"
+        >
           <Image src={profile} alt="Profile" fill className="object-cover" />
         </Link>
       </div>

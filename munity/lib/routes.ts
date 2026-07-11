@@ -26,6 +26,8 @@ export const routes = {
   settings: "/settings",
   profile: "/profile",
   emergency: "/emergency",
+  notifications: "/notifications",
+  therapistNotifications: "/therapistnotifications",
   communities: "/Communities",
   therapy: "/Therapy",
   privacy: "/privacy",
@@ -39,6 +41,7 @@ export const routes = {
   adminTherapy: "/admin/therapy",
   adminResources: "/admin/resources",
   adminSettings: "/admin/settings",
+  adminNotifications: "/admin/notifications",
   therapistOnboarding: {
     basicInfo: "/therapistonboarding/basic-info",
     credentials: "/therapistonboarding/credentials",
@@ -53,6 +56,16 @@ export function communityPath(slug: string) {
 
 export function therapyPath(id: string) {
   return `${routes.therapy}/${id}`;
+}
+
+export function messagesPath(opts?: { therapistId?: string; chatId?: string }) {
+  if (opts?.therapistId) {
+    return `${routes.messages}?therapist=${encodeURIComponent(opts.therapistId)}`;
+  }
+  if (opts?.chatId) {
+    return `${routes.messages}?chat=${encodeURIComponent(opts.chatId)}`;
+  }
+  return routes.messages;
 }
 
 export type OnboardingStepId = "basic-info" | "credentials" | "specialties" | "payout";

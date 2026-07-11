@@ -1,12 +1,13 @@
 "use client";
 
 import { type ReactNode } from "react";
-import { Bell } from "lucide-react";
 import { TherapistSidebar, type TherapistNavItem } from "@/components/therapistlayout/Sidebars";
 import { CollapsibleSidebarLayout } from "@/components/therapistlayout/CollapsibleSidebarLayout";
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMenu";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
+import { LiveToastProvider } from "@/components/live/LiveFeedback";
+import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 
 const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
 
@@ -27,6 +28,7 @@ export function TherapistAppShell({
   children,
 }: TherapistAppShellProps) {
   return (
+    <LiveToastProvider>
     <SidebarProvider storageKey="munity-therapist-sidebar-open" expandedWidth={256}>
       <div className="min-h-screen bg-munity-bg">
         <CollapsibleSidebarLayout
@@ -43,14 +45,7 @@ export function TherapistAppShell({
               </div>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 {actions}
-                <button
-                  type="button"
-                  className="relative rounded-full p-2 text-munity-muted transition hover:bg-white"
-                  aria-label="Notifications"
-                >
-                  <Bell className="size-5" />
-                  <span className="absolute right-1.5 top-1.5 size-2 rounded-full border-2 border-munity-bg bg-[#ba1a1a]" />
-                </button>
+                <NotificationsMenu role="therapist" />
                 <div className="flex items-center gap-3 rounded-full bg-[#efeded] py-1 pl-1 pr-4">
                   <ProfileAvatarMenu />
                   <span className="text-sm font-semibold tracking-wide text-munity-text">
@@ -65,5 +60,6 @@ export function TherapistAppShell({
         </CollapsibleSidebarLayout>
       </div>
     </SidebarProvider>
+    </LiveToastProvider>
   );
 }
