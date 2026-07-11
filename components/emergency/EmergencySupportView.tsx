@@ -407,11 +407,13 @@ function EmergencySupportContent() {
           transition={{ duration: 0.35 }}
           className="flex min-h-0 min-w-0 flex-1 flex-col gap-8 overflow-y-auto px-5 py-8 sm:px-8 lg:px-10"
         >
-        <section className="overflow-hidden rounded-[24px] bg-gradient-to-r from-munity-green via-[#56642b] to-[#3e5219] p-7 text-left text-white shadow-[0_4px_20px_rgba(62,82,25,0.18)] md:p-9">
-          <p className="text-lg font-medium md:text-2xl">You are not alone.</p>
-          <p className="mt-2 max-w-3xl text-base leading-relaxed text-white/90 md:text-lg">
-            Immediate support is available 24/7. Your safety is the priority. Use the contacts
-            below to reach trained help right now.
+        <section className="flex flex-col items-start gap-4 py-2 text-left sm:items-center sm:py-4 sm:text-center">
+          <h1 className="max-w-3xl text-[2rem] font-normal leading-tight tracking-[-1.2px] text-[#1b1c1c] md:text-5xl md:leading-[1.05]">
+            Immediate Support &amp; Crisis Resources
+          </h1>
+          <p className="max-w-2xl text-base leading-6 text-[#45483c]">
+            You are not alone. Help is available right now. Please use the resources below to
+            connect with professional support.
           </p>
         </section>
 
