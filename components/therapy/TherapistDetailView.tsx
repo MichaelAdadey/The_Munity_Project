@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { ArrowLeft, Calendar, MapPin, Star } from "lucide-react";
 import { motion } from "framer-motion";
+import { BookSessionSheet } from "@/components/therapy/BookSessionSheet";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
@@ -20,8 +22,11 @@ export function TherapistDetailView({
   const router = useRouter();
   const store = useMockStore();
   const { flash } = useLiveToast();
+  const [sheetOpen, setSheetOpen] = useState(false);
   const therapist = store.therapists.find((item) => item.id === id);
-  const booked = store.bookings.some((booking) => booking.therapistId === id);
+  const therapistBookings = store.bookings.filter((booking) => booking.therapistId === id);
+  const latestBooking = therapistBookings[0] ?? null;
+  const booked = therapistBookings.length > 0;
 
   if (!therapist) {
     return (
@@ -92,9 +97,13 @@ export function TherapistDetailView({
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-munity-border pt-6">
             <div>
-              <p className="text-sm text-munity-muted">Next available</p>
+              <p className="text-sm text-munity-muted">
+                {booked ? "Your booking" : "Next available"}
+              </p>
               <p className="font-semibold text-munity-text">
-                {therapist.nextAvailable} · ${therapist.rate}/hr
+                {booked && latestBooking
+                  ? latestBooking.when
+                  : `${therapist.nextAvailable} · $${therapist.rate}/hr`}
               </p>
             </div>
             <div className="flex gap-3">
@@ -115,18 +124,31 @@ export function TherapistDetailView({
                     router.push(routes.login);
                     return;
                   }
-                  mockStore.bookSession(therapist.id);
-                  flash(`Session booked with ${therapist.name}`);
+                  setSheetOpen(true);
                 }}
                 className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-5 py-3 text-sm font-semibold text-white"
               >
                 <Calendar className="size-4" />
-                {booked ? "Booked ✓" : "Book Session"}
+                {booked ? "Book another" : "Book Session"}
               </button>
             </div>
           </div>
         </section>
       </motion.div>
+
+      <BookSessionSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        therapistId={therapist.id}
+        therapistName={therapist.name}
+        rate={therapist.rate}
+        alreadyBooked={booked}
+        latestBookingWhen={latestBooking?.when}
+        onConfirm={(when) => {
+          mockStore.bookSession(therapist.id, when);
+          flash(`Session booked with ${therapist.name} · ${when}`);
+        }}
+      />
     </MemberAppShell>
   );
 }

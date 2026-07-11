@@ -14,9 +14,11 @@ import {
   Star,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { BookSessionSheet } from "@/components/therapy/BookSessionSheet";
 import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { routes, therapyPath } from "@/lib/routes";
+import type { TherapistRecord } from "@/lib/mock-db";
 
 type Specialization =
   | "Anxiety & Stress"
@@ -72,6 +74,7 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
   const [sortBy, setSortBy] = useState<SortOption>("Recommended");
   const [page, setPage] = useState(1);
   const [bookedTherapistId, setBookedTherapistId] = useState<string | null>(null);
+  const [bookingTherapist, setBookingTherapist] = useState<TherapistRecord | null>(null);
 
   const filtered = useMemo(() => {
     let list = store.therapists.filter((therapist) => {
@@ -395,13 +398,14 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
                           router.push(routes.login);
                           return;
                         }
-                        mockStore.bookSession(therapist.id);
-                        setBookedTherapistId(therapist.id);
-                        flash(`Session booked with ${therapist.name}`);
+                        setBookingTherapist(therapist);
                       }}
                       className="rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                     >
-                      {bookedTherapistId === therapist.id ? "Booked ✓" : "Book Session"}
+                      {bookedTherapistId === therapist.id ||
+                      store.bookings.some((b) => b.therapistId === therapist.id)
+                        ? "Book another"
+                        : "Book Session"}
                     </button>
                   </div>
                 </motion.article>
@@ -489,6 +493,28 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
           </div>
         </footer>
       </div>
+
+      {bookingTherapist ? (
+        <BookSessionSheet
+          open
+          onClose={() => setBookingTherapist(null)}
+          therapistId={bookingTherapist.id}
+          therapistName={bookingTherapist.name}
+          rate={bookingTherapist.rate}
+          alreadyBooked={
+            bookedTherapistId === bookingTherapist.id ||
+            store.bookings.some((b) => b.therapistId === bookingTherapist.id)
+          }
+          latestBookingWhen={
+            store.bookings.find((b) => b.therapistId === bookingTherapist.id)?.when
+          }
+          onConfirm={(when) => {
+            mockStore.bookSession(bookingTherapist.id, when);
+            setBookedTherapistId(bookingTherapist.id);
+            flash(`Session booked with ${bookingTherapist.name} · ${when}`);
+          }}
+        />
+      ) : null}
     </MemberAppShell>
   );
 }
