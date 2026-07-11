@@ -35,7 +35,13 @@ export function MoodCheckin() {
       </div>
 
       <div className="mt-6">
-        <Slider value={value} onValueChange={setValue} max={100} step={1} aria-label="Mood level" />
+        <Slider
+          value={value}
+          onValueChange={(next) => setValue(Array.isArray(next) ? [...next] : [next])}
+          max={100}
+          step={1}
+          aria-label="Mood level"
+        />
         <div className="mt-2 flex justify-between text-xs text-muted-foreground">
           <span>Struggling</span>
           <span className="font-medium text-foreground">{label}</span>
