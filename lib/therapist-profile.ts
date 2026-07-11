@@ -1,3 +1,5 @@
+"use client";
+
 export type TherapistProfile = {
   title: string;
   gender: string;
@@ -21,6 +23,8 @@ export type TherapistProfile = {
   bankAccountLast4?: string;
   memberSince: string;
 };
+
+const STORAGE_KEY = "munity-therapist-profile-v1";
 
 /** Preview data until therapist profile is loaded from Supabase. Matches demo login. */
 export const currentTherapistProfile: TherapistProfile = {
@@ -54,4 +58,30 @@ export const currentTherapistProfile: TherapistProfile = {
 
 export function getTherapistDisplayName(profile: TherapistProfile) {
   return `${profile.title} ${profile.firstName} ${profile.lastName}`.trim();
+}
+
+export function loadTherapistProfile(): TherapistProfile {
+  if (typeof window === "undefined") return currentTherapistProfile;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return currentTherapistProfile;
+    const parsed = JSON.parse(raw) as Partial<TherapistProfile>;
+    return {
+      ...currentTherapistProfile,
+      ...parsed,
+      specialties: parsed.specialties ?? currentTherapistProfile.specialties,
+      payoutMethods: parsed.payoutMethods ?? currentTherapistProfile.payoutMethods,
+    };
+  } catch {
+    return currentTherapistProfile;
+  }
+}
+
+export function saveTherapistProfile(profile: TherapistProfile) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+  } catch {
+    // ignore quota errors in preview
+  }
 }

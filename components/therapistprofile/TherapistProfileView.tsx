@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
@@ -17,24 +18,49 @@ import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShel
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { Button } from "@/components/ui/AppButton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { assets } from "@/lib/assets";
+import { routes } from "@/lib/routes";
 import {
   currentTherapistProfile,
   getTherapistDisplayName,
+  loadTherapistProfile,
+  saveTherapistProfile,
   type TherapistProfile,
 } from "@/lib/therapist-profile";
-import { routes } from "@/lib/routes";
+
+type EditSection = "profile" | "personal" | "credentials" | "specialties" | "payout";
+
+const specialtyOptions = [
+  "Anxiety & Stress",
+  "Depression",
+  "Trauma & PTSD",
+  "Relationship Issues",
+  "CBT Therapy",
+  "Family Issues",
+  "Grief & Loss",
+  "Burnout",
+];
+
+const payoutOptions = ["Mobile Money", "Bank Transfer", "Card"];
 
 function ProfileSection({
   title,
   description,
-  editHref,
+  onEdit,
   children,
   delay = 0,
 }: {
   title: string;
   description?: string;
-  editHref?: string;
+  onEdit?: () => void;
   children: React.ReactNode;
   delay?: number;
 }) {
@@ -50,14 +76,15 @@ function ProfileSection({
           <h2 className="text-lg font-bold text-munity-text">{title}</h2>
           {description ? <p className="mt-1 text-sm text-munity-muted">{description}</p> : null}
         </div>
-        {editHref ? (
-          <Link
-            href={editHref}
+        {onEdit ? (
+          <button
+            type="button"
+            onClick={onEdit}
             className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/40"
           >
             <Pencil className="size-3.5" />
             Edit
-          </Link>
+          </button>
         ) : null}
       </div>
       {children}
@@ -71,6 +98,38 @@ function DetailRow({ label, value }: { label: string; value: string }) {
       <dt className="text-xs font-semibold uppercase tracking-wide text-munity-muted">{label}</dt>
       <dd className="text-sm font-medium text-munity-text">{value}</dd>
     </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  multiline,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  multiline?: boolean;
+}) {
+  return (
+    <label className="block space-y-1.5">
+      <span className="text-xs font-semibold tracking-wide text-munity-muted">{label}</span>
+      {multiline ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={4}
+          className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+        />
+      ) : (
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+        />
+      )}
+    </label>
   );
 }
 
@@ -93,9 +152,76 @@ function VerificationBadge({ status }: { status: TherapistProfile["verificationS
 }
 
 export function TherapistProfileView() {
-  const profile = currentTherapistProfile;
-  const displayName = getTherapistDisplayName(profile);
   const { flash } = useLiveToast();
+  const [profile, setProfile] = useState<TherapistProfile>(currentTherapistProfile);
+  const [hydrated, setHydrated] = useState(false);
+  const [editSection, setEditSection] = useState<EditSection | null>(null);
+  const [draft, setDraft] = useState<TherapistProfile>(currentTherapistProfile);
+
+  useEffect(() => {
+    const loaded = loadTherapistProfile();
+    setProfile(loaded);
+    setDraft(loaded);
+    setHydrated(true);
+  }, []);
+
+  const displayName = getTherapistDisplayName(profile);
+
+  function openEdit(section: EditSection) {
+    setDraft(profile);
+    setEditSection(section);
+  }
+
+  function saveDraft() {
+    const next: TherapistProfile = {
+      ...draft,
+      firstName: draft.firstName.trim() || profile.firstName,
+      lastName: draft.lastName.trim() || profile.lastName,
+      professionalTitle: draft.professionalTitle.trim() || profile.professionalTitle,
+      phone: draft.phone.trim() || profile.phone,
+      email: draft.email.trim() || profile.email,
+      practiceLocation: draft.practiceLocation.trim() || profile.practiceLocation,
+      bio: draft.bio.trim() || profile.bio,
+      specialties: draft.specialties.length ? draft.specialties : profile.specialties,
+      payoutMethods: draft.payoutMethods.length ? draft.payoutMethods : profile.payoutMethods,
+    };
+    setProfile(next);
+    saveTherapistProfile(next);
+    setEditSection(null);
+    flash("Profile updated");
+  }
+
+  function toggleSpecialty(specialty: string) {
+    setDraft((prev) => ({
+      ...prev,
+      specialties: prev.specialties.includes(specialty)
+        ? prev.specialties.filter((item) => item !== specialty)
+        : [...prev.specialties, specialty],
+    }));
+  }
+
+  function togglePayout(method: string) {
+    setDraft((prev) => ({
+      ...prev,
+      payoutMethods: prev.payoutMethods.includes(method)
+        ? prev.payoutMethods.filter((item) => item !== method)
+        : [...prev.payoutMethods, method],
+    }));
+  }
+
+  if (!hydrated) {
+    return (
+      <TherapistAppShell
+        active="Profile"
+        title="Profile"
+        subtitle="Your public therapist profile and practice details."
+      >
+        <div className="rounded-[20px] border border-munity-border bg-white p-8 text-sm text-munity-muted">
+          Loading profile…
+        </div>
+      </TherapistAppShell>
+    );
+  }
 
   return (
     <TherapistAppShell
@@ -103,7 +229,12 @@ export function TherapistProfileView() {
       title="Profile"
       subtitle="Your public therapist profile and practice details."
     >
-      <LiveTicker items={["Your public profile is visible to patients.", "Credential verification remains in progress."]} />
+      <LiveTicker
+        items={[
+          "Your public profile is visible to patients.",
+          "Credential verification remains in progress.",
+        ]}
+      />
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,8 +271,8 @@ export function TherapistProfileView() {
               </div>
             </div>
             <Button
-              href={routes.therapistOnboarding.basicInfo}
-              onClick={() => flash("Profile editor opened")}
+              type="button"
+              onClick={() => openEdit("profile")}
               variant="outline"
               className="shrink-0"
             >
@@ -159,7 +290,7 @@ export function TherapistProfileView() {
         <ProfileSection
           title="Personal Information"
           description="Your basic contact and practice details."
-          editHref={routes.therapistOnboarding.basicInfo}
+          onEdit={() => openEdit("personal")}
           delay={0.05}
         >
           <dl>
@@ -176,7 +307,7 @@ export function TherapistProfileView() {
         <ProfileSection
           title="Professional Credentials"
           description="Licensing information shown to patients after verification."
-          editHref={routes.therapistOnboarding.credentials}
+          onEdit={() => openEdit("credentials")}
           delay={0.1}
         >
           <dl>
@@ -197,7 +328,7 @@ export function TherapistProfileView() {
         <ProfileSection
           title="Specialties & Expertise"
           description="Areas where you provide clinical support."
-          editHref={routes.therapistOnboarding.specialties}
+          onEdit={() => openEdit("specialties")}
           delay={0.15}
         >
           <div className="flex flex-wrap gap-2">
@@ -216,7 +347,7 @@ export function TherapistProfileView() {
         <ProfileSection
           title="Payout Settings"
           description="How you receive session payments. Sensitive details are masked."
-          editHref={routes.therapistOnboarding.payout}
+          onEdit={() => openEdit("payout")}
           delay={0.2}
         >
           <dl>
@@ -268,6 +399,208 @@ export function TherapistProfileView() {
           </a>
         </div>
       </motion.div>
+
+      <Dialog
+        open={editSection !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditSection(null);
+        }}
+      >
+        <DialogContent
+          className="max-h-[90dvh] overflow-y-auto border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-lg"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {editSection === "credentials"
+                ? "Edit credentials"
+                : editSection === "specialties"
+                  ? "Edit specialties"
+                  : editSection === "payout"
+                    ? "Edit payout settings"
+                    : "Edit profile"}
+            </DialogTitle>
+            <DialogDescription>
+              Updates stay on this device for the therapist preview — they do not reopen onboarding.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editSection === "profile" || editSection === "personal" ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="Title"
+                  value={draft.title}
+                  onChange={(value) => setDraft((prev) => ({ ...prev, title: value }))}
+                />
+                <Field
+                  label="Gender"
+                  value={draft.gender}
+                  onChange={(value) => setDraft((prev) => ({ ...prev, gender: value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field
+                  label="First name"
+                  value={draft.firstName}
+                  onChange={(value) => setDraft((prev) => ({ ...prev, firstName: value }))}
+                />
+                <Field
+                  label="Last name"
+                  value={draft.lastName}
+                  onChange={(value) => setDraft((prev) => ({ ...prev, lastName: value }))}
+                />
+              </div>
+              <Field
+                label="Professional title"
+                value={draft.professionalTitle}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, professionalTitle: value }))
+                }
+              />
+              <Field
+                label="Phone"
+                value={draft.phone}
+                onChange={(value) => setDraft((prev) => ({ ...prev, phone: value }))}
+              />
+              <Field
+                label="Email"
+                value={draft.email}
+                onChange={(value) => setDraft((prev) => ({ ...prev, email: value }))}
+              />
+              <Field
+                label="Practice location"
+                value={draft.practiceLocation}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, practiceLocation: value }))
+                }
+              />
+              {editSection === "profile" ? (
+                <Field
+                  label="Bio"
+                  value={draft.bio}
+                  multiline
+                  onChange={(value) => setDraft((prev) => ({ ...prev, bio: value }))}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {editSection === "credentials" ? (
+            <div className="space-y-4">
+              <Field
+                label="Licensing body"
+                value={draft.licensingBody}
+                onChange={(value) => setDraft((prev) => ({ ...prev, licensingBody: value }))}
+              />
+              <Field
+                label="License type"
+                value={draft.licenseType}
+                onChange={(value) => setDraft((prev) => ({ ...prev, licenseType: value }))}
+              />
+              <Field
+                label="License number"
+                value={draft.licenseNumber}
+                onChange={(value) => setDraft((prev) => ({ ...prev, licenseNumber: value }))}
+              />
+              <Field
+                label="Expiry date"
+                value={draft.licenseExpiry}
+                onChange={(value) => setDraft((prev) => ({ ...prev, licenseExpiry: value }))}
+              />
+            </div>
+          ) : null}
+
+          {editSection === "specialties" ? (
+            <div className="flex flex-wrap gap-2">
+              {specialtyOptions.map((specialty) => {
+                const active = draft.specialties.includes(specialty);
+                return (
+                  <button
+                    key={specialty}
+                    type="button"
+                    onClick={() => toggleSpecialty(specialty)}
+                    className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                      active
+                        ? "bg-munity-green text-white"
+                        : "border border-[#c5c8b8] bg-white text-munity-text hover:border-munity-green/40"
+                    }`}
+                  >
+                    {specialty}
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {editSection === "payout" ? (
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {payoutOptions.map((method) => {
+                  const active = draft.payoutMethods.includes(method);
+                  return (
+                    <button
+                      key={method}
+                      type="button"
+                      onClick={() => togglePayout(method)}
+                      className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                        active
+                          ? "bg-munity-green text-white"
+                          : "border border-[#c5c8b8] bg-white text-munity-text hover:border-munity-green/40"
+                      }`}
+                    >
+                      {method}
+                    </button>
+                  );
+                })}
+              </div>
+              <Field
+                label="Mobile money network"
+                value={draft.mobileMoneyNetwork ?? ""}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, mobileMoneyNetwork: value }))
+                }
+              />
+              <Field
+                label="Mobile money number"
+                value={draft.mobileMoneyNumber ?? ""}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, mobileMoneyNumber: value }))
+                }
+              />
+              <Field
+                label="Bank name"
+                value={draft.bankName ?? ""}
+                onChange={(value) => setDraft((prev) => ({ ...prev, bankName: value }))}
+              />
+              <Field
+                label="Bank account (last 4)"
+                value={draft.bankAccountLast4 ?? ""}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, bankAccountLast4: value }))
+                }
+              />
+            </div>
+          ) : null}
+
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setEditSection(null)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={saveDraft}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            >
+              Save changes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TherapistAppShell>
   );
 }
