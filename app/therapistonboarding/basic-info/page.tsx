@@ -22,6 +22,7 @@ export default function BasicInfoPage() {
   const [email, setEmail] = useState("");
   const [accountError, setAccountError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const saved = getOnboardingStepData("basic-info");
@@ -39,7 +40,7 @@ export default function BasicInfoPage() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !dirty) return;
     saveOnboardingStepData("basic-info", {
       title,
       gender,
@@ -52,6 +53,7 @@ export default function BasicInfoPage() {
     });
   }, [
     hydrated,
+    dirty,
     title,
     gender,
     practiceLocation,
