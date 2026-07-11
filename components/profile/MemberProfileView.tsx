@@ -124,7 +124,6 @@ export function MemberProfileView() {
   const { flash } = useLiveToast();
   const [tab, setTab] = useState<ProfileTab>("My Posts");
   const [view, setView] = useState("Weekly View");
-  const [search, setSearch] = useState("");
   const [editOpen, setEditOpen] = useState(false);
   const [fullName, setFullName] = useState(store.profile.fullName);
   const [username, setUsername] = useState(store.profile.username);
@@ -154,12 +153,7 @@ export function MemberProfileView() {
   }
 
   return (
-    <MemberAppShell
-      showSearch
-      searchPlaceholder="Search Munity..."
-      searchValue={search}
-      onSearchChange={setSearch}
-    >
+    <MemberAppShell>
       <motion.div initial="hidden" animate="show" variants={liveStagger} className="mx-auto flex max-w-[1280px] flex-col gap-8">
         {/* Profile hero */}
         <motion.section variants={liveFadeUp} className="overflow-hidden rounded-[20px] bg-[#e4e2e2] shadow-sm">

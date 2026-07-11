@@ -92,6 +92,7 @@ export function HomeFeedView() {
   const [activityIndex, setActivityIndex] = useState(0);
   const [onlineNow, setOnlineNow] = useState(128);
   const [justSupported, setJustSupported] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -104,6 +105,18 @@ export function HomeFeedView() {
     .filter((community) => !store.memberships.includes(community.id))
     .slice(0, 2);
   const therapists = store.therapists.slice(0, 2);
+
+  const visiblePosts = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return store.posts;
+    return store.posts.filter(
+      (post) =>
+        post.content.toLowerCase().includes(query) ||
+        post.author.toLowerCase().includes(query) ||
+        post.feeling.toLowerCase().includes(query) ||
+        (post.communityName?.toLowerCase().includes(query) ?? false),
+    );
+  }, [search, store.posts]);
 
   const liveActivity = useMemo(() => {
     const recentPost = store.posts[0];
@@ -245,8 +258,12 @@ export function HomeFeedView() {
   }
 
   return (
-    <MemberAppShell>
-      <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
+    <MemberAppShell
+      showSearch
+      searchPlaceholder="Search posts, people, communities..."
+      searchValue={search}
+      onSearchChange={setSearch}
+    >      <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-6 h-40 rounded-[32px] bg-[radial-gradient(circle_at_top,_rgba(214,231,161,0.35),_transparent_70%)]"
@@ -604,7 +621,26 @@ export function HomeFeedView() {
           </motion.div>
 
           <AnimatePresence initial={false}>
-            {store.posts.map((post, index) => {
+            {visiblePosts.length === 0 ? (
+              <motion.div
+                key="empty-search"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`${cardClass} px-6 py-12 text-center`}
+              >
+                <p className="text-sm text-munity-muted">
+                  No posts match “{search.trim()}”.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="mt-3 text-sm font-semibold text-munity-green hover:underline"
+                >
+                  Clear search
+                </button>
+              </motion.div>
+            ) : null}
+            {visiblePosts.map((post, index) => {
               const comments = store.commentsByPost[post.id] ?? [];
               const open = expandedComments === post.id;
               const supported = store.supportedPostIds.includes(post.id);
