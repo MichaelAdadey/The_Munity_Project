@@ -30,6 +30,7 @@ const therapistProtectedPrefixes = [
   '/therapistcareplan',
   '/therapistprofile',
   '/therapistnotifications',
+  '/therapistmessages',
 ]
 
 const adminProtectedPrefixes = ['/admin']

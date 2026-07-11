@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Maximize2,
@@ -14,6 +15,8 @@ import {
   VideoOff,
 } from "lucide-react";
 import { useLiveToast } from "@/components/live/LiveFeedback";
+import { chatIdFromPatient } from "@/lib/therapist-chats";
+import { therapistMessagesPath } from "@/lib/routes";
 
 export type TherapistSessionKind = "video" | "chat";
 
@@ -49,6 +52,7 @@ export function TherapistSessionOverlays({
   kind: TherapistSessionKind | null;
   onClose: () => void;
 }) {
+  const router = useRouter();
   const { flash } = useLiveToast();
   const [phase, setPhase] = useState<"connecting" | "connected">("connecting");
   const [seconds, setSeconds] = useState(0);
@@ -57,6 +61,7 @@ export function TherapistSessionOverlays({
   const [minimized, setMinimized] = useState(false);
   const [draft, setDraft] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!patient || !kind) return;
@@ -96,6 +101,11 @@ export function TherapistSessionOverlays({
     return () => window.clearInterval(tick);
   }, [patient, kind, phase]);
 
+  useEffect(() => {
+    if (kind !== "chat") return;
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages, kind]);
+
   if (!patient || !kind) return null;
 
   const activePatient = patient;
@@ -108,6 +118,13 @@ export function TherapistSessionOverlays({
         : `Chat with ${activePatient.name} closed`,
     );
     onClose();
+  }
+
+  function expandToMessages() {
+    const chatId = chatIdFromPatient(activePatient);
+    flash(`Opening full chat with ${activePatient.name}`);
+    onClose();
+    router.push(therapistMessagesPath({ chatId }));
   }
 
   function sendMessage() {
@@ -298,9 +315,9 @@ export function TherapistSessionOverlays({
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             onClick={(event) => event.stopPropagation()}
-            className="flex max-h-[90dvh] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-[#d8dbcf] bg-white shadow-2xl"
+            className="flex h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-[#d8dbcf] bg-white shadow-2xl"
           >
-            <div className="flex items-center gap-3 border-b border-munity-border px-5 py-4">
+            <div className="flex shrink-0 items-center gap-3 border-b border-munity-border px-5 py-4">
               <div className="relative size-11 overflow-hidden rounded-full">
                 <Image
                   src={activePatient.avatar}
@@ -319,41 +336,52 @@ export function TherapistSessionOverlays({
               </div>
               <button
                 type="button"
+                onClick={expandToMessages}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-munity-green px-3 py-2 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/30"
+              >
+                <Maximize2 className="size-3.5" />
+                Expand
+              </button>
+              <button
+                type="button"
                 onClick={endSession}
                 className="rounded-xl border border-[#c5c8b8] px-3 py-2 text-xs font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
               >
                 Close
               </button>
             </div>
-            <div className="flex-1 space-y-3 overflow-y-auto bg-[#fbf9f8] px-5 py-4">
-              {messages.map((message) => {
-                const mine = message.from === "me";
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${mine ? "justify-end" : "justify-start"}`}
-                  >
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fbf9f8] px-5 py-4">
+              <div className="space-y-3">
+                {messages.map((message) => {
+                  const mine = message.from === "me";
+                  return (
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
-                        mine
-                          ? "rounded-br-md bg-munity-green text-white"
-                          : "rounded-bl-md bg-white text-munity-text"
-                      }`}
+                      key={message.id}
+                      className={`flex ${mine ? "justify-end" : "justify-start"}`}
                     >
-                      {message.content}
-                      <p
-                        className={`mt-1 text-[10px] ${
-                          mine ? "text-white/70" : "text-munity-muted"
+                      <div
+                        className={`max-w-[80%] break-words rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                          mine
+                            ? "rounded-br-md bg-munity-green text-white"
+                            : "rounded-bl-md bg-white text-munity-text"
                         }`}
                       >
-                        {message.time}
-                      </p>
+                        {message.content}
+                        <p
+                          className={`mt-1 text-[10px] ${
+                            mine ? "text-white/70" : "text-munity-muted"
+                          }`}
+                        >
+                          {message.time}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
             </div>
-            <div className="border-t border-munity-border bg-white p-4">
+            <div className="shrink-0 border-t border-munity-border bg-white p-4">
               <div className="flex items-center gap-2 rounded-2xl border border-[#c5c8b8] bg-[#f5f3f3] p-2">
                 <input
                   value={draft}
@@ -370,7 +398,7 @@ export function TherapistSessionOverlays({
                 <button
                   type="button"
                   onClick={sendMessage}
-                  className="flex size-10 items-center justify-center rounded-xl bg-munity-green text-white transition hover:bg-munity-green-dark"
+                  className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-munity-green text-white transition hover:bg-munity-green-dark"
                   aria-label="Send message"
                 >
                   <Send className="size-4" />

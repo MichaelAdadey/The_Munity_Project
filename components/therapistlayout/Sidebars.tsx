@@ -15,6 +15,7 @@ import {
   Settings,
   NotebookPen,
   ChartColumn,
+  MessageCircle,
 } from "lucide-react";
 import type { OnboardingStepId, PatientNavSection, PatientSlug } from "@/lib/routes";
 import { onboardingSteps, patientNavHref, patientRoutes, routes } from "@/lib/routes";
@@ -199,6 +200,7 @@ export function OnboardingSidebar({
 export type TherapistNavItem =
   | "Dashboard"
   | "Appointments"
+  | "Messages"
   | "Patients"
   | "Sessions"
   | "Analysis"
@@ -219,6 +221,7 @@ const therapistNavItems: {
 }[] = [
   { label: "Dashboard", href: routes.therapistDashboard, icon: LayoutGrid },
   { label: "Appointments", href: routes.therapistAppointments, icon: Calendar },
+  { label: "Messages", href: routes.therapistMessages, icon: MessageCircle },
   { label: "Patients", href: routes.therapistPatients, icon: Users },
   { label: "Sessions", href: routes.therapistClinicalNotes, icon: NotebookPen },
   { label: "Analysis", href: routes.therapistAnalytics, icon: ChartColumn },

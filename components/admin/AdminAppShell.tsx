@@ -47,11 +47,13 @@ export function AdminAppShell({
   adminName,
   title = "Admin Dashboard",
   searchPlaceholder = "Search analytics...",
+  actions,
 }: {
   children: ReactNode;
   adminName: string;
   title?: string;
   searchPlaceholder?: string;
+  actions?: ReactNode;
 }) {
   const pathname = usePathname();
   const [search, setSearch] = useState("");
@@ -97,6 +99,7 @@ export function AdminAppShell({
       <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(197,200,184,0.2)] bg-[rgba(251,249,248,0.8)] shadow-sm backdrop-blur-md lg:left-64">
         <div className="flex h-16 items-center gap-4 px-6 lg:px-10">
           <h1 className="shrink-0 text-xl font-bold text-munity-green md:text-2xl">{title}</h1>
+          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
           <div className="relative ml-auto hidden sm:block">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-gray-500" />
             <input

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { RefreshCw } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
 import { LiveTicker, liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
 import { useMockStore } from "@/lib/mock-store";
@@ -67,13 +68,6 @@ function AdminSubpageContent({ section }: { section: AdminSection }) {
               <p className="mt-2 text-sm text-munity-muted">{metric.detail}</p>
             </article>
           ))}
-          <button
-            type="button"
-            onClick={() => flash("Growth insights refreshed with the latest platform activity.")}
-            className="rounded-2xl border border-dashed border-munity-border bg-white/60 p-6 text-left text-sm font-semibold text-munity-green transition hover:bg-munity-lime/30"
-          >
-            Refresh growth insights
-          </button>
         </div>
       ),
     },
@@ -177,6 +171,22 @@ function AdminSubpageContent({ section }: { section: AdminSection }) {
   );
 }
 
+function GrowthRefreshButton() {
+  const { flash } = useLiveToast();
+
+  return (
+    <button
+      type="button"
+      onClick={() => flash("Growth insights refreshed with the latest platform activity.")}
+      className="flex size-9 items-center justify-center rounded-full border border-munity-border bg-white text-munity-green transition hover:bg-munity-lime/40"
+      aria-label="Refresh growth insights"
+      title="Refresh growth insights"
+    >
+      <RefreshCw className="size-4" />
+    </button>
+  );
+}
+
 export function AdminSubpageView({
   adminName,
   section,
@@ -193,7 +203,11 @@ export function AdminSubpageView({
   }[section];
 
   return (
-    <AdminAppShell adminName={adminName} title={title}>
+    <AdminAppShell
+      adminName={adminName}
+      title={title}
+      actions={section === "growth" ? <GrowthRefreshButton /> : undefined}
+    >
       <AdminSubpageContent section={section} />
     </AdminAppShell>
   );

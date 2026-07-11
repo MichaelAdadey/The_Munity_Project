@@ -22,6 +22,7 @@ export const routes = {
   therapistCredentialAuth: "/therapistcredentialauth",
   resources: "/resources",
   messages: "/messages",
+  therapistMessages: "/therapistmessages",
   saved: "/saved",
   settings: "/settings",
   profile: "/profile",
@@ -66,6 +67,13 @@ export function messagesPath(opts?: { therapistId?: string; chatId?: string }) {
     return `${routes.messages}?chat=${encodeURIComponent(opts.chatId)}`;
   }
   return routes.messages;
+}
+
+export function therapistMessagesPath(opts?: { chatId?: string }) {
+  if (opts?.chatId) {
+    return `${routes.therapistMessages}?chat=${encodeURIComponent(opts.chatId)}`;
+  }
+  return routes.therapistMessages;
 }
 
 export type OnboardingStepId = "basic-info" | "credentials" | "specialties" | "payout";
