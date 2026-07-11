@@ -16,8 +16,8 @@ import {
 
 const profileMenuItems = [
   { label: "My Profile", href: routes.therapistProfile, icon: User },
-  { label: "My Appointments", href: routes.therapistClinicalNotes, icon: Calendar },
-  { label: "Appearance", href: routes.therapistDashboard, icon: Palette },
+  { label: "My Appointments", href: routes.therapistAppointments, icon: Calendar },
+  { label: "Appearance", href: routes.therapistSettings, icon: Palette },
 ] as const;
 
 export function ProfileAvatarMenu() {

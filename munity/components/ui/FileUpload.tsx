@@ -7,9 +7,14 @@ import { useRef, useState } from "react";
 interface FileUploadProps {
   accept?: string;
   maxSizeMb?: number;
+  onFileChange?: (file: File | null) => void;
 }
 
-export function FileUpload({ accept = ".pdf,.jpg,.jpeg,.png", maxSizeMb = 10 }: FileUploadProps) {
+export function FileUpload({
+  accept = ".pdf,.jpg,.jpeg,.png",
+  maxSizeMb = 10,
+  onFileChange,
+}: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [file, setFile] = useState<File | null>(null);
@@ -23,6 +28,7 @@ export function FileUpload({ accept = ".pdf,.jpg,.jpeg,.png", maxSizeMb = 10 }: 
     }
     setError(null);
     setFile(nextFile);
+    onFileChange?.(nextFile);
   }
 
   function handleDrop(event: React.DragEvent) {
@@ -106,6 +112,7 @@ export function FileUpload({ accept = ".pdf,.jpg,.jpeg,.png", maxSizeMb = 10 }: 
               type="button"
               onClick={() => {
                 setFile(null);
+                onFileChange?.(null);
                 if (inputRef.current) inputRef.current.value = "";
               }}
               className="rounded-full p-1 text-munity-muted hover:bg-white/70 hover:text-munity-green"

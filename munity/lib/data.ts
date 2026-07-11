@@ -288,78 +288,33 @@ export const messagesByConversation: Record<string, Message[]> = {
 
 export const resources: Resource[] = [
   {
-    id: 'r-featured',
-    title: 'The Comprehensive Guide to Daily Mindfulness',
-    type: 'guide',
-    category: 'Stress',
-    description:
-      'Discover practical techniques to ground yourself in the present moment and manage daily stressors with professional insights from our leading therapists.',
-    duration: '12 min read',
-    image_url: '/resources/bafd983a4938bdbbb138d008eae5121425e9b286.png',
-    featured: true,
-    action_label: 'Start Reading',
-  },
-  {
     id: 'r1',
-    title: 'Navigating Social Anxiety in Workspace',
-    type: 'article',
-    category: 'Anxiety',
-    description: 'Practical steps to manage workplace interactions and build confidence in professional settings.',
-    duration: '5 min read',
-    image_url: '/resources/aec9581c0962a774a51b42084ca3d7d46df4a111.png',
-    action_label: 'Read More',
+    title: 'Guided Body Scan',
+    type: 'meditation',
+    description: 'A 10-minute meditation to release tension and reconnect with the present.',
+    duration: '10 min',
   },
   {
     id: 'r2',
-    title: 'Breathing Techniques for Instant Calm',
-    type: 'video',
-    category: 'Stress',
-    description: 'A guided session on physiological sighs and evidence-based breathing patterns for acute stress.',
-    duration: '15 min video',
-    image_url: '/resources/87a10b9d5fec955553a797f07d8a5933bc614658.png',
-    action_label: 'Watch Session',
+    title: 'Understanding Anxiety Triggers',
+    type: 'article',
+    description: 'Evidence-based reading on identifying and managing what sets off anxiety.',
+    duration: '6 min read',
   },
   {
     id: 'r3',
-    title: 'Understanding the Cycles of Loss',
-    type: 'guide',
-    category: 'Grief',
-    description: 'A compassionate look at how to navigate the emotional waves of grief with self-kindness.',
-    duration: '8 min read',
-    image_url: '/resources/e4a06c9c469747b7fae60602e2a19127b4082b1c.png',
-    action_label: 'Read More',
+    title: 'Gratitude Journal Prompt',
+    type: 'journal',
+    description: 'Three reflective prompts to ground your day in what is going well.',
+    duration: null,
   },
   {
     id: 'r4',
-    title: 'Guided Body Scan',
-    type: 'meditation',
-    category: 'Stress',
-    description: 'A 10-minute meditation to release tension and reconnect with the present.',
-    duration: '10 min',
-    image_url: '/resources/87a10b9d5fec955553a797f07d8a5933bc614658.png',
-    action_label: 'Start Session',
+    title: '4-7-8 Breathing Exercise',
+    type: 'exercise',
+    description: 'A simple breathing pattern to lower your heart rate in moments of stress.',
+    duration: '3 min',
   },
-  {
-    id: 'r5',
-    title: 'Understanding Anxiety Triggers',
-    type: 'article',
-    category: 'Anxiety',
-    description: 'Evidence-based reading on identifying and managing what sets off anxiety.',
-    duration: '6 min read',
-    image_url: '/resources/aec9581c0962a774a51b42084ca3d7d46df4a111.png',
-    action_label: 'Read More',
-  },
-]
-
-export const savedResources = [
-  { id: 's1', title: 'Morning Routine for Mental Clarity', type: 'article' as const },
-  { id: 's2', title: 'Cognitive Reframing Workbook', type: 'guide' as const },
-]
-
-export const trendingTopics = [
-  { id: 't1', rank: 1, title: 'How to start therapy for the first time', reads: '2.4k reads this week' },
-  { id: 't2', rank: 2, title: 'Managing postpartum depression', reads: '1.8k reads this week' },
-  { id: 't3', rank: 3, title: 'Sleep hygiene for better mood', reads: '1.5k reads this week' },
 ]
 
 export const recentMoodEntries: MoodEntry[] = [
@@ -429,31 +384,6 @@ export function getMessages(conversationId: string) {
 export function getResources() {
   return resources
 }
-
-export function getFeaturedResource() {
-  return resources.find((r) => r.featured) ?? resources[0]
-}
-
-export function getLatestResources() {
-  return resources.filter((r) => !r.featured)
-}
-
-export function getSavedResources() {
-  return savedResources
-}
-
-export function getTrendingTopics() {
-  return trendingTopics
-}
-
-export const resourceCategories = [
-  'Anxiety',
-  'Depression',
-  'Stress',
-  'Grief',
-  'Relationships',
-  'Addiction',
-] as const
 
 export function getMoodEntries() {
   return recentMoodEntries

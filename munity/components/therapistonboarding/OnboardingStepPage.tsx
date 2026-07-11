@@ -25,6 +25,10 @@ interface OnboardingStepPageProps {
   continueLabel: string;
   footer?: React.ReactNode;
   validate?: () => boolean;
+  /** Return false to block navigation (e.g. after an async account create). */
+  onBeforeContinue?: (form: HTMLFormElement) => boolean | Promise<boolean>;
+  /** Persist step answers before marking the step complete. */
+  onSave?: (form: HTMLFormElement) => void;
 }
 
 export function OnboardingStepPage({
@@ -38,6 +42,8 @@ export function OnboardingStepPage({
   continueLabel,
   footer,
   validate,
+  onBeforeContinue,
+  onSave,
 }: OnboardingStepPageProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
@@ -63,6 +69,14 @@ export function OnboardingStepPage({
       return;
     }
 
+    if (onBeforeContinue) {
+      const canContinue = await onBeforeContinue(form);
+      if (!canContinue) {
+        return;
+      }
+    }
+
+    onSave?.(form);
     markStepComplete(stepId);
     await navigate(continueHref, "Saving your progress...");
   }

@@ -13,6 +13,8 @@ import {
   Clock,
   User,
   Settings,
+  NotebookPen,
+  ChartColumn,
 } from "lucide-react";
 import type { OnboardingStepId, PatientNavSection, PatientSlug } from "@/lib/routes";
 import { onboardingSteps, patientNavHref, patientRoutes, routes } from "@/lib/routes";
@@ -36,12 +38,12 @@ interface PatientSidebarProps {
   };
 }
 
-const navItems: { label: PatientNavItem; section?: PatientNavSection; icon: React.ElementType }[] = [
+const navItems: { label: PatientNavItem; section: PatientNavSection; icon: React.ElementType }[] = [
   { label: "Overview", section: "Overview", icon: LayoutGrid },
   { label: "Clinical Notes", section: "Clinical Notes", icon: FileText },
   { label: "Progress", section: "Progress", icon: TrendingUp },
-  { label: "Files", icon: FolderOpen },
-  { label: "Care Plan", icon: Briefcase },
+  { label: "Files", section: "Files", icon: FolderOpen },
+  { label: "Care Plan", section: "Care Plan", icon: Briefcase },
 ];
 
 export function PatientSidebar({
@@ -84,24 +86,17 @@ export function PatientSidebar({
       <nav className="flex flex-1 flex-col gap-1">
         {navItems.map(({ label, section, icon: Icon }) => {
           const isActive = label === active;
-          const href = section ? patientNavHref(patientSlug, section) : "#";
-          const className = `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
-            isActive
-              ? "bg-munity-lime text-munity-olive-text"
-              : "text-munity-muted hover:bg-white/50"
-          }`;
-
-          if (href === "#") {
-            return (
-              <button key={label} type="button" className={className} disabled aria-disabled>
-                <Icon className="size-[18px]" />
-                {label}
-              </button>
-            );
-          }
-
+          const href = patientNavHref(patientSlug, section);
           return (
-            <Link key={label} href={href} className={className}>
+            <Link
+              key={label}
+              href={href}
+              className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition-colors ${
+                isActive
+                  ? "bg-munity-lime text-munity-olive-text"
+                  : "text-munity-muted hover:bg-white/50"
+              }`}
+            >
               <Icon className="size-[18px]" />
               {label}
             </Link>
@@ -110,7 +105,7 @@ export function PatientSidebar({
       </nav>
 
       <Link
-        href={patientNavHref(patientSlug, "Clinical Notes")}
+        href={patientRoutes(patientSlug).newSessionNote}
         className="mt-auto flex items-center justify-center gap-2 rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-munity-green-dark"
       >
         <Plus className="size-3.5" />
@@ -204,7 +199,11 @@ export function OnboardingSidebar({
 export type TherapistNavItem =
   | "Dashboard"
   | "Appointments"
-  | "My Patients"
+  | "Patients"
+  | "Sessions"
+  | "Analysis"
+  | "Files"
+  | "Care Plan"
   | "Availability"
   | "Profile"
   | "Settings";
@@ -219,15 +218,15 @@ const therapistNavItems: {
   icon: React.ElementType;
 }[] = [
   { label: "Dashboard", href: routes.therapistDashboard, icon: LayoutGrid },
-  { label: "Appointments", href: routes.therapistClinicalNotes, icon: Calendar },
-  {
-    label: "My Patients",
-    href: routes.therapistPatients,
-    icon: Users,
-  },
-  { label: "Availability", href: routes.therapistDashboard, icon: Clock },
+  { label: "Appointments", href: routes.therapistAppointments, icon: Calendar },
+  { label: "Patients", href: routes.therapistPatients, icon: Users },
+  { label: "Sessions", href: routes.therapistClinicalNotes, icon: NotebookPen },
+  { label: "Analysis", href: routes.therapistAnalytics, icon: ChartColumn },
+  { label: "Files", href: routes.therapistFiles, icon: FolderOpen },
+  { label: "Care Plan", href: routes.therapistCarePlan, icon: Briefcase },
+  { label: "Availability", href: routes.therapistAvailability, icon: Clock },
   { label: "Profile", href: routes.therapistProfile, icon: User },
-  { label: "Settings", href: routes.therapistDashboard, icon: Settings },
+  { label: "Settings", href: routes.therapistSettings, icon: Settings },
 ];
 
 export function TherapistSidebar({ active }: TherapistSidebarProps) {
@@ -260,13 +259,13 @@ export function TherapistSidebar({ active }: TherapistSidebarProps) {
         </nav>
       </div>
 
-      <div className="rounded-2xl border border-munity-green/10 bg-munity-green/5 p-4">
-        <button
-          type="button"
-          className="w-full rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+      <div className="p-2">
+        <Link
+          href={routes.emergency}
+          className="flex w-full items-center justify-center rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
         >
           Emergency Support
-        </button>
+        </Link>
       </div>
     </aside>
   );

@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { findMockAccount, getMockAccountByRole } from "@/lib/mock-credentials";
+import { setMockSession } from "@/lib/mock-session";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/routes";
@@ -19,7 +21,15 @@ export async function signInAsTherapist(
   }
 
   if (!isSupabaseConfigured()) {
-    redirect(routes.therapistDashboard);
+    const account = findMockAccount(email, password);
+    if (!account || account.role !== "therapist") {
+      return {
+        error:
+          "Invalid therapist credentials. Use elena.aris@munity.app / Therapist1234!",
+      };
+    }
+    await setMockSession(account);
+    redirect(account.redirectTo);
   }
 
   const supabase = await createClient();
@@ -31,6 +41,7 @@ export async function signInAsTherapist(
 
 export async function signInWithGoogleAsTherapistLogin(): Promise<void> {
   if (!isSupabaseConfigured()) {
+    await setMockSession(getMockAccountByRole("therapist"));
     redirect(routes.therapistDashboard);
   }
 

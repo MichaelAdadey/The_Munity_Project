@@ -4,338 +4,295 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import {
+  AlertTriangle,
   ArrowRight,
   Calendar,
-  ChevronRight,
+  CheckCircle2,
   ClipboardList,
   Clock,
-  TrendingUp,
-  Users,
+  MessageSquare,
+  MoreVertical,
+  Star,
   Video,
 } from "lucide-react";
-import { TherapistSidebar } from "@/components/therapistlayout/Sidebars";
-import { CollapsibleSidebarLayout } from "@/components/therapistlayout/CollapsibleSidebarLayout";
-import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
-import { TopNav } from "@/components/therapistlayout/TopNav";
-import { AnimatedPage } from "@/components/ui/AnimatedPage";
-import { Button } from "@/components/ui/AppButton";
+import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug, routes } from "@/lib/routes";
+import { patientRoutes, routes } from "@/lib/routes";
 
 const stats = [
   {
-    label: "Active Patients",
-    value: "12",
-    change: "+2 this month",
-    icon: Users,
-    iconBg: "bg-munity-lime/50",
-    iconColor: "text-munity-green",
-  },
-  {
-    label: "Sessions Today",
-    value: "3",
-    change: "Next at 10:30 AM",
+    label: "Upcoming Sessions",
+    value: "08",
+    meta: "+2 from yesterday",
+    metaClass: "text-munity-muted",
     icon: Calendar,
-    iconBg: "bg-munity-green/10",
-    iconColor: "text-munity-green",
+    iconWrap: "bg-munity-lime/40 text-munity-green",
   },
   {
-    label: "Pending Notes",
-    value: "2",
-    change: "Due before Friday",
+    label: "Pending Requests",
+    value: "03",
+    meta: "Requires Action",
+    metaClass: "text-[#56642b]",
     icon: ClipboardList,
-    iconBg: "bg-[#e4e4cc]",
-    iconColor: "text-[#474836]",
+    iconWrap: "bg-[#e4e4cc] text-[#474836]",
   },
   {
-    label: "Avg. Mood Score",
-    value: "7.4",
-    change: "+0.6 vs last week",
-    icon: TrendingUp,
-    iconBg: "bg-munity-lime/30",
-    iconColor: "text-munity-olive-text",
+    label: "Completed This Week",
+    value: "24",
+    meta: "88% Completion",
+    metaClass: "text-munity-muted",
+    icon: CheckCircle2,
+    iconWrap: "bg-munity-green/10 text-munity-green",
   },
-];
+  {
+    label: "Average Rating",
+    value: "4.92",
+    meta: "Top Rated",
+    metaClass: "text-munity-green",
+    icon: Star,
+    iconWrap: "bg-munity-lime/50 text-munity-olive-text",
+  },
+] as const;
 
-const todaysSessions = [
+const todaysSchedule = [
   {
-    time: "10:30 AM",
-    duration: "60 min",
-    patient: "Leo Richards",
-    slug: "leo-richards" as const,
+    name: "Marcus Thorne",
+    patientId: "#MT-82",
     type: "Video Session",
-    avatarKey: "leo" as const,
+    typeIcon: Video,
+    time: "02:00 PM – 02:50 PM",
+    action: "Join Session",
+    actionHref: patientRoutes("alex-mercer").clinicalNotes,
+    avatar: assets.avatars.alex,
   },
   {
-    time: "2:00 PM",
-    duration: "45 min",
-    patient: "Elena Rodriguez",
-    slug: "elena-rodriguez" as const,
-    type: "In-Person",
-    avatarKey: "elena" as const,
+    name: "Sarah Jenkins",
+    patientId: "#SJ-41",
+    type: "Text Consultation",
+    typeIcon: MessageSquare,
+    time: "04:30 PM – 05:00 PM",
+    action: "Open Chat",
+    actionHref: patientRoutes("elena-rodriguez").overview,
+    avatar: assets.avatars.elena,
   },
-  {
-    time: "4:30 PM",
-    duration: "60 min",
-    patient: "Alex Mercer",
-    slug: "alex-mercer" as const,
-    type: "Video Session",
-    avatarKey: "alex" as const,
-  },
-];
+] as const;
 
-const patientCaseload = patientSlugs.map((slug) => {
-  const patient = patientsBySlug[slug];
-  const meta: Record<
-    typeof slug,
-    { status: string; mood: string; lastSession: string; plan: string }
-  > = {
-    "leo-richards": {
-      status: "Active",
-      mood: "8/10",
-      lastSession: "Mar 14",
-      plan: "Weekly Therapy",
-    },
-    "elena-rodriguez": {
-      status: "Active",
-      mood: "6/10",
-      lastSession: "Mar 12",
-      plan: "Bi-weekly",
-    },
-    "alex-mercer": {
-      status: "Follow-up",
-      mood: "7/10",
-      lastSession: "Mar 10",
-      plan: "Monthly Check-in",
-    },
-  };
-
-  return {
-    ...patient,
-    avatar: assets.avatars[patient.avatarKey],
-    ...meta[slug],
-  };
-});
-
-const tasks = [
+const recentPatients = [
   {
-    title: "Review session notes for Alex Mercer",
-    due: "Due today",
-    href: patientRoutes("alex-mercer").clinicalNotes,
+    name: "Leo Richards",
+    detail: "Last active: 2h ago",
+    status: "online" as const,
+    avatar: assets.avatars.leo,
+    href: patientRoutes("leo-richards").overview,
   },
   {
-    title: "Update care plan for Elena Rodriguez",
-    due: "Due tomorrow",
+    name: "Chloe Bennett",
+    detail: "Active journal entry",
+    status: "away" as const,
+    avatar: assets.avatars.elena,
     href: patientRoutes("elena-rodriguez").overview,
   },
   {
-    title: "Submit monthly progress summary",
-    due: "Due Friday",
-    href: patientRoutes("leo-richards").progress,
+    name: "Julian Vance",
+    detail: "Last session: 3 days ago",
+    status: "offline" as const,
+    avatar: assets.avatars.alex,
+    href: patientRoutes("alex-mercer").overview,
   },
 ];
 
+const statusDotClass = {
+  online: "bg-[#22c55e]",
+  away: "bg-[#fbbf24]",
+  offline: "bg-[#9ca3af]",
+} as const;
+
 export function TherapistDashboardView() {
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-
   return (
-    <SidebarProvider storageKey="munity-therapist-sidebar-open">
-    <div className="min-h-screen bg-munity-bg">
-      <TopNav active="Dashboard" showSearch />
-
-      <div className="w-full pt-16">
-        <CollapsibleSidebarLayout
-          sidebar={<TherapistSidebar active="Dashboard" />}
-          mainClassName="px-10 pb-16 pt-8"
+    <TherapistAppShell
+      active="Dashboard"
+      title="Welcome back, Dr. Aris"
+      subtitle="Here's an overview of your schedule today."
+    >
+      <section className="flex flex-col gap-3 rounded-2xl border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.4)] p-4 sm:flex-row sm:items-start sm:gap-4">
+        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#93000a]" />
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-semibold tracking-wide text-[#93000a]">
+            Urgent: Patient Crisis Flag
+          </h2>
+          <p className="mt-1 text-xs font-medium leading-relaxed text-munity-muted">
+            Marcus Thorne has flagged high distress in their morning check-in. Review their recent
+            logs before your 2:00 PM session.
+          </p>
+        </div>
+        <Link
+          href={patientRoutes("alex-mercer").progress}
+          className="shrink-0 text-sm font-semibold tracking-wide text-munity-green hover:underline"
         >
-        <AnimatedPage className="flex-1">
-          <header className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
-                Therapist Dashboard
-              </p>
-              <h1 className="mt-2 text-3xl font-bold text-munity-text">Good morning, Dr. Harper</h1>
-              <p className="mt-1 text-base text-munity-muted">{today}</p>
-            </div>
-            <Button href={patientRoutes("leo-richards").clinicalNotes}>
-              Start Next Session
-              <ArrowRight className="size-4" />
-            </Button>
-          </header>
+          View Log
+        </Link>
+      </section>
 
-          <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat, index) => {
-              const Icon = stat.icon;
-              return (
-                <motion.article
-                  key={stat.label}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-semibold text-munity-muted">{stat.label}</p>
-                      <p className="mt-2 text-3xl font-bold text-munity-text">{stat.value}</p>
-                      <p className="mt-1 text-sm text-munity-green">{stat.change}</p>
-                    </div>
-                    <div
-                      className={`flex size-11 items-center justify-center rounded-xl ${stat.iconBg}`}
-                    >
-                      <Icon className={`size-5 ${stat.iconColor}`} />
-                    </div>
-                  </div>
-                </motion.article>
-              );
-            })}
-          </section>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-3">
-            <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-2">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-munity-text">Today&apos;s Schedule</h2>
-                  <p className="text-sm text-munity-muted">Upcoming sessions and appointments</p>
+      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <motion.article
+              key={stat.label}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="rounded-[20px] border border-munity-input-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
+            >
+              <div className="flex items-center justify-between">
+                <div className={`flex size-9 items-center justify-center rounded-xl ${stat.iconWrap}`}>
+                  <Icon className="size-4" />
                 </div>
-                <span className="rounded-full bg-munity-lime/40 px-3 py-1 text-xs font-bold text-munity-olive-text">
-                  3 sessions
-                </span>
+                <span className={`text-xs font-medium ${stat.metaClass}`}>{stat.meta}</span>
               </div>
+              <p className="mt-3 text-sm font-semibold tracking-wide text-munity-muted">
+                {stat.label}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-munity-text">{stat.value}</p>
+            </motion.article>
+          );
+        })}
+      </section>
 
-              <div className="space-y-4">
-                {todaysSessions.map((session, index) => (
-                  <motion.div
-                    key={session.slug}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.06 }}
-                    className="flex flex-wrap items-center gap-4 rounded-2xl border border-munity-border bg-munity-sidebar/40 p-4"
-                  >
-                    <div className="min-w-[88px]">
-                      <p className="text-sm font-bold text-munity-text">{session.time}</p>
-                      <p className="text-xs text-munity-muted">{session.duration}</p>
-                    </div>
-                    <div className="relative size-12 shrink-0 overflow-hidden rounded-xl">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+        <section className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)] xl:col-span-2">
+          <div className="flex items-center justify-between border-b border-munity-input-border px-6 py-6">
+            <h2 className="text-2xl font-semibold text-munity-text">Today&apos;s Schedule</h2>
+            <Link
+              href={routes.therapistAppointments}
+              className="rounded-xl px-4 py-2 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/40"
+            >
+              View Calendar
+            </Link>
+          </div>
+
+          <div>
+            {todaysSchedule.map((session, index) => {
+              const TypeIcon = session.typeIcon;
+              return (
+                <motion.div
+                  key={session.patientId}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.1 + index * 0.05 }}
+                  className={`flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:gap-6 ${
+                    index > 0 ? "border-t border-munity-input-border" : ""
+                  }`}
+                >
+                  <div className="flex min-w-[200px] items-center gap-4">
+                    <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
                       <Image
-                        src={assets.avatars[session.avatarKey]}
-                        alt={session.patient}
+                        src={session.avatar}
+                        alt={session.name}
                         fill
                         className="object-cover"
                       />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-munity-text">{session.patient}</p>
-                      <p className="text-sm text-munity-muted">{session.type}</p>
+                    <div>
+                      <p className="text-sm font-semibold tracking-wide text-munity-text">
+                        {session.name}
+                      </p>
+                      <p className="text-xs font-medium text-munity-muted">
+                        Patient ID: {session.patientId}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-munity-green">
-                      <Video className="size-4" />
-                      Join
+                  </div>
+
+                  <div className="flex flex-1 flex-wrap items-center gap-6 sm:gap-8">
+                    <div className="flex items-center gap-2 text-munity-muted">
+                      <TypeIcon className="size-3.5 shrink-0" />
+                      <span className="text-xs font-medium leading-snug">{session.type}</span>
                     </div>
-                    <Link
-                      href={patientRoutes(session.slug).clinicalNotes}
-                      className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
-                    >
-                      Prepare Notes
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
-              <div className="mb-6 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-munity-text">Action Items</h2>
-                <Clock className="size-[18px] text-munity-muted" />
-              </div>
-              <div className="space-y-4">
-                {tasks.map((task) => (
-                  <Link
-                    key={task.title}
-                    href={task.href}
-                    className="block rounded-2xl border border-munity-border bg-munity-bg p-4 transition hover:border-munity-green/30"
-                  >
-                    <p className="text-sm font-semibold text-munity-text">{task.title}</p>
-                    <p className="mt-1 text-xs font-bold uppercase tracking-wide text-munity-muted">
-                      {task.due}
-                    </p>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-3">
-              <div className="mb-6 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-munity-text">Patient Caseload</h2>
-                  <p className="text-sm text-munity-muted">
-                    Active clients and their latest clinical signals
-                  </p>
-                </div>
-                <Button variant="outline" href={routes.therapistPatients}>
-                  View All Patients
-                </Button>
-              </div>
-
-              <div className="overflow-hidden rounded-2xl border border-munity-border">
-                <div className="grid grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] gap-4 border-b border-munity-border bg-munity-sidebar/60 px-6 py-3 text-xs font-bold uppercase tracking-wide text-munity-muted">
-                  <span>Patient</span>
-                  <span>Status</span>
-                  <span>Care Plan</span>
-                  <span>Mood</span>
-                  <span>Last Session</span>
-                </div>
-                {patientCaseload.map((patient, index) => (
-                  <motion.div
-                    key={patient.slug}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <Link
-                      href={patientRoutes(patient.slug).overview}
-                      className="grid grid-cols-[minmax(0,2fr)_repeat(4,minmax(0,1fr))] items-center gap-4 border-b border-munity-border px-6 py-4 transition last:border-b-0 hover:bg-munity-lime/10"
-                    >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div className="relative size-11 shrink-0 overflow-hidden rounded-xl">
-                          <Image
-                            src={patient.avatar}
-                            alt={patient.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate font-semibold text-munity-text">{patient.name}</p>
-                          <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                            {patient.clientId}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="w-fit rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
-                        {patient.status}
+                    <div className="flex items-center gap-2">
+                      <Clock className="size-3.5 shrink-0 text-munity-muted" />
+                      <span className="text-sm font-semibold tracking-wide text-munity-text">
+                        {session.time}
                       </span>
-                      <span className="text-sm text-munity-text">{patient.plan}</span>
-                      <span className="text-sm font-semibold text-munity-green">{patient.mood}</span>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-sm text-munity-muted">{patient.lastSession}</span>
-                        <ChevronRight className="size-4 text-munity-green" />
-                      </div>
-                    </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </section>
+                    </div>
+                  </div>
+
+                  <Link
+                    href={session.actionHref}
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+                  >
+                    {session.action}
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
-        </AnimatedPage>
-        </CollapsibleSidebarLayout>
+        </section>
+
+        <aside className="flex flex-col gap-8">
+          <section className="rounded-[20px] border border-munity-input-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+            <h2 className="text-sm font-semibold uppercase tracking-[0.7px] text-munity-text">
+              Recent Patients
+            </h2>
+            <div className="mt-6 flex flex-col gap-6">
+              {recentPatients.map((patient) => (
+                <div key={patient.name} className="flex items-center justify-between gap-3">
+                  <Link href={patient.href} className="flex min-w-0 items-center gap-3">
+                    <div className="relative shrink-0">
+                      <div className="relative size-10 overflow-hidden rounded-full">
+                        <Image
+                          src={patient.avatar}
+                          alt={patient.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <span
+                        className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-munity-bg ${statusDotClass[patient.status]}`}
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold tracking-wide text-munity-text">
+                        {patient.name}
+                      </p>
+                      <p className="truncate text-xs font-medium text-munity-muted">
+                        {patient.detail}
+                      </p>
+                    </div>
+                  </Link>
+                  <button
+                    type="button"
+                    className="rounded-lg p-1 text-munity-muted transition hover:bg-munity-bg hover:text-munity-green"
+                    aria-label={`More options for ${patient.name}`}
+                  >
+                    <MoreVertical className="size-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <Link
+              href={routes.therapistPatients}
+              className="mt-6 flex w-full items-center justify-center rounded-xl border border-munity-input-border py-3 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/30"
+            >
+              View All Patients
+            </Link>
+          </section>
+
+          <section className="rounded-[20px] bg-munity-lime/35 p-6">
+            <h2 className="text-base font-semibold text-munity-text">Weekly Summary Report</h2>
+            <p className="mt-2 text-sm leading-relaxed text-munity-muted">
+              Your AI-assisted progress summaries for all 12 patients this week are ready for final
+              review.
+            </p>
+            <Link
+              href={routes.therapistAnalytics}
+              className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-munity-green hover:underline"
+            >
+              Review Now
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </section>
+        </aside>
       </div>
-    </div>
-    </SidebarProvider>
+    </TherapistAppShell>
   );
 }

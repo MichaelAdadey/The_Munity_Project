@@ -1,10 +1,5 @@
-import { HomeFeedView } from '@/components/home/home-feed-view'
-import { HomeLayout } from '@/components/home/home-layout'
+import { HomeFeedView } from "@/components/home/HomeFeedView";
 
 export default function HomePage() {
-  return (
-    <HomeLayout>
-      <HomeFeedView />
-    </HomeLayout>
-  )
+  return <HomeFeedView />;
 }

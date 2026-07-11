@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
 import { FileUpload } from "@/components/ui/FileUpload";
@@ -12,12 +12,34 @@ import {
   ghanaLicensingBodies,
   ghanaRegions,
 } from "@/lib/ghana-therapist";
+import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
 import { routes } from "@/lib/routes";
 
 export default function CredentialsPage() {
   const [licenseType, setLicenseType] = useState("");
   const [licensingBody, setLicensingBody] = useState("");
   const [regionOfIssue, setRegionOfIssue] = useState("");
+  const [registrationNumber, setRegistrationNumber] = useState("");
+  const [yearsOfExperience, setYearsOfExperience] = useState(5);
+  const [documentName, setDocumentName] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = getOnboardingStepData("credentials");
+    if (saved) {
+      setLicenseType(saved.licenseType);
+      setLicensingBody(saved.licensingBody);
+      setRegionOfIssue(saved.regionOfIssue);
+      setRegistrationNumber(saved.registrationNumber);
+      setYearsOfExperience(saved.yearsOfExperience);
+      setDocumentName(saved.documentName);
+    }
+    setHydrated(true);
+  }, []);
+
+  if (!hydrated) {
+    return null;
+  }
 
   return (
     <OnboardingStepPage
@@ -34,6 +56,17 @@ export default function CredentialsPage() {
           return false;
         }
         return true;
+      }}
+      onSave={(form) => {
+        const formData = new FormData(form);
+        saveOnboardingStepData("credentials", {
+          licenseType,
+          licensingBody,
+          regionOfIssue,
+          registrationNumber: String(formData.get("registrationNumber") || "").trim(),
+          yearsOfExperience,
+          documentName,
+        });
       }}
       footer={
         <div className="relative flex items-center justify-center gap-8 opacity-40">
@@ -59,6 +92,7 @@ export default function CredentialsPage() {
             name="registrationNumber"
             placeholder="e.g. GPC/CP/2024/0042"
             className="input-field"
+            defaultValue={registrationNumber}
             required
           />
         </Field>
@@ -76,7 +110,13 @@ export default function CredentialsPage() {
           value={regionOfIssue}
           onChange={setRegionOfIssue}
         />
-        <RangeField label="Years of Experience" min={0} max={20} defaultValue={5} />
+        <RangeField
+          label="Years of Experience"
+          min={0}
+          max={20}
+          value={yearsOfExperience}
+          onChange={setYearsOfExperience}
+        />
       </div>
 
       <hr className="my-8 border-munity-input-border/30" />
@@ -88,7 +128,12 @@ export default function CredentialsPage() {
         <p className="mt-1 text-xs font-medium text-munity-muted">
           Upload a copy of your current council registration or certification document.
         </p>
-        <FileUpload />
+        {documentName ? (
+          <p className="mt-2 text-sm text-munity-muted">Previously uploaded: {documentName}</p>
+        ) : null}
+        <FileUpload
+          onFileChange={(file) => setDocumentName(file?.name ?? "")}
+        />
       </div>
     </OnboardingStepPage>
   );

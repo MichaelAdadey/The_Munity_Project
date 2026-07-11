@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
 import { ChipSelect } from "@/components/ui/ChipSelect";
 import { Select } from "@/components/ui/AppSelect";
 import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
+import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
 import { routes } from "@/lib/routes";
 
 const payoutMethodOptions = ["Mobile Money", "Bank Transfer"];
@@ -14,9 +15,32 @@ export default function PayoutPage() {
   const [payoutMethods, setPayoutMethods] = useState<string[]>([]);
   const [mobileMoneyNetwork, setMobileMoneyNetwork] = useState("");
   const [bankName, setBankName] = useState("");
+  const [momoAccountName, setMomoAccountName] = useState("");
+  const [momoNumber, setMomoNumber] = useState("");
+  const [bankAccountName, setBankAccountName] = useState("");
+  const [bankAccountNumber, setBankAccountNumber] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const saved = getOnboardingStepData("payout");
+    if (saved) {
+      setPayoutMethods(saved.payoutMethods);
+      setMobileMoneyNetwork(saved.mobileMoneyNetwork);
+      setBankName(saved.bankName);
+      setMomoAccountName(saved.momoAccountName);
+      setMomoNumber(saved.momoNumber);
+      setBankAccountName(saved.bankAccountName);
+      setBankAccountNumber(saved.bankAccountNumber);
+    }
+    setHydrated(true);
+  }, []);
 
   const hasMobileMoney = payoutMethods.includes("Mobile Money");
   const hasBank = payoutMethods.includes("Bank Transfer");
+
+  if (!hydrated) {
+    return null;
+  }
 
   return (
     <OnboardingStepPage
@@ -42,6 +66,18 @@ export default function PayoutPage() {
         }
         return true;
       }}
+      onSave={(form) => {
+        const formData = new FormData(form);
+        saveOnboardingStepData("payout", {
+          payoutMethods,
+          mobileMoneyNetwork,
+          bankName,
+          momoAccountName: String(formData.get("momoAccountName") || "").trim(),
+          momoNumber: String(formData.get("momoNumber") || "").trim(),
+          bankAccountName: String(formData.get("bankAccountName") || "").trim(),
+          bankAccountNumber: String(formData.get("bankAccountNumber") || "").trim(),
+        });
+      }}
     >
       <div>
         <label className="mb-3 block text-sm font-semibold tracking-wide text-munity-muted">
@@ -66,6 +102,7 @@ export default function PayoutPage() {
                 name="momoAccountName"
                 placeholder="Ama Mensah"
                 className="input-field"
+                defaultValue={momoAccountName}
                 required={hasMobileMoney}
               />
             </Field>
@@ -83,6 +120,7 @@ export default function PayoutPage() {
               name="momoNumber"
               placeholder="024 123 4567"
               className="input-field"
+              defaultValue={momoNumber}
               required={hasMobileMoney}
             />
           </Field>
@@ -98,6 +136,7 @@ export default function PayoutPage() {
                 name="bankAccountName"
                 placeholder="Ama Mensah"
                 className="input-field"
+                defaultValue={bankAccountName}
                 required={hasBank}
               />
             </Field>
@@ -115,6 +154,7 @@ export default function PayoutPage() {
               name="bankAccountNumber"
               placeholder="1234567890"
               className="input-field"
+              defaultValue={bankAccountNumber}
               required={hasBank}
             />
           </Field>

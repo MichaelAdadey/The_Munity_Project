@@ -4,17 +4,21 @@ import { routes } from "@/lib/routes";
 
 const platformLinks = [
   { label: "Home", href: routes.home },
-  { label: "Communities", href: routes.signup },
-  { label: "Resources", href: routes.home },
-  { label: "Therapy", href: routes.login },
+  { label: "Communities", href: routes.communities },
+  { label: "Resources", href: routes.resources },
+  { label: "Therapy", href: routes.therapy },
 ];
 const supportLinks = [
-  { label: "Emergency Support", href: "#", highlight: true },
-  { label: "Help Center", href: "#" },
-  { label: "Community Guidelines", href: "#" },
-  { label: "Safety Tools", href: "#" },
+  { label: "Emergency Support", href: routes.emergency, highlight: true },
+  { label: "Help Center", href: routes.help },
+  { label: "Community Guidelines", href: routes.help },
+  { label: "Safety Tools", href: routes.emergency },
 ];
-const legalLinks = ["Privacy Policy", "Terms of Service", "Cookie Policy"];
+const legalLinks = [
+  { label: "Privacy Policy", href: routes.privacy },
+  { label: "Terms of Service", href: routes.terms },
+  { label: "Cookie Policy", href: "#" },
+];
 
 export function LandingFooter() {
   return (
@@ -62,7 +66,7 @@ export function LandingFooter() {
         <div className="grid gap-8 sm:grid-cols-3">
           <FooterColumn title="Platform" links={platformLinks} />
           <FooterColumn title="Support" links={supportLinks} />
-          <FooterColumn title="Legal" links={legalLinks.map((l) => ({ label: l, href: "#" }))} />
+          <FooterColumn title="Legal" links={legalLinks} />
         </div>
       </div>
 

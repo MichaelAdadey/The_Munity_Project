@@ -4,13 +4,16 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  Clock3,
+  Lock,
+  RefreshCw,
 } from "lucide-react";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import type { OnboardingStepId } from "@/lib/routes";
 
+export type ApplicationTabId = OnboardingStepId | "review";
+
 const applicationSteps: {
-  id: OnboardingStepId | "review";
+  id: ApplicationTabId;
   label: string;
 }[] = [
   { id: "basic-info", label: "Basic Information" },
@@ -20,7 +23,15 @@ const applicationSteps: {
   { id: "review", label: "Review in Progress" },
 ];
 
-export function CredentialVerificationSidebar() {
+interface CredentialVerificationSidebarProps {
+  activeTab: ApplicationTabId;
+  onSelectTab: (tab: ApplicationTabId) => void;
+}
+
+export function CredentialVerificationSidebar({
+  activeTab,
+  onSelectTab,
+}: CredentialVerificationSidebarProps) {
   const { isStepComplete, progressPercent } = useOnboardingProgress();
 
   return (
@@ -41,39 +52,49 @@ export function CredentialVerificationSidebar() {
       <nav className="flex flex-col gap-2">
         {applicationSteps.map((step) => {
           if (step.id === "review") {
+            const isActive = activeTab === "review";
             return (
-              <div
+              <button
                 key={step.label}
-                className="flex items-center gap-3 rounded-xl border border-munity-green/20 bg-munity-divider px-4 py-3"
+                type="button"
+                onClick={() => onSelectTab("review")}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
+                  isActive
+                    ? "border border-munity-green/20 bg-munity-divider"
+                    : "hover:bg-white/50"
+                }`}
               >
-                <Clock3 className="size-4 text-munity-green" />
+                <RefreshCw className="size-4 text-munity-green" />
                 <span className="text-base text-munity-green">{step.label}</span>
-              </div>
+              </button>
             );
           }
 
           if (isStepComplete(step.id)) {
+            const isActive = activeTab === step.id;
             return (
-              <div
+              <button
                 key={step.label}
-                className="flex items-center gap-3 rounded-xl bg-munity-lime px-4 py-3"
+                type="button"
+                onClick={() => onSelectTab(step.id)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
+                  isActive ? "bg-munity-lime ring-2 ring-munity-green/20" : "bg-munity-lime/70 hover:bg-munity-lime"
+                }`}
               >
                 <span className="flex size-5 items-center justify-center rounded-full bg-munity-green text-white">
                   <Check className="size-3" strokeWidth={3} />
                 </span>
                 <span className="text-base text-munity-olive-text">{step.label}</span>
-              </div>
+              </button>
             );
           }
 
           return (
             <div
               key={step.label}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 text-munity-muted"
+              className="flex items-center gap-3 rounded-xl px-4 py-3 text-munity-muted/40"
             >
-              <span className="flex size-5 items-center justify-center rounded-full bg-munity-divider text-xs font-medium">
-                {applicationSteps.findIndex((item) => item.id === step.id) + 1}
-              </span>
+              <Lock className="size-4 shrink-0" />
               <span className="text-base">{step.label}</span>
             </div>
           );

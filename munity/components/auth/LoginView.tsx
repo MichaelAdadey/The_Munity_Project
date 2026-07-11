@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
@@ -9,7 +8,9 @@ import { signIn, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
+import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
 
 function GoogleIcon() {
@@ -74,6 +75,7 @@ function AuthField({
   icon: Icon,
   name,
   autoComplete,
+  defaultValue,
 }: {
   label: string;
   id: string;
@@ -82,6 +84,7 @@ function AuthField({
   icon: React.ElementType;
   name: string;
   autoComplete?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -96,6 +99,7 @@ function AuthField({
           type={type}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          defaultValue={defaultValue}
           required
           className="auth-input"
         />
@@ -104,28 +108,10 @@ function AuthField({
   );
 }
 
-function isSupabaseConfiguredClient() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
-}
-
 export function LoginView() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction] = useActionState<AuthState, FormData>(signIn, undefined);
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (!isSupabaseConfiguredClient()) {
-      event.preventDefault();
-      const form = event.currentTarget;
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-      router.push("/home");
-    }
-  }
+  const demoUser = getMockAccountByRole("user");
 
   return (
     <AuthShell
@@ -138,6 +124,20 @@ export function LoginView() {
           >
             Create Account
           </Link>
+          {" · "}
+          <Link
+            href={routes.therapistLogin}
+            className="text-sm font-bold tracking-[0.14px] text-munity-green hover:underline"
+          >
+            Therapist
+          </Link>
+          {" · "}
+          <Link
+            href={routes.adminLogin}
+            className="text-sm font-bold tracking-[0.14px] text-munity-green hover:underline"
+          >
+            Admin
+          </Link>
         </p>
       }
     >
@@ -147,6 +147,8 @@ export function LoginView() {
           subtitle="Continue your journey with Munity"
         />
 
+        <MockCredentialsHint role="user" />
+
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-[41px] pb-[41px] pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
             <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800">
@@ -155,7 +157,7 @@ export function LoginView() {
             </div>
           ) : null}
 
-          <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form action={formAction} className="flex flex-col gap-6">
             <AuthField
               label="Email Address"
               id="email"
@@ -164,6 +166,7 @@ export function LoginView() {
               placeholder="name@example.com"
               icon={Mail}
               autoComplete="email"
+              defaultValue={demoUser.email}
             />
 
             <div className="flex flex-col gap-2">
@@ -189,6 +192,7 @@ export function LoginView() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  defaultValue={demoUser.password}
                   required
                   className="auth-input pr-12"
                 />

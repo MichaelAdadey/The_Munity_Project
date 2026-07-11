@@ -1,14 +1,17 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { findMockAccount, getMockAccountByRole } from '@/lib/mock-credentials'
+import { clearMockSession, setMockSession } from '@/lib/mock-session'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { createClient } from '@/lib/supabase/server'
+import { routes } from '@/lib/routes'
 
 export type AuthState = { error?: string } | undefined
 
 /**
  * Email + password sign in.
- * Falls back to a direct redirect when Supabase is not configured yet,
+ * Falls back to mock credentials when Supabase is not configured yet,
  * so the preview is navigable without a backend.
  */
 export async function signIn(
@@ -23,7 +26,15 @@ export async function signIn(
   }
 
   if (!isSupabaseConfigured()) {
-    redirect('/home')
+    const account = findMockAccount(email, password)
+    if (!account || account.role !== 'user') {
+      return {
+        error:
+          'Invalid member credentials. Use alex.rivera@munity.app / User1234!',
+      }
+    }
+    await setMockSession(account)
+    redirect(account.redirectTo)
   }
 
   const supabase = await createClient()
@@ -56,6 +67,12 @@ export async function signUp(
   const fullName = `${firstName} ${lastName}`
 
   if (!isSupabaseConfigured()) {
+    const account = getMockAccountByRole('user')
+    await setMockSession({
+      ...account,
+      name: fullName,
+      email: email.trim().toLowerCase() || account.email,
+    })
     redirect('/home')
   }
 
@@ -79,6 +96,7 @@ export async function signUp(
  */
 export async function signInWithGoogle(): Promise<void> {
   if (!isSupabaseConfigured()) {
+    await setMockSession(getMockAccountByRole('user'))
     redirect('/home')
   }
 
@@ -97,6 +115,7 @@ export async function signInWithGoogle(): Promise<void> {
  * Sign out and return to the landing page.
  */
 export async function signOut() {
+  await clearMockSession()
   if (isSupabaseConfigured()) {
     const supabase = await createClient()
     await supabase.auth.signOut()

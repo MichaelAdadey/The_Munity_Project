@@ -8,11 +8,28 @@ interface RangeFieldProps {
   min?: number;
   max?: number;
   defaultValue?: number;
+  value?: number;
+  onChange?: (value: number) => void;
 }
 
-export function RangeField({ label, min = 0, max = 20, defaultValue = 5 }: RangeFieldProps) {
-  const [value, setValue] = useState(defaultValue);
+export function RangeField({
+  label,
+  min = 0,
+  max = 20,
+  defaultValue = 5,
+  value: controlledValue,
+  onChange,
+}: RangeFieldProps) {
+  const [internalValue, setInternalValue] = useState(defaultValue);
+  const value = controlledValue ?? internalValue;
   const percent = ((value - min) / (max - min)) * 100;
+
+  function setValue(next: number) {
+    if (controlledValue === undefined) {
+      setInternalValue(next);
+    }
+    onChange?.(next);
+  }
 
   return (
     <div>

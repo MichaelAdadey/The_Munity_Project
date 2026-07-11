@@ -1,0 +1,354 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
+import {
+  seedBookings,
+  seedChats,
+  seedCommunities,
+  seedFeedPosts,
+  seedMemberProfile,
+  seedMemberships,
+  seedMessages,
+  seedReports,
+  seedSavedPostIds,
+  seedSavedResourceIds,
+  seedSessionNotes,
+  seedSettings,
+  seedSupportedPostIds,
+  seedTherapists,
+  type Booking,
+  type ChatMessage,
+  type ChatThread,
+  type CommunityRecord,
+  type FeedPost,
+  type MemberProfile,
+  type MemberSettingsState,
+  type ModerationReport,
+  type SessionNoteRecord,
+  type TherapistRecord,
+} from "@/lib/mock-db";
+
+const STORAGE_KEY = "munity-mock-store-v1";
+
+export type MockStoreState = {
+  profile: MemberProfile;
+  posts: FeedPost[];
+  communities: CommunityRecord[];
+  memberships: string[];
+  therapists: TherapistRecord[];
+  bookings: Booking[];
+  chats: ChatThread[];
+  messages: Record<string, ChatMessage[]>;
+  reports: ModerationReport[];
+  sessionNotes: SessionNoteRecord[];
+  savedPostIds: string[];
+  savedResourceIds: string[];
+  supportedPostIds: string[];
+  moodToday: string | null;
+  settings: MemberSettingsState;
+};
+
+function createSeedState(): MockStoreState {
+  return {
+    profile: { ...seedMemberProfile },
+    posts: structuredClone(seedFeedPosts),
+    communities: structuredClone(seedCommunities),
+    memberships: [...seedMemberships],
+    therapists: structuredClone(seedTherapists),
+    bookings: structuredClone(seedBookings),
+    chats: structuredClone(seedChats),
+    messages: structuredClone(seedMessages),
+    reports: structuredClone(seedReports),
+    sessionNotes: structuredClone(seedSessionNotes),
+    savedPostIds: [...seedSavedPostIds],
+    savedResourceIds: [...seedSavedResourceIds],
+    supportedPostIds: [...seedSupportedPostIds],
+    moodToday: null,
+    settings: { ...seedSettings },
+  };
+}
+
+let state: MockStoreState = createSeedState();
+let hydrated = false;
+const listeners = new Set<() => void>();
+
+function emit() {
+  listeners.forEach((listener) => listener());
+}
+
+function persist() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore quota errors in preview
+  }
+}
+
+function hydrate() {
+  if (hydrated || typeof window === "undefined") return;
+  hydrated = true;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as Partial<MockStoreState>;
+    state = {
+      ...createSeedState(),
+      ...parsed,
+      communities: seedCommunities,
+      therapists: seedTherapists,
+      profile: { ...seedMemberProfile, ...(parsed.profile ?? {}) },
+      settings: { ...seedSettings, ...(parsed.settings ?? {}) },
+    };
+  } catch {
+    state = createSeedState();
+  }
+}
+
+function setState(updater: (prev: MockStoreState) => MockStoreState) {
+  hydrate();
+  state = updater(state);
+  persist();
+  emit();
+}
+
+function getSnapshot(): MockStoreState {
+  hydrate();
+  return state;
+}
+
+function getServerSnapshot(): MockStoreState {
+  return createSeedState();
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export function useMockStore(): MockStoreState {
+  return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+export const mockStore = {
+  getState: getSnapshot,
+  reset() {
+    state = createSeedState();
+    persist();
+    emit();
+  },
+  setMood(mood: string | null) {
+    setState((prev) => ({ ...prev, moodToday: mood }));
+  },
+  createPost(input: {
+    content: string;
+    anonymous?: boolean;
+    feeling?: string;
+    communityId?: string | null;
+  }) {
+    const community = input.communityId
+      ? state.communities.find((c) => c.id === input.communityId)
+      : null;
+    const post: FeedPost = {
+      id: `p-${Date.now()}`,
+      anonymous: Boolean(input.anonymous),
+      author: input.anonymous ? "Anonymous Member" : state.profile.fullName,
+      authorId: "me",
+      avatar: input.anonymous ? undefined : state.profile.avatar,
+      time: "Just now",
+      feeling: input.feeling ?? "Feeling Open",
+      content: input.content.trim(),
+      supports: 0,
+      comments: 0,
+      image: null,
+      communityId: community?.id ?? null,
+      communityName: community?.name ?? null,
+      accent: Boolean(input.anonymous),
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({ ...prev, posts: [post, ...prev.posts] }));
+    return post;
+  },
+  toggleSupport(postId: string) {
+    setState((prev) => {
+      const supported = prev.supportedPostIds.includes(postId);
+      return {
+        ...prev,
+        supportedPostIds: supported
+          ? prev.supportedPostIds.filter((id) => id !== postId)
+          : [...prev.supportedPostIds, postId],
+        posts: prev.posts.map((post) =>
+          post.id === postId
+            ? {
+                ...post,
+                supports: Math.max(0, post.supports + (supported ? -1 : 1)),
+              }
+            : post,
+        ),
+      };
+    });
+  },
+  toggleSavedPost(postId: string) {
+    setState((prev) => ({
+      ...prev,
+      savedPostIds: prev.savedPostIds.includes(postId)
+        ? prev.savedPostIds.filter((id) => id !== postId)
+        : [...prev.savedPostIds, postId],
+    }));
+  },
+  toggleSavedResource(resourceId: string) {
+    setState((prev) => ({
+      ...prev,
+      savedResourceIds: prev.savedResourceIds.includes(resourceId)
+        ? prev.savedResourceIds.filter((id) => id !== resourceId)
+        : [...prev.savedResourceIds, resourceId],
+    }));
+  },
+  toggleMembership(communityId: string) {
+    setState((prev) => {
+      const joined = prev.memberships.includes(communityId);
+      const communities = prev.communities.map((community) => {
+        if (community.id !== communityId) return community;
+        const memberCount = community.memberCount + (joined ? -1 : 1);
+        return {
+          ...community,
+          memberCount,
+          membersLabel: formatMemberCount(memberCount),
+        };
+      });
+      return {
+        ...prev,
+        communities,
+        memberships: joined
+          ? prev.memberships.filter((id) => id !== communityId)
+          : [...prev.memberships, communityId],
+        profile: {
+          ...prev.profile,
+          groupCount: Math.max(
+            0,
+            prev.profile.groupCount + (joined ? -1 : 1),
+          ),
+        },
+      };
+    });
+  },
+  bookSession(therapistId: string, when?: string) {
+    const therapist = state.therapists.find((t) => t.id === therapistId);
+    if (!therapist) return null;
+    const booking: Booking = {
+      id: `b-${Date.now()}`,
+      therapistId,
+      therapistName: therapist.name,
+      when: when ?? therapist.nextAvailable,
+      status: "confirmed",
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({ ...prev, bookings: [booking, ...prev.bookings] }));
+    return booking;
+  },
+  sendMessage(chatId: string, content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const message: ChatMessage = {
+      id: `m-${Date.now()}`,
+      kind: "text",
+      from: "me",
+      content: trimmed,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setState((prev) => {
+      const thread = prev.messages[chatId] ?? [];
+      return {
+        ...prev,
+        messages: { ...prev.messages, [chatId]: [...thread, message] },
+        chats: prev.chats.map((chat) =>
+          chat.id === chatId
+            ? { ...chat, preview: trimmed, time: "now", unread: false }
+            : chat,
+        ),
+      };
+    });
+  },
+  markChatRead(chatId: string) {
+    setState((prev) => ({
+      ...prev,
+      chats: prev.chats.map((chat) =>
+        chat.id === chatId ? { ...chat, unread: false } : chat,
+      ),
+    }));
+  },
+  resolveReport(
+    reportId: string,
+    resolution: string,
+    nextStatus: ModerationReport["status"] = "Resolved",
+  ) {
+    setState((prev) => ({
+      ...prev,
+      reports: prev.reports.map((report) =>
+        report.id === reportId
+          ? {
+              ...report,
+              status: nextStatus,
+              resolution,
+              resolvedAt: new Date().toISOString(),
+              urgent: false,
+            }
+          : report,
+      ),
+    }));
+  },
+  updateReportStatus(reportId: string, status: ModerationReport["status"]) {
+    setState((prev) => ({
+      ...prev,
+      reports: prev.reports.map((report) =>
+        report.id === reportId
+          ? { ...report, status, urgent: status === "Pending Urgent" }
+          : report,
+      ),
+    }));
+  },
+  addSessionNote(note: Omit<SessionNoteRecord, "id" | "createdAt">) {
+    const record: SessionNoteRecord = {
+      ...note,
+      id: `n-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({
+      ...prev,
+      sessionNotes: [record, ...prev.sessionNotes],
+    }));
+    return record;
+  },
+  updateSettings(patch: Partial<MemberSettingsState>) {
+    setState((prev) => ({
+      ...prev,
+      settings: { ...prev.settings, ...patch },
+      profile:
+        patch.displayName !== undefined
+          ? { ...prev.profile, fullName: patch.displayName }
+          : prev.profile,
+    }));
+  },
+  updateProfile(patch: Partial<MemberProfile>) {
+    setState((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, ...patch },
+    }));
+  },
+};
+
+function formatMemberCount(count: number) {
+  if (count >= 1000) {
+    const value = count / 1000;
+    return `${value % 1 === 0 ? value.toFixed(0) : value.toFixed(1)}k members`;
+  }
+  return `${count} members`;
+}
+
+export function getCommunityBySlug(slug: string) {
+  return getSnapshot().communities.find((c) => c.slug === slug) ?? null;
+}
+
+export function getTherapistById(id: string) {
+  return getSnapshot().therapists.find((t) => t.id === id) ?? null;
+}

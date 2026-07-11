@@ -2,6 +2,8 @@ import type { assets } from "@/lib/assets";
 
 export const routes = {
   home: "/",
+  memberHome: "/home",
+  memberDashboard: "/dashboard",
   login: "/login",
   therapistLogin: "/therapistlogin",
   signup: "/signup",
@@ -11,8 +13,32 @@ export const routes = {
   therapistProfile: "/therapistprofile",
   therapistPatients: "/therapistpatients",
   therapistClinicalNotes: "/therapistclinicalnotes",
+  therapistAppointments: "/therapistappointments",
+  therapistAvailability: "/therapistavailability",
+  therapistSettings: "/therapistsettings",
   therapistAnalytics: "/therapistanalytics",
+  therapistFiles: "/therapistfiles",
+  therapistCarePlan: "/therapistcareplan",
   therapistCredentialAuth: "/therapistcredentialauth",
+  resources: "/resources",
+  messages: "/messages",
+  saved: "/saved",
+  settings: "/settings",
+  profile: "/profile",
+  emergency: "/emergency",
+  communities: "/Communities",
+  therapy: "/Therapy",
+  privacy: "/privacy",
+  terms: "/terms",
+  help: "/help",
+  admin: "/admin",
+  adminLogin: "/admin/login",
+  adminModeration: "/admin/moderation",
+  adminCommunities: "/admin/communities",
+  adminGrowth: "/admin/growth",
+  adminTherapy: "/admin/therapy",
+  adminResources: "/admin/resources",
+  adminSettings: "/admin/settings",
   therapistOnboarding: {
     basicInfo: "/therapistonboarding/basic-info",
     credentials: "/therapistonboarding/credentials",
@@ -20,6 +46,14 @@ export const routes = {
     payout: "/therapistonboarding/payout",
   },
 } as const;
+
+export function communityPath(slug: string) {
+  return `${routes.communities}/${slug}`;
+}
+
+export function therapyPath(id: string) {
+  return `${routes.therapy}/${id}`;
+}
 
 export type OnboardingStepId = "basic-info" | "credentials" | "specialties" | "payout";
 
@@ -111,11 +145,19 @@ export function patientRoutes(slug: PatientSlug) {
   return {
     overview: `/therapistpatients/${slug}`,
     clinicalNotes: `/therapistpatients/${slug}/clinical-notes`,
+    newSessionNote: `/therapistpatients/${slug}/clinical-notes/new`,
     progress: `/therapistpatients/${slug}/progress`,
+    files: `/therapistpatients/${slug}/files`,
+    carePlan: `/therapistpatients/${slug}/care-plan`,
   };
 }
 
-export type PatientNavSection = "Overview" | "Clinical Notes" | "Progress";
+export type PatientNavSection =
+  | "Overview"
+  | "Clinical Notes"
+  | "Progress"
+  | "Files"
+  | "Care Plan";
 
 export function patientNavHref(slug: PatientSlug, section: PatientNavSection): string {
   const paths = patientRoutes(slug);
@@ -126,6 +168,10 @@ export function patientNavHref(slug: PatientSlug, section: PatientNavSection): s
       return paths.clinicalNotes;
     case "Progress":
       return paths.progress;
+    case "Files":
+      return paths.files;
+    case "Care Plan":
+      return paths.carePlan;
   }
 }
 

@@ -84,39 +84,10 @@ export type Message = {
   created_at: string
 }
 
-export type ResourceFormat =
-  | 'article'
-  | 'video'
-  | 'guide'
-  | 'meditation'
-  | 'journal'
-  | 'exercise'
-
-export type ResourceCategory =
-  | 'Anxiety'
-  | 'Depression'
-  | 'Stress'
-  | 'Grief'
-  | 'Relationships'
-  | 'Addiction'
-
 export type Resource = {
   id: string
   title: string
-  type: ResourceFormat
-  category: ResourceCategory
+  type: 'meditation' | 'article' | 'journal' | 'exercise'
   description: string
   duration: string | null
-  image_url: string
-  featured?: boolean
-  action_label?: string
-}
-
-export type SavedResource = Pick<Resource, 'id' | 'title' | 'type'>
-
-export type TrendingTopic = {
-  id: string
-  rank: number
-  title: string
-  reads: string
 }

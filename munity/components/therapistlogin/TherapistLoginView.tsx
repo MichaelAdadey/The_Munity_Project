@@ -1,7 +1,6 @@
 "use client";
 
-import { useActionState, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
@@ -13,7 +12,9 @@ import {
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
+import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
+import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
 
 function GoogleIcon() {
@@ -78,6 +79,7 @@ function AuthField({
   icon: Icon,
   name,
   autoComplete,
+  defaultValue,
 }: {
   label: string;
   id: string;
@@ -86,6 +88,7 @@ function AuthField({
   icon: React.ElementType;
   name: string;
   autoComplete?: string;
+  defaultValue?: string;
 }) {
   return (
     <div className="flex flex-col gap-2">
@@ -100,6 +103,7 @@ function AuthField({
           type={type}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          defaultValue={defaultValue}
           required
           className="auth-input"
         />
@@ -109,24 +113,12 @@ function AuthField({
 }
 
 export function TherapistLoginView() {
-  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction] = useActionState<TherapistLoginState, FormData>(
     signInAsTherapist,
     undefined,
   );
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (!isSupabaseConfiguredClient()) {
-      event.preventDefault();
-      const form = event.currentTarget;
-      if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
-      }
-      router.push(routes.therapistDashboard);
-    }
-  }
+  const demoTherapist = getMockAccountByRole("therapist");
 
   return (
     <AuthShell
@@ -134,19 +126,35 @@ export function TherapistLoginView() {
         <p className="text-base text-munity-muted">
           New to Munity?{" "}
           <Link
-            href={routes.therapistSignup}
+            href={routes.therapistOnboarding.basicInfo}
             className="text-sm font-bold tracking-wide text-munity-green hover:underline"
           >
-            Create Account
+            Join as a therapist
+          </Link>
+          {" · "}
+          <Link
+            href={routes.login}
+            className="text-sm font-bold tracking-wide text-munity-green hover:underline"
+          >
+            Member
+          </Link>
+          {" · "}
+          <Link
+            href={routes.adminLogin}
+            className="text-sm font-bold tracking-wide text-munity-green hover:underline"
+          >
+            Admin
           </Link>
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-8">
+      <div className="flex w-full max-w-[480px] flex-col gap-6">
         <AuthBrandHeader
           title="Welcome Back"
-          subtitle="Continue your journey with Munity"
+          subtitle="Sign in with your approved therapist credentials"
         />
+
+        <MockCredentialsHint role="therapist" />
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10 py-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
@@ -156,7 +164,7 @@ export function TherapistLoginView() {
             </div>
           ) : null}
 
-          <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form action={formAction} className="flex flex-col gap-6">
             <AuthField
               label="Email Address"
               id="email"
@@ -165,6 +173,7 @@ export function TherapistLoginView() {
               placeholder="name@example.com"
               icon={Mail}
               autoComplete="email"
+              defaultValue={demoTherapist.email}
             />
 
             <div className="flex flex-col gap-2">
@@ -187,6 +196,7 @@ export function TherapistLoginView() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  defaultValue={demoTherapist.password}
                   required
                   className="auth-input pr-12"
                 />
@@ -223,11 +233,5 @@ export function TherapistLoginView() {
         </div>
       </div>
     </AuthShell>
-  );
-}
-
-function isSupabaseConfiguredClient() {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 }

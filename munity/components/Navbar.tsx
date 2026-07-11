@@ -1,41 +1,24 @@
-"use client"
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import profile from "@/public/images/profile.jpg"
-import React from "react";
+import { Bell } from "lucide-react";
+import profile from "@/public/images/profile.jpg";
 
+/** Lightweight top bar without page links — navigation lives in MemberAppShell sidebar. */
 const Navbar = () => {
-  const pageLink = [
-    { pageName: "Home", pageLink: "/home" },
-    { pageName: "Communities", pageLink: "/Communities" },
-    { pageName: "Resources", pageLink: "/resources" },
-    { pageName: "Therapy", pageLink: "/Therapy" },
-  ];
-  
-  const pathname = usePathname();
-
   return (
-    <div className="flex justify-between shadow-sm p-4">
-      <div className="space-x-10 flex">
-        <div className="font-bold text-[#3E5219] text-[24px] font">Munity</div>
-        <div className="flex">
-          <ul className="text-[14px] space-x-6 flex items-center text-[#3E5219] ">
-            {pageLink.map((item) => (
-              <Link className="" key={item.pageName} href={`${item.pageLink}`}>
-                <li className={`pb-1 ${pathname === item.pageLink ? "border-b-2 border-[#3E5219]" : ""}`}>{item.pageName}</li>
-              </Link>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div className="flex space-x-5 px-3">
-        <div>not</div>
-        <div className="h-7.5 w-7.5">
-            <Image src={profile} alt="Profile" className="rounded-full" />
-        </div>
+    <div className="flex justify-between p-4 shadow-sm">
+      <Link href="/home" className="text-[24px] font-bold text-[#3E5219]">
+        Munity
+      </Link>
+      <div className="flex items-center space-x-5 px-3">
+        <button type="button" aria-label="Notifications">
+          <Bell className="size-5 text-[#3E5219]" />
+        </button>
+        <Link href="/profile" className="relative size-7.5 overflow-hidden rounded-full">
+          <Image src={profile} alt="Profile" fill className="object-cover" />
+        </Link>
       </div>
     </div>
   );
