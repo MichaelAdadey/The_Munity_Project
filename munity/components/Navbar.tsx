@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 import profile from "@/public/images/profile.jpg";
 
-/** Lightweight top bar without page links — navigation lives in MemberAppShell sidebar. */
+/** Lightweight top bar — navigation lives in MemberAppShell sidebar. */
 const Navbar = () => {
   return (
     <div className="flex justify-between p-4 shadow-sm">
