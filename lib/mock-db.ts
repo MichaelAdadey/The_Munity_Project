@@ -135,6 +135,7 @@ export type MemberProfile = {
   title: string;
   bio: string;
   avatar: string;
+  cover: string;
   email: string;
   dayStreak: number;
   groupCount: number;
@@ -146,6 +147,7 @@ export const seedMemberProfile: MemberProfile = {
   title: "Daily Mindful Warrior",
   bio: "Navigating the journey to nurtured stability. Passionate about peer support, cognitive wellness, and early morning meditation.",
   avatar: "/images/profile/avatar.jpg",
+  cover: "/images/profile/cover.png",
   email: "alex.rivera@munity.app",
   dayStreak: 12,
   groupCount: 4,

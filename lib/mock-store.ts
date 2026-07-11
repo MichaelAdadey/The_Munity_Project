@@ -133,7 +133,7 @@ function hydrate() {
       ...parsed,
       communities: seedCommunities,
       therapists: seedTherapists,
-      profile: { ...seedMemberProfile, ...(parsed.profile ?? {}) },
+      profile: { ...seedMemberProfile, ...(parsed.profile ?? {}), cover: parsed.profile?.cover ?? seedMemberProfile.cover, avatar: parsed.profile?.avatar ?? seedMemberProfile.avatar },
       settings: { ...seedSettings, ...(parsed.settings ?? {}) },
       commentsByPost: parsed.commentsByPost ?? createSeedState().commentsByPost,
     };

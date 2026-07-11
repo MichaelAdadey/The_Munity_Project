@@ -1,16 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useRef, useState, type ChangeEvent } from "react";
 import { motion } from "framer-motion";
 import {
+  Camera,
   ChevronDown,
   Flame,
   Heart,
+  ImageIcon,
   MapPin,
   MessageCircle,
   Pencil,
   Share2,
+  Upload,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
@@ -26,6 +29,57 @@ import {
 import { mockStore, useMockStore } from "@/lib/mock-store";
 
 type ProfileTab = "My Posts" | "Communities" | "Saved Resources";
+type PhotoTarget = "avatar" | "cover";
+
+const avatarLibrary = [
+  { id: "avatar", src: "/images/profile/avatar.jpg", label: "Default" },
+  { id: "support-1", src: "/images/profile/support-1.jpg", label: "Warm light" },
+  { id: "support-2", src: "/images/profile/support-2.jpg", label: "Soft focus" },
+  { id: "support-3", src: "/images/profile/support-3.jpg", label: "Garden" },
+  { id: "support-4", src: "/images/profile/support-4.jpg", label: "Calm" },
+  { id: "elena", src: "/images/home-feed/elena.jpg", label: "Portrait" },
+];
+
+const coverLibrary = [
+  { id: "cover", src: "/images/profile/cover.png", label: "Meadow" },
+  { id: "forest", src: "/images/home-feed/forest-walk.png", label: "Forest walk" },
+  { id: "stones", src: "/images/messages/media-stones.jpg", label: "Stones" },
+  { id: "mindfulness", src: "/images/messages/mindfulness.jpg", label: "Mindfulness" },
+  { id: "anxiety", src: "/images/resources/card-anxiety.png", label: "Soft green" },
+  { id: "featured", src: "/images/resources/featured.png", label: "Horizon" },
+];
+
+function ProfileMedia({
+  src,
+  alt,
+  className,
+  sizes,
+  priority,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes?: string;
+  priority?: boolean;
+}) {
+  if (src.startsWith("data:")) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img src={src} alt={alt} className={`absolute inset-0 size-full object-cover ${className ?? ""}`} />
+    );
+  }
+
+  return (
+    <Image
+      src={src}
+      alt={alt}
+      fill
+      className={className ?? "object-cover"}
+      sizes={sizes}
+      priority={priority}
+    />
+  );
+}
 
 const moodWeek = [
   { day: "Mon", label: "Calm", value: 55 },
@@ -125,10 +179,15 @@ export function MemberProfileView() {
   const [tab, setTab] = useState<ProfileTab>("My Posts");
   const [view, setView] = useState("Weekly View");
   const [editOpen, setEditOpen] = useState(false);
+  const [photoTarget, setPhotoTarget] = useState<PhotoTarget | null>(null);
   const [fullName, setFullName] = useState(store.profile.fullName);
   const [username, setUsername] = useState(store.profile.username);
   const [title, setTitle] = useState(store.profile.title);
   const [bio, setBio] = useState(store.profile.bio);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const coverSrc = store.profile.cover || "/images/profile/cover.png";
+  const photoLibrary = photoTarget === "cover" ? coverLibrary : avatarLibrary;
 
   function openEdit() {
     setFullName(store.profile.fullName);
@@ -152,33 +211,86 @@ export function MemberProfileView() {
     flash("Profile updated");
   }
 
+  function applyPhoto(src: string) {
+    if (!photoTarget) return;
+    if (photoTarget === "avatar") {
+      mockStore.updateProfile({ avatar: src });
+      flash("Profile photo updated");
+    } else {
+      mockStore.updateProfile({ cover: src });
+      flash("Cover photo updated");
+    }
+    setPhotoTarget(null);
+  }
+
+  function onPhotoFile(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file || !photoTarget) return;
+    if (!file.type.startsWith("image/")) {
+      flash("Please choose an image file");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") applyPhoto(reader.result);
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <MemberAppShell>
+      <input
+        ref={photoInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={onPhotoFile}
+      />
       <motion.div initial="hidden" animate="show" variants={liveStagger} className="mx-auto flex max-w-[1280px] flex-col gap-8">
         {/* Profile hero */}
         <motion.section variants={liveFadeUp} className="overflow-hidden rounded-[20px] bg-[#e4e2e2] shadow-sm">
-          <div className="relative h-48 w-full md:h-64">
-            <Image
-              src="/images/profile/cover.png"
+          <div className="group relative h-48 w-full md:h-64">
+            <ProfileMedia
+              src={coverSrc}
               alt=""
-              fill
               className="object-cover"
               sizes="(max-width: 1280px) 100vw, 1280px"
               priority
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            <button
+              type="button"
+              onClick={() => setPhotoTarget("cover")}
+              className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-xl bg-black/45 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm transition hover:bg-black/60 md:opacity-0 md:group-hover:opacity-100"
+            >
+              <Camera className="size-3.5" />
+              Change cover
+            </button>
           </div>
 
           <div className="relative px-6 pb-6 pt-20">
             <div className="absolute left-6 top-0 -translate-y-1/2">
-              <div className="relative size-28 overflow-hidden rounded-full border-4 border-[#fbf9f8] bg-white shadow-xl md:size-32">
-                <Image
-                  src={store.profile.avatar}
-                  alt={store.profile.fullName}
-                  fill
-                  className="object-cover"
-                  sizes="128px"
-                />
+              <div className="group/avatar relative size-28 md:size-32">
+                <div className="relative size-full overflow-hidden rounded-full border-4 border-[#fbf9f8] bg-white shadow-xl">
+                  <ProfileMedia
+                    src={store.profile.avatar}
+                    alt={store.profile.fullName}
+                    className="object-cover"
+                    sizes="128px"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPhotoTarget("avatar")}
+                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-100 transition hover:bg-black/55 md:opacity-0 md:group-hover/avatar:opacity-100"
+                  aria-label="Change profile photo"
+                >
+                  <span className="inline-flex flex-col items-center gap-1 text-[10px] font-semibold tracking-wide">
+                    <Camera className="size-5" />
+                    Edit
+                  </span>
+                </button>
               </div>
             </div>
 
@@ -449,6 +561,30 @@ export function MemberProfileView() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditOpen(false);
+                  setPhotoTarget("avatar");
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
+              >
+                <Camera className="size-4" />
+                Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditOpen(false);
+                  setPhotoTarget("cover");
+                }}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
+              >
+                <ImageIcon className="size-4" />
+                Cover
+              </button>
+            </div>
             <label className="block space-y-1.5">
               <span className="text-xs font-semibold tracking-wide text-munity-muted">
                 Full name
@@ -506,6 +642,77 @@ export function MemberProfileView() {
               className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
             >
               Save changes
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={photoTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setPhotoTarget(null);
+        }}
+      >
+        <DialogContent
+          className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
+          showCloseButton
+        >
+          <DialogHeader>
+            <DialogTitle>
+              {photoTarget === "cover" ? "Change cover photo" : "Change profile photo"}
+            </DialogTitle>
+            <DialogDescription>
+              Upload from your device or pick a demo image for this preview.
+            </DialogDescription>
+          </DialogHeader>
+          <button
+            type="button"
+            onClick={() => photoInputRef.current?.click()}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+          >
+            <Upload className="size-4" />
+            Upload from device
+          </button>
+          <div className="grid grid-cols-3 gap-3">
+            {photoLibrary.map((item) => {
+              const selected =
+                photoTarget === "cover"
+                  ? coverSrc === item.src
+                  : store.profile.avatar === item.src;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => applyPhoto(item.src)}
+                  className={`overflow-hidden rounded-xl border-2 text-left transition ${
+                    selected
+                      ? "border-munity-green ring-2 ring-munity-green/20"
+                      : "border-transparent hover:border-munity-green/40"
+                  }`}
+                >
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      src={item.src}
+                      alt={item.label}
+                      fill
+                      className="object-cover"
+                      sizes="120px"
+                    />
+                  </div>
+                  <p className="bg-[#f7f6f2] px-2 py-1.5 text-[11px] font-medium text-munity-muted">
+                    {item.label}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+            <button
+              type="button"
+              onClick={() => setPhotoTarget(null)}
+              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+            >
+              Cancel
             </button>
           </DialogFooter>
         </DialogContent>
