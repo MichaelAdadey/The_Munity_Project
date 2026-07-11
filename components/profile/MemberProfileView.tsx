@@ -7,13 +7,11 @@ import {
   ChevronDown,
   Flame,
   Heart,
-  LogOut,
   MapPin,
   MessageCircle,
   Pencil,
   Share2,
 } from "lucide-react";
-import { signOut } from "@/app/(auth)/actions";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
 import { LivePulse, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
@@ -219,14 +217,6 @@ export function MemberProfileView() {
                   className="flex size-11 items-center justify-center rounded-xl bg-munity-lime text-munity-olive-text transition hover:brightness-95"
                 >
                   <Share2 className="size-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => signOut()}
-                  className="inline-flex h-11 items-center gap-2 rounded-xl border border-[#c5c8b8] bg-white px-5 text-sm font-semibold tracking-wide text-munity-muted transition hover:border-[#93000a]/30 hover:bg-[#ffdad6]/40 hover:text-[#93000a]"
-                >
-                  <LogOut className="size-3.5" />
-                  Log out
                 </button>
               </div>
             </div>
