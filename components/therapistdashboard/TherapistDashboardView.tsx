@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,6 +16,11 @@ import {
   Star,
   Video,
 } from "lucide-react";
+import {
+  TherapistSessionOverlays,
+  type TherapistSessionKind,
+  type TherapistSessionPatient,
+} from "@/components/therapist/TherapistSessionOverlays";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
@@ -63,7 +69,7 @@ const todaysSchedule = [
     typeIcon: Video,
     time: "02:00 PM – 02:50 PM",
     action: "Join Session",
-    actionHref: patientRoutes("alex-mercer").clinicalNotes,
+    kind: "video" as const,
     avatar: assets.avatars.alex,
   },
   {
@@ -73,7 +79,7 @@ const todaysSchedule = [
     typeIcon: MessageSquare,
     time: "04:30 PM – 05:00 PM",
     action: "Open Chat",
-    actionHref: patientRoutes("elena-rodriguez").overview,
+    kind: "chat" as const,
     avatar: assets.avatars.elena,
   },
 ] as const;
@@ -110,6 +116,24 @@ const statusDotClass = {
 
 export function TherapistDashboardView() {
   const { flash } = useLiveToast();
+  const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
+  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
+
+  function startSession(session: (typeof todaysSchedule)[number]) {
+    setActivePatient({
+      name: session.name,
+      patientId: session.patientId,
+      avatar: session.avatar,
+      time: session.time,
+      type: session.type,
+    });
+    setActiveKind(session.kind);
+    flash(
+      session.kind === "video"
+        ? `Joining video session with ${session.name}`
+        : `Opening chat with ${session.name}`,
+    );
+  }
 
   return (
     <TherapistAppShell
@@ -230,13 +254,13 @@ export function TherapistDashboardView() {
                     </div>
                   </div>
 
-                  <Link
-                    href={session.actionHref}
-                    onClick={() => flash(`${session.action} opened for ${session.name}`)}
+                  <button
+                    type="button"
+                    onClick={() => startSession(session)}
                     className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
                   >
                     {session.action}
-                  </Link>
+                  </button>
                 </motion.div>
               );
             })}
@@ -308,6 +332,15 @@ export function TherapistDashboardView() {
           </section>
         </aside>
       </div>
+
+      <TherapistSessionOverlays
+        patient={activePatient}
+        kind={activeKind}
+        onClose={() => {
+          setActivePatient(null);
+          setActiveKind(null);
+        }}
+      />
     </TherapistAppShell>
   );
 }

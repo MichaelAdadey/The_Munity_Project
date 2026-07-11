@@ -1,9 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Clock, MessageSquare, Search, Video } from "lucide-react";
+import {
+  TherapistSessionOverlays,
+  type TherapistSessionKind,
+  type TherapistSessionPatient,
+} from "@/components/therapist/TherapistSessionOverlays";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
@@ -20,7 +26,7 @@ const appointments = [
         typeIcon: Video,
         time: "02:00 PM – 02:50 PM",
         action: "Join Session",
-        href: patientRoutes("alex-mercer").clinicalNotes,
+        kind: "video" as const,
         avatar: assets.avatars.alex,
       },
       {
@@ -30,7 +36,7 @@ const appointments = [
         typeIcon: MessageSquare,
         time: "04:30 PM – 05:00 PM",
         action: "Open Chat",
-        href: patientRoutes("elena-rodriguez").overview,
+        kind: "chat" as const,
         avatar: assets.avatars.elena,
       },
     ],
@@ -64,6 +70,33 @@ const appointments = [
 
 export function TherapistAppointmentsView() {
   const { flash } = useLiveToast();
+  const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
+  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
+
+  function startLiveSession(session: {
+    name: string;
+    patientId: string;
+    avatar: string;
+    time: string;
+    type: string;
+    kind: TherapistSessionKind;
+    action: string;
+  }) {
+    setActivePatient({
+      name: session.name,
+      patientId: session.patientId,
+      avatar: session.avatar,
+      time: session.time,
+      type: session.type,
+    });
+    setActiveKind(session.kind);
+    flash(
+      session.kind === "video"
+        ? `Joining video session with ${session.name}`
+        : `Opening chat with ${session.name}`,
+    );
+  }
+
   return (
     <TherapistAppShell
       active="Appointments"
@@ -80,7 +113,13 @@ export function TherapistAppointmentsView() {
         </div>
       }
     >
-      <LiveTicker items={["Marcus completed pre-session check-in.", "Tomorrow’s calendar has two video sessions.", "A text consultation is waiting at 4:30 PM."]} />
+      <LiveTicker
+        items={[
+          "Marcus completed pre-session check-in.",
+          "Tomorrow’s calendar has two video sessions.",
+          "A text consultation is waiting at 4:30 PM.",
+        ]}
+      />
       <div className="flex flex-col gap-8">
         {appointments.map((group, groupIndex) => (
           <section
@@ -88,7 +127,10 @@ export function TherapistAppointmentsView() {
             className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)]"
           >
             <div className="border-b border-munity-input-border px-6 py-5">
-              <div className="flex items-center gap-3"><h2 className="text-xl font-semibold text-munity-text">{group.day}</h2><LivePulse label={`${group.items.length} sessions`} /></div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-munity-text">{group.day}</h2>
+                <LivePulse label={`${group.items.length} sessions`} />
+              </div>
             </div>
             <div>
               {group.items.map((session, index) => {
@@ -135,13 +177,33 @@ export function TherapistAppointmentsView() {
                       </div>
                     </div>
 
-                    <Link
-                      href={session.href}
-                      onClick={() => flash(`${session.action} opened for ${session.name}`)}
-                      className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
-                    >
-                      {session.action}
-                    </Link>
+                    {"kind" in session ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          startLiveSession({
+                            name: session.name,
+                            patientId: session.patientId,
+                            avatar: session.avatar,
+                            time: session.time,
+                            type: session.type,
+                            kind: session.kind,
+                            action: session.action,
+                          })
+                        }
+                        className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+                      >
+                        {session.action}
+                      </button>
+                    ) : (
+                      <Link
+                        href={session.href}
+                        onClick={() => flash(`${session.action} opened for ${session.name}`)}
+                        className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+                      >
+                        {session.action}
+                      </Link>
+                    )}
                   </motion.div>
                 );
               })}
@@ -149,6 +211,15 @@ export function TherapistAppointmentsView() {
           </section>
         ))}
       </div>
+
+      <TherapistSessionOverlays
+        patient={activePatient}
+        kind={activeKind}
+        onClose={() => {
+          setActivePatient(null);
+          setActiveKind(null);
+        }}
+      />
     </TherapistAppShell>
   );
 }
