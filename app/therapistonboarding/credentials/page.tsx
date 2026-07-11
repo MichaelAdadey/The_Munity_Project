@@ -23,6 +23,7 @@ export default function CredentialsPage() {
   const [yearsOfExperience, setYearsOfExperience] = useState(5);
   const [documentName, setDocumentName] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const saved = getOnboardingStepData("credentials");
@@ -38,7 +39,7 @@ export default function CredentialsPage() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !dirty) return;
     saveOnboardingStepData("credentials", {
       licenseType,
       licensingBody,
@@ -49,6 +50,7 @@ export default function CredentialsPage() {
     });
   }, [
     hydrated,
+    dirty,
     licenseType,
     licensingBody,
     regionOfIssue,
@@ -107,7 +109,10 @@ export default function CredentialsPage() {
           placeholder="Select your license type"
           options={[...ghanaLicenseTypes]}
           value={licenseType}
-          onChange={setLicenseType}
+          onChange={(value) => {
+            setDirty(true);
+            setLicenseType(value);
+          }}
         />
         <Field label="Council Registration Number">
           <input
@@ -116,7 +121,10 @@ export default function CredentialsPage() {
             placeholder="e.g. GPC/CP/2024/0042"
             className="input-field"
             value={registrationNumber}
-            onChange={(e) => setRegistrationNumber(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setRegistrationNumber(e.target.value);
+            }}
             required
           />
         </Field>
@@ -125,21 +133,30 @@ export default function CredentialsPage() {
           placeholder="Select council"
           options={[...ghanaLicensingBodies]}
           value={licensingBody}
-          onChange={setLicensingBody}
+          onChange={(value) => {
+            setDirty(true);
+            setLicensingBody(value);
+          }}
         />
         <Select
           label="Region of Issue"
           placeholder="Select region"
           options={[...ghanaRegions]}
           value={regionOfIssue}
-          onChange={setRegionOfIssue}
+          onChange={(value) => {
+            setDirty(true);
+            setRegionOfIssue(value);
+          }}
         />
         <RangeField
           label="Years of Experience"
           min={0}
           max={20}
           value={yearsOfExperience}
-          onChange={setYearsOfExperience}
+          onChange={(value) => {
+            setDirty(true);
+            setYearsOfExperience(value);
+          }}
         />
       </div>
 
@@ -155,7 +172,12 @@ export default function CredentialsPage() {
         {documentName ? (
           <p className="mt-2 text-sm text-munity-muted">Previously uploaded: {documentName}</p>
         ) : null}
-        <FileUpload onFileChange={(file) => setDocumentName(file?.name ?? "")} />
+        <FileUpload
+          onFileChange={(file) => {
+            setDirty(true);
+            setDocumentName(file?.name ?? "");
+          }}
+        />
       </div>
     </OnboardingStepPage>
   );

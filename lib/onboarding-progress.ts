@@ -23,6 +23,7 @@ const KEYS_TO_CLEAR = [
   "munity-onboarding-completed-steps-v3",
   "munity-onboarding-completed-steps-v4",
   "munity-onboarding-storage-reset-v3",
+  "munity-therapist-application-review-v1",
 ];
 
 /** Clears stale onboarding keys whenever the storage schema version changes. */
@@ -80,6 +81,7 @@ export function isStepComplete(stepId: OnboardingStepId) {
 
 export function getApplicationProgressPercent() {
   const completedCount = getCompletedSteps().length;
-  // Four form steps plus review = five milestones on the credential sidebar.
+  // All form steps done still means review is open — credentials are not active yet.
+  if (completedCount >= 4) return 80;
   return Math.round((completedCount / 5) * 100);
 }

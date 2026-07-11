@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Check,
@@ -8,7 +9,12 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
+import {
+  APPLICATION_REVIEW_EVENT,
+  isApplicationSubmitted,
+} from "@/lib/therapist-application-review";
 import type { OnboardingStepId } from "@/lib/routes";
+import { routes } from "@/lib/routes";
 
 export type ApplicationTabId = OnboardingStepId | "review";
 
@@ -32,7 +38,18 @@ export function CredentialVerificationSidebar({
   activeTab,
   onSelectTab,
 }: CredentialVerificationSidebarProps) {
-  const { isStepComplete, progressPercent } = useOnboardingProgress();
+  const { isStepComplete, progressPercent, refresh } = useOnboardingProgress();
+  const [reviewLive, setReviewLive] = useState(false);
+
+  useEffect(() => {
+    function sync() {
+      setReviewLive(isApplicationSubmitted());
+      refresh();
+    }
+    sync();
+    window.addEventListener(APPLICATION_REVIEW_EVENT, sync);
+    return () => window.removeEventListener(APPLICATION_REVIEW_EVENT, sync);
+  }, [refresh]);
 
   return (
     <aside className="flex h-full w-72 flex-col gap-8 p-6">
@@ -47,6 +64,11 @@ export function CredentialVerificationSidebar({
           />
         </div>
         <p className="mt-1 text-base text-munity-green">{progressPercent}% Completed</p>
+        {reviewLive ? (
+          <p className="mt-1 text-xs text-munity-muted">
+            Awaiting clinical approval — dashboard locked
+          </p>
+        ) : null}
       </div>
 
       <nav className="flex flex-col gap-2">
@@ -64,7 +86,10 @@ export function CredentialVerificationSidebar({
                     : "hover:bg-white/50"
                 }`}
               >
-                <RefreshCw className="size-4 text-munity-green" />
+                <RefreshCw
+                  className={`size-4 text-munity-green ${reviewLive ? "animate-spin" : ""}`}
+                  style={reviewLive ? { animationDuration: "3s" } : undefined}
+                />
                 <span className="text-base text-munity-green">{step.label}</span>
               </button>
             );
@@ -106,13 +131,13 @@ export function CredentialVerificationSidebar({
         <p className="mt-1 text-xs leading-relaxed text-munity-muted">
           Our support team is available 24/7 for application queries.
         </p>
-        <button
-          type="button"
+        <Link
+          href={routes.help}
           className="mt-2 inline-flex items-center gap-1 text-base text-munity-green hover:underline"
         >
           Contact Support
           <ArrowRight className="size-3" />
-        </button>
+        </Link>
       </div>
     </aside>
   );
@@ -130,13 +155,13 @@ export function CredentialVerificationFooter() {
           </p>
         </div>
         <div className="flex flex-wrap gap-6 text-xs font-medium text-munity-muted">
-          <Link href="#" className="hover:text-munity-green">
+          <Link href={routes.privacy} className="hover:text-munity-green">
             Privacy Policy
           </Link>
-          <Link href="#" className="hover:text-munity-green">
+          <Link href={routes.terms} className="hover:text-munity-green">
             Terms of Service
           </Link>
-          <Link href="#" className="hover:text-munity-green">
+          <Link href={routes.help} className="hover:text-munity-green">
             Help Center
           </Link>
         </div>

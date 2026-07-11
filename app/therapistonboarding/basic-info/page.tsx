@@ -134,14 +134,20 @@ export default function BasicInfoPage() {
           placeholder="Select title"
           options={[...honorificTitles]}
           value={title}
-          onChange={setTitle}
+          onChange={(value) => {
+            setDirty(true);
+            setTitle(value);
+          }}
         />
         <Select
           label="Gender"
           placeholder="Select gender"
           options={[...genderOptions]}
           value={gender}
-          onChange={setGender}
+          onChange={(value) => {
+            setDirty(true);
+            setGender(value);
+          }}
         />
         <Field label="First Name">
           <input
@@ -150,7 +156,10 @@ export default function BasicInfoPage() {
             placeholder="Ama"
             className="input-field"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setFirstName(e.target.value);
+            }}
             required
           />
         </Field>
@@ -161,7 +170,10 @@ export default function BasicInfoPage() {
             placeholder="Mensah"
             className="input-field"
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setLastName(e.target.value);
+            }}
             required
           />
         </Field>
@@ -172,7 +184,10 @@ export default function BasicInfoPage() {
             placeholder="Registered Clinical Psychologist"
             className="input-field"
             value={professionalTitle}
-            onChange={(e) => setProfessionalTitle(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setProfessionalTitle(e.target.value);
+            }}
             required
           />
         </Field>
@@ -183,7 +198,10 @@ export default function BasicInfoPage() {
             placeholder="+233 24 123 4567"
             className="input-field"
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => {
+              setDirty(true);
+              setPhone(e.target.value);
+            }}
             required
           />
         </Field>
@@ -193,7 +211,10 @@ export default function BasicInfoPage() {
             placeholder="Select region"
             options={[...ghanaRegions]}
             value={practiceLocation}
-            onChange={setPracticeLocation}
+            onChange={(value) => {
+              setDirty(true);
+              setPracticeLocation(value);
+            }}
           />
         </div>
       </div>
@@ -215,7 +236,10 @@ export default function BasicInfoPage() {
               className="input-field"
               autoComplete="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setEmail(e.target.value);
+              }}
               required
             />
           </Field>

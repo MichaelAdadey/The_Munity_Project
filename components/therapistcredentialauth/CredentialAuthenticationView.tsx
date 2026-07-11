@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Bell,
   Check,
   Clock3,
   Compass,
+  Home,
   Hourglass,
+  Mail,
   MessageCircle,
   Shield,
   Users,
@@ -23,15 +25,21 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
-import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
+import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
+import {
+  APPLICATION_REVIEW_EVENT,
+  ensureApplicationSubmitted,
+  formatSubmittedRelative,
+  getApplicantDisplayName,
+  getApplicationReview,
+  getReviewChecklist,
+  getReviewProgressPercent,
+  getReviewTickerItems,
+  type ReviewCheckStatus,
+  type ReviewChecklistItem,
+} from "@/lib/therapist-application-review";
+import { ONBOARDING_PROGRESS_EVENT } from "@/lib/onboarding-progress";
 import { routes } from "@/lib/routes";
-
-const verificationChecklist = [
-  { label: "Identity Verified", status: "complete" as const },
-  { label: "License Credentials", status: "complete" as const },
-  { label: "Background Check", status: "pending" as const, icon: Hourglass },
-  { label: "Clinical Interview", status: "pending" as const, icon: MessageCircle },
-];
 
 const secondaryInfo = [
   {
@@ -51,7 +59,90 @@ const secondaryInfo = [
   },
 ] as const;
 
-function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
+function checklistIcon(status: ReviewCheckStatus) {
+  if (status === "complete") return Check;
+  if (status === "in_progress") return Hourglass;
+  return MessageCircle;
+}
+
+function ChecklistRow({ item }: { item: ReviewChecklistItem }) {
+  const Icon = checklistIcon(item.status);
+  const isComplete = item.status === "complete";
+  const isActive = item.status === "in_progress";
+
+  return (
+    <div
+      className={`flex items-start gap-3 rounded-xl border border-munity-input-border p-4 ${
+        isComplete
+          ? "bg-white/50"
+          : isActive
+            ? "bg-munity-lime/40"
+            : "bg-white/30 opacity-60"
+      }`}
+    >
+      {isComplete ? (
+        <Check className="mt-0.5 size-5 shrink-0 text-munity-green" strokeWidth={2.5} />
+      ) : (
+        <Icon
+          className={`mt-0.5 size-4 shrink-0 ${isActive ? "animate-pulse text-munity-green" : "text-munity-muted"}`}
+        />
+      )}
+      <div className="min-w-0 text-left">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-base text-munity-text">{item.label}</span>
+          {isActive ? <LivePulse label="In progress" /> : null}
+        </div>
+        <p className="mt-1 text-xs leading-relaxed text-munity-muted">{item.detail}</p>
+      </div>
+    </div>
+  );
+}
+
+function ReviewStatusCard() {
+  const [now, setNow] = useState(() => Date.now());
+  const [checklist, setChecklist] = useState<ReviewChecklistItem[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [applicantName, setApplicantName] = useState<string | null>(null);
+  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
+  const [tickerItems, setTickerItems] = useState<string[]>([]);
+
+  function refresh() {
+    ensureApplicationSubmitted();
+    setChecklist(getReviewChecklist());
+    setProgress(getReviewProgressPercent());
+    setApplicantName(getApplicantDisplayName());
+    setSubmittedAt(getApplicationReview()?.submittedAt ?? null);
+    setTickerItems(getReviewTickerItems(Date.now()));
+    setNow(Date.now());
+  }
+
+  useEffect(() => {
+    refresh();
+
+    function handleUpdate() {
+      refresh();
+    }
+
+    window.addEventListener(APPLICATION_REVIEW_EVENT, handleUpdate);
+    window.addEventListener(ONBOARDING_PROGRESS_EVENT, handleUpdate);
+    window.addEventListener("storage", handleUpdate);
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+      setTickerItems(getReviewTickerItems(Date.now()));
+    }, 15_000);
+
+    return () => {
+      window.removeEventListener(APPLICATION_REVIEW_EVENT, handleUpdate);
+      window.removeEventListener(ONBOARDING_PROGRESS_EVENT, handleUpdate);
+      window.removeEventListener("storage", handleUpdate);
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const submittedLabel =
+    submittedAt != null ? formatSubmittedRelative(submittedAt, now) : null;
+
   return (
     <>
       <motion.article
@@ -65,11 +156,30 @@ function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
             <span className="absolute inset-0 rounded-full border-4 border-munity-green/10" />
           </div>
 
-          <div className="flex items-center gap-3"><h1 className="text-base text-munity-green">Documents Successfully Uploaded</h1><LivePulse label="Review active" /></div>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <h1 className="text-base text-munity-green">
+              {submittedAt
+                ? "Application submitted for verification"
+                : "Finish onboarding to start review"}
+            </h1>
+            {submittedAt ? <LivePulse label="Review active" /> : null}
+          </div>
+
           <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
-            Thank you for sharing your professional credentials. We are now verifying your
-            information to ensure the highest standard of care for the Munity community.
+            {applicantName ? (
+              <>
+                Thanks, <span className="font-semibold text-munity-text">{applicantName}</span>.{" "}
+              </>
+            ) : null}
+            Clinical Operations is verifying your credentials before your therapist account can go
+            live. Dashboard access unlocks only after approval.
           </p>
+
+          {tickerItems.length > 0 ? (
+            <div className="mt-6 w-full max-w-md">
+              <LiveTicker items={tickerItems} />
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-10 rounded-2xl border border-munity-input-border/30 bg-munity-sidebar p-6">
@@ -80,16 +190,26 @@ function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
             <div className="text-left">
               <p className="text-base text-munity-text">Review in Progress</p>
               <p className="text-xs font-medium text-munity-muted">
-                Estimated time: 24–48 business hours
+                {submittedLabel
+                  ? `Submitted ${submittedLabel} · typically 24–48 business hours`
+                  : "Estimated time: 24–48 business hours after submission"}
               </p>
             </div>
           </div>
 
           <div className="mt-4 h-2 overflow-hidden rounded-full bg-munity-divider">
-            <div className="relative h-full w-[65%] rounded-full bg-munity-green">
+            <motion.div
+              className="relative h-full rounded-full bg-munity-green"
+              initial={false}
+              animate={{ width: `${Math.max(8, progress)}%` }}
+              transition={{ type: "spring", stiffness: 120, damping: 20 }}
+            >
               <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white/30 to-transparent" />
-            </div>
+            </motion.div>
           </div>
+          <p className="mt-2 text-left text-xs font-semibold text-munity-green">
+            {progress}% verified · credentials inactive until approved
+          </p>
 
           <p className="mt-4 text-left text-xs italic leading-relaxed text-munity-muted">
             &ldquo;Munity is committed to safety and quality. Every profile is manually reviewed by
@@ -98,34 +218,31 @@ function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
         </div>
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {verificationChecklist.map((item) => {
-            const PendingIcon = item.status === "pending" ? item.icon : null;
-            return (
-              <div
-                key={item.label}
-                className={`flex items-center gap-3 rounded-xl border border-munity-input-border p-4 ${
-                  item.status === "complete" ? "bg-white/50" : "bg-white/30 opacity-50"
-                }`}
-              >
-                {item.status === "complete" ? (
-                  <Check className="size-5 shrink-0 text-munity-green" strokeWidth={2.5} />
-                ) : PendingIcon ? (
-                  <PendingIcon className="size-4 shrink-0 text-munity-muted" />
-                ) : null}
-                <span className="text-base text-munity-muted">{item.label}</span>
-              </div>
-            );
-          })}
+          {checklist.map((item) => (
+            <ChecklistRow key={item.id} item={item} />
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-munity-green/15 bg-munity-green/5 px-5 py-4 text-left">
+          <div className="flex items-start gap-3">
+            <Mail className="mt-0.5 size-4 shrink-0 text-munity-green" />
+            <div>
+              <p className="text-sm font-semibold text-munity-text">
+                We’ll notify you when verification is complete
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-munity-muted">
+                Therapist login and dashboard stay locked until Clinical Operations activates your
+                credentials. You can leave this page — your application remains in review.
+              </p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-10 flex items-center justify-center">
           <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              href={routes.therapistDashboard}
-              onClick={onContinue}
-              className="h-14 rounded-xl px-8 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
-            >
-              Continue to dashboard
+            <Button href={routes.home} className="h-14 rounded-xl px-8">
+              <Home className="size-4" />
+              Back to Home
             </Button>
             <Button
               href={routes.resources}
@@ -167,7 +284,10 @@ function ReviewStatusCard({ onContinue }: { onContinue: () => void }) {
 
 export function CredentialAuthenticationView() {
   const [activeTab, setActiveTab] = useState<ApplicationTabId>("review");
-  const { flash } = useLiveToast();
+
+  useEffect(() => {
+    ensureApplicationSubmitted();
+  }, []);
 
   return (
     <SidebarProvider storageKey="munity-credential-sidebar-open" expandedWidth={288}>
@@ -190,7 +310,7 @@ export function CredentialAuthenticationView() {
           >
             <AnimatedPage className="flex w-full max-w-2xl flex-col gap-12">
               {activeTab === "review" ? (
-                <ReviewStatusCard onContinue={() => flash("Welcome to your clinical dashboard")} />
+                <ReviewStatusCard />
               ) : (
                 <motion.div
                   key={activeTab}

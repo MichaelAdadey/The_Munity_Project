@@ -7,6 +7,7 @@ import { ChipSelect } from "@/components/ui/ChipSelect";
 import { Select } from "@/components/ui/AppSelect";
 import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
 import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
+import { submitTherapistApplication } from "@/lib/therapist-application-review";
 import { routes } from "@/lib/routes";
 
 const payoutMethodOptions = ["Mobile Money", "Bank Transfer"];
@@ -20,6 +21,7 @@ export default function PayoutPage() {
   const [bankAccountName, setBankAccountName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const saved = getOnboardingStepData("payout");
@@ -36,7 +38,7 @@ export default function PayoutPage() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !dirty) return;
     saveOnboardingStepData("payout", {
       payoutMethods,
       mobileMoneyNetwork,
@@ -48,6 +50,7 @@ export default function PayoutPage() {
     });
   }, [
     hydrated,
+    dirty,
     payoutMethods,
     mobileMoneyNetwork,
     bankName,
@@ -99,6 +102,7 @@ export default function PayoutPage() {
           bankAccountName: String(formData.get("bankAccountName") || "").trim(),
           bankAccountNumber: String(formData.get("bankAccountNumber") || "").trim(),
         });
+        submitTherapistApplication();
       }}
     >
       <div>
@@ -108,7 +112,10 @@ export default function PayoutPage() {
         <ChipSelect
           options={payoutMethodOptions}
           value={payoutMethods}
-          onChange={setPayoutMethods}
+          onChange={(value) => {
+            setDirty(true);
+            setPayoutMethods(value);
+          }}
         />
         <p className="mt-3 text-sm text-munity-muted">
           Select all payment methods you want to use for payouts.
@@ -125,7 +132,10 @@ export default function PayoutPage() {
                 placeholder="Ama Mensah"
                 className="input-field"
                 value={momoAccountName}
-                onChange={(e) => setMomoAccountName(e.target.value)}
+                onChange={(e) => {
+                  setDirty(true);
+                  setMomoAccountName(e.target.value);
+                }}
                 required={hasMobileMoney}
               />
             </Field>
@@ -135,7 +145,10 @@ export default function PayoutPage() {
             placeholder="Select network"
             options={[...ghanaMobileMoneyProviders]}
             value={mobileMoneyNetwork}
-            onChange={setMobileMoneyNetwork}
+            onChange={(value) => {
+              setDirty(true);
+              setMobileMoneyNetwork(value);
+            }}
           />
           <Field label="MoMo Number">
             <input
@@ -144,7 +157,10 @@ export default function PayoutPage() {
               placeholder="024 123 4567"
               className="input-field"
               value={momoNumber}
-              onChange={(e) => setMomoNumber(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setMomoNumber(e.target.value);
+              }}
               required={hasMobileMoney}
             />
           </Field>
@@ -161,7 +177,10 @@ export default function PayoutPage() {
                 placeholder="Ama Mensah"
                 className="input-field"
                 value={bankAccountName}
-                onChange={(e) => setBankAccountName(e.target.value)}
+                onChange={(e) => {
+                  setDirty(true);
+                  setBankAccountName(e.target.value);
+                }}
                 required={hasBank}
               />
             </Field>
@@ -171,7 +190,10 @@ export default function PayoutPage() {
             placeholder="Select bank"
             options={[...ghanaBanks]}
             value={bankName}
-            onChange={setBankName}
+            onChange={(value) => {
+              setDirty(true);
+              setBankName(value);
+            }}
           />
           <Field label="Bank Account Number">
             <input
@@ -180,7 +202,10 @@ export default function PayoutPage() {
               placeholder="1234567890"
               className="input-field"
               value={bankAccountNumber}
-              onChange={(e) => setBankAccountNumber(e.target.value)}
+              onChange={(e) => {
+                setDirty(true);
+                setBankAccountNumber(e.target.value);
+              }}
               required={hasBank}
             />
           </Field>

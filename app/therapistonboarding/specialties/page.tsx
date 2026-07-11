@@ -14,6 +14,7 @@ export default function SpecialtiesPage() {
   const [categoryId, setCategoryId] = useState("mood");
   const [customSpecialty, setCustomSpecialty] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
     const saved = getOnboardingStepData("specialties");
@@ -24,9 +25,9 @@ export default function SpecialtiesPage() {
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || !dirty) return;
     saveOnboardingStepData("specialties", { specialties: selected });
-  }, [hydrated, selected]);
+  }, [hydrated, dirty, selected]);
 
   const activeCategory =
     therapistSpecialtyCategories.find((category) => category.id === categoryId) ??
@@ -46,12 +47,14 @@ export default function SpecialtiesPage() {
     const next = customSpecialty.trim();
     if (!next) return;
     if (!selected.includes(next)) {
+      setDirty(true);
       setSelected([...selected, next]);
     }
     setCustomSpecialty("");
   }
 
   function removeSelected(specialty: string) {
+    setDirty(true);
     setSelected(selected.filter((item) => item !== specialty));
   }
 
@@ -132,7 +135,14 @@ export default function SpecialtiesPage() {
 
       <div className="max-h-56 overflow-y-auto rounded-2xl border border-munity-border/50 bg-munity-sidebar/40 p-4">
         {catalog.length > 0 ? (
-          <ChipSelect options={catalog} value={selected} onChange={setSelected} />
+          <ChipSelect
+            options={catalog}
+            value={selected}
+            onChange={(value) => {
+              setDirty(true);
+              setSelected(value);
+            }}
+          />
         ) : (
           <p className="text-sm text-munity-muted">
             No matches for “{query}”. Add it as a custom specialty below.
