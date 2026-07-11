@@ -125,6 +125,7 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Keep auth enabled (Harriet). Do not use main's "temporarily disabled" block.
   const isProtected = pathMatches(request.nextUrl.pathname, memberProtected)
 
   if (!user && isProtected) {
