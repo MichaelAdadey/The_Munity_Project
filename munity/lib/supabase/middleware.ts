@@ -62,14 +62,14 @@ export async function updateSession(request: NextRequest) {
   //   return NextResponse.redirect(url)
   // }
 
-  const pathname = request.nextUrl.pathname;
+  // const pathname = request.nextUrl.pathname;
 
-  // Public routes
-  const publicRoutes = ["/", "/login", "/signup"]
+  // // Public routes
+  // const publicRoutes = ["/", "/login", "/signup"]
 
-  if (!user && !publicRoutes.includes(pathname)) {
-    return NextResponse.redirect(new URL("/login", request.url))
-  }
+  // if (!user && !publicRoutes.includes(pathname)) {
+  //   return NextResponse.redirect(new URL("/login", request.url))
+  // }
 
   return response
 }
