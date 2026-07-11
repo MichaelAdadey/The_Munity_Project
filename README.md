@@ -1,25 +1,43 @@
 # Munity
 
-**Nurtured Stability** — mental wellness · peer support · licensed therapy
+**Nurtured Stability**  
+Mental wellness · peer support · licensed therapy
 
-| Next.js 16 · React 19 · TypeScript 5 · Tailwind 4 | Preview mode (no backend required) |
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16-black?logo=nextdotjs&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind-4-38BDF8?logo=tailwindcss&logoColor=white" alt="Tailwind" />
+  <img src="https://img.shields.io/badge/Supabase-optional-3FCF8E?logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/status-preview-3E5219" alt="Preview" />
+</p>
 
-| Members | Therapists | Admins |
+<p align="center">
+  <a href="#-demo-credentials">🔑 Credentials</a> ·
+  <a href="#-quick-start">🚀 Quick start</a> ·
+  <a href="#-product-map">🗺️ Product map</a> ·
+  <a href="#-implementing-a-real-backend">🔌 Backend</a> ·
+  <a href="#-local-urls">🔗 URLs</a>
+</p>
+
+---
+
+**Munity** connects people with peer communities, curated wellness resources, and licensed therapists — with a calm olive/sage clinical UI.
+
+| 👤 Members | 🩺 Therapists | 🛡️ Admins |
 |:---:|:---:|:---:|
 | Feed, communities, therapy, resources, messages | Onboarding, dashboard, patients, notes, sessions | Reviews, moderation, growth, platform overview |
 | `/login` → `/home` | `/therapistlogin` → `/therapistdashboard` | `/admin/login` → `/admin` |
 
-> **No backend required.** Without Supabase env vars, the app runs in preview mode with seed data and the demo accounts below.
-
-[Credentials](#demo-credentials) · [Quick start](#quick-start) · [Product map](#product-map) · [Backend handoff](#implementing-a-real-backend) · [Local URLs](#local-urls)
+> ✨ **No backend required.** Without Supabase env vars, the app runs in preview mode with seed data and the demo accounts below.
 
 ---
 
-## Demo credentials
+## 🔑 Demo credentials
 
 Use these when Supabase is **not** configured. Login screens also show and pre-fill them.
 
-### Member
+### 👤 Member
 
 | | |
 |---|---|
@@ -35,7 +53,7 @@ Email:    alex.rivera@munity.app
 Password: User1234!
 ```
 
-### Therapist
+### 🩺 Therapist
 
 | | |
 |---|---|
@@ -51,7 +69,7 @@ Email:    elena.aris@munity.app
 Password: Therapist1234!
 ```
 
-### Admin
+### 🛡️ Admin
 
 | | |
 |---|---|
@@ -67,16 +85,16 @@ Email:    admin@munity.app
 Password: Admin1234!
 ```
 
-> Credentials are **role-scoped**. Therapist login rejects member/admin passwords (and the reverse). Defined in `lib/mock-credentials.ts`.
+> ⚠️ Credentials are **role-scoped**. Therapist login rejects member/admin passwords (and the reverse). Defined in `lib/mock-credentials.ts`.
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
 ### Prerequisites
 
-- Node.js **20+**
-- npm (lockfile included)
+- ✅ Node.js **20+**
+- ✅ npm (lockfile included)
 
 ### Install & run
 
@@ -85,14 +103,14 @@ npm install
 npm run dev
 ```
 
-Open **[http://localhost:3000](http://localhost:3000)**
+Open **[http://localhost:3000](http://localhost:3000)** 🌿
 
 | Command | What it does |
 |---------|----------------|
-| `npm run dev` | Dev server (Turbopack) |
-| `npm run build` | Production build |
-| `npm start` | Serve production build |
-| `npm run lint` | ESLint |
+| `npm run dev` | 🔥 Dev server (Turbopack) |
+| `npm run build` | 📦 Production build |
+| `npm start` | ▶️ Serve production build |
+| `npm run lint` | 🧹 ESLint |
 
 ### Optional Supabase
 
@@ -106,60 +124,60 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 | Mode | Behavior |
 |------|----------|
-| **Preview** (no env) | Mock logins + seed data + `localStorage` onboarding |
-| **Supabase** | Real auth / OAuth; middleware protects member routes |
+| 🧪 **Preview** (no env) | Mock logins + seed data + `localStorage` onboarding |
+| ☁️ **Supabase** | Real auth / OAuth; middleware protects member routes |
 
 ---
 
-## Brand & stack
+## 🎨 Brand & stack
 
 ### Palette
 
 | Token | Hex | Swatch |
 |-------|-----|--------|
-| `munity-green` | `#3E5219` | Deep olive |
-| `munity-lime` | `#D6E7A1` | Soft lime |
-| `munity-bg` | `#FBF9F8` | Warm paper |
-| `munity-text` | `#1B1C1C` | Near black |
-| `munity-muted` | `#45483C` | Soft olive gray |
+| `munity-green` | `#3E5219` | 🟢 Deep olive |
+| `munity-lime` | `#D6E7A1` | 🟡 Soft lime |
+| `munity-bg` | `#FBF9F8` | ⬜ Warm paper |
+| `munity-text` | `#1B1C1C` | ⬛ Near black |
+| `munity-muted` | `#45483C` | 🩶 Soft olive gray |
 
 ### Built with
 
 | Layer | Choice |
 |-------|--------|
-| UI | Next.js 16 · React 19 · TypeScript |
-| Style | Tailwind CSS 4 · Framer Motion · Lucide |
-| Auth | Supabase (optional) · mock session cookie |
-| Components | Base UI + `components/ui/` |
+| ⚛️ UI | Next.js 16 · React 19 · TypeScript |
+| 🎨 Style | Tailwind CSS 4 · Framer Motion · Lucide |
+| 🔐 Auth | Supabase (optional) · mock session cookie |
+| 🧩 Components | Base UI + `components/ui/` |
 
-> This Next.js version may differ from older tutorials — check `node_modules/next/dist/docs/` and `AGENTS.md`.
+> 📘 This Next.js version may differ from older tutorials — check `node_modules/next/dist/docs/` and `AGENTS.md`.
 
 ---
 
-## Product map
+## 🗺️ Product map
 
-### Members
+### 👤 Members
 
 | Path | Feature |
 |------|---------|
-| `/` | Marketing landing |
-| `/login` · `/signup` | Auth (sets mock session in preview) |
-| `/home` | Feed with search, mood check-in, composer, bookmark/save (auth) |
-| `/dashboard` | Member wellness dashboard (auth) |
-| `/Communities` · `/Communities/[slug]` | Browse / join communities |
-| `/Therapy` · `/Therapy/[id]` | Therapist directory + booking |
-| `/messages` | Threads, send, and call overlays (auth) |
-| `/profile` | Edit profile, photo upload, daily reflection (auth) |
-| `/settings` · `/saved` | Account + saved posts (auth) |
-| `/notifications` | Member notification center (auth) |
-| `/resources` | Resource Hub — guides, sessions, audio (public; guests see Resources tab only) |
-| `/emergency` | Crisis support + nearby help (Google Maps) |
-| `/privacy` · `/terms` · `/help` | Legal / help stubs |
+| `/` | 🏠 Marketing landing |
+| `/login` · `/signup` | 🔐 Auth (sets mock session in preview) |
+| `/home` | 📰 Feed with search, mood check-in, composer, bookmark/save (auth) |
+| `/dashboard` | 📊 Member wellness dashboard (auth) |
+| `/Communities` · `/Communities/[slug]` | 👥 Browse / join communities |
+| `/Therapy` · `/Therapy/[id]` | 💬 Therapist directory + booking |
+| `/messages` | 💬 Threads, send, and call overlays (auth) |
+| `/profile` | 👤 Edit profile, photo upload, daily reflection (auth) |
+| `/settings` · `/saved` | ⚙️ Account + saved posts (auth) |
+| `/notifications` | 🔔 Member notification center (auth) |
+| `/resources` | 📚 Resource Hub — guides, sessions, audio (public; guests see Resources tab only) |
+| `/emergency` | 🆘 Crisis support + nearby help (Google Maps) |
+| `/privacy` · `/terms` · `/help` | 📄 Legal / help stubs |
 
 **Resource categories:** Anxiety · Depression · Stress · Grief · Relationships · Addiction  
 → each has its own featured guide, cards, and trending list (`lib/resource-categories.ts`, `lib/resource-content.ts`, `lib/resource-session-audio.ts`).
 
-### Therapists
+### 🩺 Therapists
 
 ```text
 Join → Onboarding (4 steps) → Review screen → Clinical app
@@ -167,26 +185,26 @@ Join → Onboarding (4 steps) → Review screen → Clinical app
 
 | Step | Path |
 |------|------|
-| 1 · Basic info | `/therapistonboarding/basic-info` |
-| 2 · Credentials | `/therapistonboarding/credentials` |
-| 3 · Specialties | `/therapistonboarding/specialties` |
-| 4 · Payout | `/therapistonboarding/payout` |
-| Review | `/therapistcredentialauth` |
-| Dashboard | `/therapistdashboard` |
-| Patients | `/therapistpatients` (+ per-patient notes, progress, files, care plan) |
-| Clinical notes | `/therapistclinicalnotes` |
-| Appointments | `/therapistappointments` (live session overlays) |
-| Messages | `/therapistmessages` |
-| Analytics | `/therapistanalytics` |
-| Profile | `/therapistprofile` (editable) |
-| Notifications | `/therapistnotifications` |
-| Settings · files · care plan · availability | Matching `/therapist*` routes |
+| 1️⃣ Basic info | `/therapistonboarding/basic-info` |
+| 2️⃣ Credentials | `/therapistonboarding/credentials` |
+| 3️⃣ Specialties | `/therapistonboarding/specialties` |
+| 4️⃣ Payout | `/therapistonboarding/payout` |
+| ✅ Review | `/therapistcredentialauth` |
+| 🏥 Dashboard | `/therapistdashboard` |
+| 👥 Patients | `/therapistpatients` (+ per-patient notes, progress, files, care plan) |
+| 📝 Clinical notes | `/therapistclinicalnotes` |
+| 📅 Appointments | `/therapistappointments` (live session overlays) |
+| 💬 Messages | `/therapistmessages` |
+| 📊 Analytics | `/therapistanalytics` |
+| 👤 Profile | `/therapistprofile` (editable) |
+| 🔔 Notifications | `/therapistnotifications` |
+| ⚙️ Settings · files · care plan · availability | Matching `/therapist*` routes |
 
 Onboarding drafts persist in `localStorage` with validation across steps; read-only previews on the review screen.
 
 Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.ts`
 
-### Admins
+### 🛡️ Admins
 
 | Path | Feature |
 |------|---------|
@@ -197,7 +215,7 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 | `/admin/communities` · `/therapy` · `/resources` · `/settings` | Console sections |
 | `/admin/notifications` | Admin notification center |
 
-### Preview data layer
+### 🔌 Preview data layer
 
 | File | Role |
 |------|------|
@@ -212,7 +230,7 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 
 ---
 
-## Implementing a real backend
+## 🔌 Implementing a real backend
 
 The UI is built to be swappable. Preview mode uses an in-browser store and a mock session cookie; production should use real auth + a database (Supabase is already partially wired). Work domain-by-domain — do not flip everything at once.
 
@@ -336,72 +354,72 @@ Then in views, replace `mockStore.createPost(...)` / `useMockStore()` with that 
 
 ---
 
-## Project structure
+## 📁 Project structure
 
 ```text
-munity
-├── app/                      # App Router pages & server actions
-│   ├── (auth)/               # Member auth actions
-│   ├── admin/                # Admin login + console
-│   ├── therapistonboarding/  # 4-step application
-│   ├── therapist*/           # Clinical surfaces
+📦 munity
+├── 📂 app/                      # App Router pages & server actions
+│   ├── (auth)/                  # Member auth actions
+│   ├── admin/                   # Admin login + console
+│   ├── therapistonboarding/     # 4-step application
+│   ├── therapist*/              # Clinical surfaces
 │   ├── Communities/ · Therapy/
 │   ├── home/ · resources/ · messages/ · notifications/
 │   ├── emergency/ · profile/ · saved/
 │   └── login/ · signup/
-├── components/
-│   ├── auth/                 # Shell, demo credential hints
+├── 📂 components/
+│   ├── auth/                    # Shell, demo credential hints
 │   ├── therapist*/ · resources/ · home/ · messages/ · emergency/
-│   ├── live/                 # NotificationsMenu, LiveFeedback
-│   └── ui/                   # Shared primitives
-├── lib/
-│   ├── routes.ts             # Canonical paths
-│   ├── mock-credentials.ts   # Demo accounts (remove after backend)
-│   ├── mock-session.ts       # Cookie session (preview)
+│   ├── live/                    # NotificationsMenu, LiveFeedback
+│   └── ui/                      # Shared primitives
+├── 📂 lib/
+│   ├── routes.ts                # 🧭 Canonical paths
+│   ├── mock-credentials.ts      # 🔑 Demo accounts (remove after backend)
+│   ├── mock-session.ts          # Cookie session (preview)
 │   ├── mock-db.ts · mock-store.ts
-│   ├── onboarding-*.ts       # Application progress & drafts
-│   ├── resource-*.ts         # Hub content, categories, session audio
+│   ├── onboarding-*.ts          # Application progress & drafts
+│   ├── resource-*.ts            # Hub content, categories, session audio
 │   ├── notifications.ts
 │   ├── ghana-therapist.ts
-│   ├── supabase/             # Client · server · middleware
-│   └── data.ts               # Legacy seed (prefer mock-db)
-├── hooks/
-├── public/                   # Logos, landing, resources, images
-└── README.md
+│   ├── supabase/                # Client · server · middleware
+│   └── data.ts                  # Legacy seed (prefer mock-db)
+├── 📂 hooks/
+├── 📂 public/                   # Logos, landing, resources, images
+└── 📄 README.md
 ```
 
 Prefer `routes` from `lib/routes.ts` over hard-coded paths.
 
 ---
 
-## Auth behavior
+## 🔐 Auth behavior
 
 | Mode | Flow |
 |------|------|
-| Preview | Email/password → `munity-mock-session` cookie → role home |
-| Supabase | `signInWithPassword` / Google OAuth · middleware guards `/home`, communities, therapy, profile… |
+| 🧪 Preview | Email/password → `munity-mock-session` cookie → role home |
+| ☁️ Supabase | `signInWithPassword` / Google OAuth · middleware guards `/home`, communities, therapy, profile… |
 
 `/resources` stays **public**. Sign out clears mock cookie + Supabase session.
 
 ---
 
-## Local URLs
+## 🔗 Local URLs
 
-| URL | Purpose |
-|-----|---------|
+| 🔗 URL | 📌 Purpose |
+|--------|------------|
 | http://localhost:3000 | Landing |
-| http://localhost:3000/login | Member login |
-| http://localhost:3000/therapistlogin | Therapist login |
-| http://localhost:3000/admin/login | Admin login |
-| http://localhost:3000/resources | Resource Hub |
-| http://localhost:3000/emergency | Crisis support |
-| http://localhost:3000/therapistdashboard | Therapist dashboard |
-| http://localhost:3000/therapistmessages | Therapist messages |
-| http://localhost:3000/dev | All-screen index |
+| http://localhost:3000/login | 👤 Member login |
+| http://localhost:3000/therapistlogin | 🩺 Therapist login |
+| http://localhost:3000/admin/login | 🛡️ Admin login |
+| http://localhost:3000/resources | 📚 Resource Hub |
+| http://localhost:3000/emergency | 🆘 Crisis support |
+| http://localhost:3000/therapistdashboard | 🏥 Therapist dashboard |
+| http://localhost:3000/therapistmessages | 💬 Therapist messages |
+| http://localhost:3000/dev | 🗂️ All-screen index |
 
 ---
 
-## Contributing notes
+## 🤝 Contributing notes
 
 1. Match existing patterns in the feature folder — don’t invent a parallel design system.
 2. Keep PRs scoped; skip drive-by refactors.
@@ -412,10 +430,10 @@ Prefer `routes` from `lib/routes.ts` over hard-coded paths.
 
 ---
 
-## License
+## 📄 License
 
 Private project (`"private": true`). All rights reserved unless otherwise stated by the owners.
 
 ---
 
-Munity · Nurtured Stability
+<sub>Munity · Nurtured Stability</sub>
