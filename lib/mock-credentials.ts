@@ -65,15 +65,33 @@ export function getMockAccountByRole(role: MockRole): MockAccount {
 export function parseMockSessionCookie(value: string | undefined): MockAccount | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(value) as { role?: MockRole; email?: string };
+    const parsed = JSON.parse(value) as {
+      role?: MockRole;
+      email?: string;
+      name?: string;
+    };
     if (!parsed.role || !parsed.email) return null;
-    return (
-      mockAccounts.find(
-        (account) =>
-          account.role === parsed.role &&
-          account.email.toLowerCase() === parsed.email!.toLowerCase(),
-      ) ?? null
+
+    const known = mockAccounts.find(
+      (account) =>
+        account.role === parsed.role &&
+        account.email.toLowerCase() === parsed.email!.toLowerCase(),
     );
+    if (known) {
+      return {
+        ...known,
+        name: parsed.name?.trim() || known.name,
+      };
+    }
+
+    // Preview signups may use a new email — keep role template + cookie identity.
+    const template = mockAccounts.find((account) => account.role === parsed.role);
+    if (!template) return null;
+    return {
+      ...template,
+      email: parsed.email,
+      name: parsed.name?.trim() || template.name,
+    };
   } catch {
     return null;
   }

@@ -1,19 +1,104 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import {
+  MOCK_SESSION_COOKIE,
+  parseMockSessionCookie,
+  type MockRole,
+} from '@/lib/mock-credentials'
+import { routes } from '@/lib/routes'
 import { isSupabaseConfigured } from './client'
 
+const memberProtected = [
+  '/home',
+  '/dashboard',
+  '/messages',
+  '/profile',
+  '/saved',
+  '/settings',
+]
+
+const therapistProtectedPrefixes = [
+  '/therapistdashboard',
+  '/therapistpatients',
+  '/therapistclinicalnotes',
+  '/therapistappointments',
+  '/therapistavailability',
+  '/therapistsettings',
+  '/therapistanalytics',
+  '/therapistfiles',
+  '/therapistcareplan',
+  '/therapistprofile',
+]
+
+const adminProtectedPrefixes = ['/admin']
+const adminPublic = ['/admin/login']
+
+const therapistPublic = [
+  '/therapistlogin',
+  '/therapistsignup',
+  '/therapistonboarding',
+  '/therapistcredentialauth',
+]
+
+function pathMatches(pathname: string, prefixes: string[]) {
+  const lower = pathname.toLowerCase()
+  return prefixes.some(
+    (prefix) => lower === prefix || lower.startsWith(`${prefix}/`),
+  )
+}
+
+function redirectTo(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone()
+  url.pathname = pathname
+  url.searchParams.set('next', request.nextUrl.pathname)
+  return NextResponse.redirect(url)
+}
+
+function enforceMockAuth(request: NextRequest, response: NextResponse) {
+  const pathname = request.nextUrl.pathname
+  const session = parseMockSessionCookie(
+    request.cookies.get(MOCK_SESSION_COOKIE)?.value,
+  )
+  const role: MockRole | null = session?.role ?? null
+
+  if (pathMatches(pathname, memberProtected)) {
+    if (role !== 'user') {
+      return redirectTo(request, routes.login)
+    }
+    return response
+  }
+
+  if (
+    pathMatches(pathname, therapistProtectedPrefixes) &&
+    !pathMatches(pathname, therapistPublic)
+  ) {
+    if (role !== 'therapist') {
+      return redirectTo(request, routes.therapistLogin)
+    }
+    return response
+  }
+
+  if (
+    pathMatches(pathname, adminProtectedPrefixes) &&
+    !pathMatches(pathname, adminPublic)
+  ) {
+    if (role !== 'admin') {
+      return redirectTo(request, routes.adminLogin)
+    }
+  }
+
+  return response
+}
+
 /**
- * Refreshes the Supabase auth session on every request and (optionally)
- * guards the in-app routes. Called from `middleware.ts`.
- *
- * While Supabase is not configured, this is a no-op so the preview works
- * without any backend.
+ * Refreshes the Supabase auth session on every request and guards in-app routes.
+ * Without Supabase, enforces the preview mock-session cookie instead.
  */
 export async function updateSession(request: NextRequest) {
   const response = NextResponse.next({ request })
 
   if (!isSupabaseConfigured()) {
-    return response
+    return enforceMockAuth(request, response)
   }
 
   const supabase = createServerClient(
@@ -36,30 +121,14 @@ export async function updateSession(request: NextRequest) {
     },
   )
 
-  // IMPORTANT: do not run code between createServerClient and getUser().
   const {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Protected app routes — redirect unauthenticated users to /login.
-  // /resources stays public so guests can browse; other tabs require login.
-  const protectedPaths = [
-    '/home',
-    '/communities',
-    '/messages',
-    '/therapy',
-    '/profile',
-    '/saved',
-    '/settings',
-  ]
-  const isProtected = protectedPaths.some((p) =>
-    request.nextUrl.pathname.startsWith(p),
-  )
+  const isProtected = pathMatches(request.nextUrl.pathname, memberProtected)
 
   if (!user && isProtected) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/login'
-    return NextResponse.redirect(url)
+    return redirectTo(request, routes.login)
   }
 
   return response

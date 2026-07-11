@@ -4,12 +4,11 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import {
+  ArrowDownRight,
   Check,
   ChevronRight,
   Download,
-  Frown,
-  Info,
-  Smile,
+  TrendingUp,
 } from "lucide-react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
@@ -21,32 +20,59 @@ import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
 import type { PatientRecord } from "@/lib/routes";
-import { patientNavHref, routes } from "@/lib/routes";
+import { patientNavHref } from "@/lib/routes";
 
 const dateRanges = ["Last 30 Days", "Last 3 Months", "Last 6 Months", "Last 12 Months"];
 
-const themeTags = [
-  { label: "Anxiety", className: "bg-munity-green text-white text-lg font-bold px-4 py-2" },
-  { label: "Work-life balance", className: "bg-munity-lime text-munity-olive-text text-base font-semibold px-3 py-1" },
-  { label: "Sleep", className: "bg-munity-divider text-munity-muted text-sm px-3 py-1" },
-  { label: "Self-esteem", className: "bg-[#646552] text-[#e2e3ca] text-xl font-extrabold px-5 py-3" },
-  { label: "Boundaries", className: "bg-munity-divider text-munity-muted text-sm px-3 py-1" },
-  { label: "Relationships", className: "bg-[#d9eaa3] text-[#161f00] text-base font-medium px-4 py-2" },
-  { label: "Phobias", className: "bg-munity-divider text-munity-muted text-xs px-2 py-1" },
-  { label: "Coping strategies", className: "bg-munity-olive text-munity-lime-light text-sm font-semibold px-3 py-1" },
-  { label: "Social media", className: "bg-[#4c4d3b] text-white text-base px-4 py-2" },
+const summaryStats = [
+  { label: "GAD-7 score", value: "8", detail: "Down from 14 at baseline", tone: "good" as const },
+  { label: "Symptom change", value: "−42%", detail: "Since onboarding", tone: "good" as const },
+  { label: "Attendance", value: "82%", detail: "16 of 20 sessions", tone: "neutral" as const },
+  { label: "Mood average", value: "7.5", detail: "Last 30 days", tone: "good" as const },
 ];
 
-const attendanceBars = [
-  { h: "h-[185px]", color: "bg-munity-olive" },
-  { h: "h-full", color: "bg-munity-olive" },
-  { h: "h-[41px]", color: "bg-[#ffdad6]" },
-  { h: "h-[175px]", color: "bg-munity-olive" },
-  { h: "h-[196px]", color: "bg-munity-olive" },
-  { h: "h-full", color: "bg-munity-olive" },
-  { h: "h-[62px]", color: "bg-munity-divider" },
-  { h: "h-[185px]", color: "bg-munity-olive" },
+const chartPoints = [
+  { label: "Baseline", score: 14 },
+  { label: "Week 4", score: 12 },
+  { label: "Week 8", score: 11 },
+  { label: "Week 12", score: 9 },
+  { label: "Week 16", score: 8 },
+  { label: "Current", score: 8 },
 ];
+
+const attendanceSessions = [
+  { label: "S1", attended: true },
+  { label: "S2", attended: true },
+  { label: "S3", attended: false },
+  { label: "S4", attended: true },
+  { label: "S5", attended: true },
+  { label: "S6", attended: true },
+  { label: "S7", attended: false },
+  { label: "S8", attended: true },
+  { label: "S9", attended: true },
+  { label: "S10", attended: true },
+];
+
+const themes = [
+  { label: "Anxiety", count: 18 },
+  { label: "Work-life balance", count: 14 },
+  { label: "Self-esteem", count: 12 },
+  { label: "Relationships", count: 11 },
+  { label: "Sleep", count: 9 },
+  { label: "Boundaries", count: 8 },
+  { label: "Coping strategies", count: 7 },
+  { label: "Social media", count: 4 },
+];
+
+const keyShifts = [
+  { text: "Improved sleep hygiene (6h → 7.5h avg)", positive: true },
+  { text: "Decrease in panic frequency (2/week → 0/week)", positive: true },
+  { text: "Social engagement remains a challenge area", positive: false },
+];
+
+function scoreToY(score: number, max = 21) {
+  return 160 - (score / max) * 140;
+}
 
 interface TherapeuticProgressViewProps {
   patient: PatientRecord;
@@ -56,264 +82,289 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
   const { withLoading } = useLoading();
   const [dateRange, setDateRange] = useState("Last 6 Months");
   const avatar = assets.avatars[patient.avatarKey];
+  const maxThemeCount = themes[0]?.count ?? 1;
+
+  const linePoints = chartPoints
+    .map((point, index) => {
+      const x = (index / (chartPoints.length - 1)) * 500;
+      const y = scoreToY(point.score);
+      return `${x},${y}`;
+    })
+    .join(" ");
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
-    <div className="min-h-screen bg-munity-bg">
-      <TopNav active="Analytics" showSearch />
+      <div className="min-h-screen bg-munity-bg">
+        <TopNav active="Patients" showSearch />
 
-      <div className="w-full pt-16">
-        <CollapsibleSidebarLayout
-          sidebar={
-            <PatientSidebar
-              active="Progress"
-              patientSlug={patient.slug}
-              patient={{
-                name: patient.name,
-                clientId: patient.clientId,
-                avatar,
-              }}
-            />
-          }
-          mainClassName="px-10 pb-24 pt-6"
-        >
-        <AnimatedPage className="flex-1">
-          <div className="mb-8 flex items-center justify-between">
-            <div>
-              <nav className="mb-1 flex items-center gap-2 text-xs font-medium text-munity-muted">
-                <Link href={routes.therapistDashboard} className="hover:text-munity-green">
-                  Patients
-                </Link>
-                <ChevronRight className="size-3" />
-                <Link href={patientNavHref(patient.slug, "Overview")} className="hover:text-munity-green">
-                  {patient.name}
-                </Link>
-                <ChevronRight className="size-3" />
-                <span className="font-bold text-munity-green">Progress Tracking</span>
-              </nav>
-              <h1 className="text-[32px] font-bold text-munity-text">Therapeutic Progress</h1>
-            </div>
-            <div className="flex gap-3">
-              <DropdownMenu value={dateRange} options={dateRanges} onChange={setDateRange} />
-              <Button
-                onClick={() =>
-                  withLoading(async () => {
-                    await new Promise((resolve) => setTimeout(resolve, 1000));
-                  }, "Generating report...")
-                }
-              >
-                <Download className="size-3" />
-                Export Report
-              </Button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-12 gap-6">
-            <section className="col-span-12 rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_20px_rgba(85,107,47,0.05)] lg:col-span-8">
-              <div className="flex items-start justify-between">
+        <div className="w-full pt-16">
+          <CollapsibleSidebarLayout
+            sidebar={
+              <PatientSidebar
+                active="Progress"
+                patientSlug={patient.slug}
+                patient={{
+                  name: patient.name,
+                  clientId: patient.clientId,
+                  avatar,
+                }}
+              />
+            }
+            mainClassName="px-10 pb-16 pt-6"
+          >
+            <AnimatedPage className="flex flex-col gap-8">
+              <header className="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-semibold text-munity-text">
-                    Anxiety Levels over Time
-                  </h2>
-                  <p className="text-sm font-semibold tracking-wide text-munity-muted">
-                    Self-reported GAD-7 scores from weekly check-ins
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
+                    Insights
+                  </p>
+                  <h1 className="mt-2 text-3xl font-bold text-munity-text">Progress</h1>
+                  <p className="mt-1 text-base text-munity-muted">
+                    Symptom trends and session outcomes for {patient.name}
                   </p>
                 </div>
-                <div className="flex gap-4 text-xs font-medium">
-                  <span className="flex items-center gap-2">
-                    <span className="size-3 rounded-full bg-munity-green" />
-                    Current
-                  </span>
-                  <span className="flex items-center gap-2">
-                    <span className="size-3 rounded-full bg-munity-input-border" />
-                    Baseline
-                  </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <DropdownMenu value={dateRange} options={dateRanges} onChange={setDateRange} />
+                  <Button
+                    onClick={() =>
+                      withLoading(async () => {
+                        await new Promise((resolve) => setTimeout(resolve, 1000));
+                      }, "Generating report...")
+                    }
+                  >
+                    <Download className="size-3.5" />
+                    Export report
+                  </Button>
                 </div>
-              </div>
+              </header>
 
-              <div className="relative mt-6 h-52">
-                <div className="absolute inset-0 flex flex-col justify-between text-xs text-munity-muted">
-                  <span>21</span>
-                  <span>14</span>
-                  <span>7</span>
-                  <span>0</span>
-                </div>
-                <svg
-                  viewBox="0 0 500 180"
-                  className="absolute inset-0 ml-8 h-full w-[calc(100%-2rem)]"
-                  preserveAspectRatio="none"
-                >
-                  <line x1="0" y1="20" x2="500" y2="20" stroke="#c5c8b8" strokeDasharray="4" />
-                  <line x1="0" y1="80" x2="500" y2="80" stroke="#c5c8b8" strokeDasharray="4" />
-                  <line x1="0" y1="140" x2="500" y2="140" stroke="#c5c8b8" strokeDasharray="4" />
-                  <polyline
-                    fill="none"
-                    stroke="#c5c8b8"
-                    strokeWidth="2"
-                    strokeDasharray="6 4"
-                    points="0,30 100,35 200,40 300,38 400,36 500,34"
-                  />
-                  <polyline
-                    fill="none"
-                    stroke="#3e5219"
-                    strokeWidth="2.5"
-                    points="0,25 100,55 200,90 300,110 400,130 500,145"
-                  />
-                  <circle cx="500" cy="145" r="5" fill="#3e5219" />
-                  <circle cx="0" cy="25" r="5" fill="#3e5219" />
-                </svg>
-              </div>
-
-              <div className="mt-2 flex justify-between px-12 text-xs font-medium text-munity-muted">
-                {["Baseline", "Week 4", "Week 8", "Week 12", "Week 16", "Current"].map((l) => (
-                  <span key={l}>{l}</span>
+              <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {summaryStats.map((stat, index) => (
+                  <motion.article
+                    key={stat.label}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.04 }}
+                    className="rounded-[20px] border border-munity-border bg-white p-5 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
+                  >
+                    <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                      {stat.label}
+                    </p>
+                    <p className="mt-2 text-3xl font-bold text-munity-text">{stat.value}</p>
+                    <p
+                      className={`mt-1 text-sm ${
+                        stat.tone === "good" ? "text-munity-green" : "text-munity-muted"
+                      }`}
+                    >
+                      {stat.detail}
+                    </p>
+                  </motion.article>
                 ))}
-              </div>
+              </section>
 
-              <div className="mt-6 flex items-center justify-between border-t border-munity-input-border/30 pt-6">
-                <div className="flex items-center gap-4">
-                  <span className="rounded-full bg-munity-lime px-3 py-1 text-xs font-bold text-munity-olive-text">
-                    -42% Improvement
-                  </span>
-                  <span className="text-xs font-medium text-munity-muted">
-                    since onboarding (Oct 2023)
-                  </span>
-                </div>
-                <Link
-                  href={patientNavHref(patient.slug, "Clinical Notes")}
-                  className="flex items-center gap-1 text-sm font-bold text-munity-green"
-                >
-                  View session notes
-                  <ChevronRight className="size-2.5" />
-                </Link>
-              </div>
-            </section>
-
-            <section className="col-span-12 rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] lg:col-span-4">
-              <h2 className="text-2xl font-semibold text-munity-text">Attendance</h2>
-              <p className="text-sm font-semibold tracking-wide text-munity-muted">
-                Completion rate for last 10 sessions
-              </p>
-              <div className="mt-6 flex h-48 items-end justify-center gap-3 px-2">
-                {attendanceBars.map((bar, i) => (
-                  <motion.div
-                    key={`${dateRange}-${i}`}
-                    initial={{ height: 0 }}
-                    animate={{ height: "auto" }}
-                    className={`w-[18px] rounded-t-lg ${bar.color} ${bar.h}`}
-                  />
-                ))}
-              </div>
-              <div className="mt-6">
-                <div className="mb-2 flex justify-between text-sm font-semibold">
-                  <span className="text-munity-muted">Sessions Completed</span>
-                  <span className="text-munity-green">82%</span>
-                </div>
-                <div className="h-2 overflow-hidden rounded-full bg-munity-divider">
-                  <div className="h-full w-[82%] rounded-full bg-munity-green" />
-                </div>
-                <p className="mt-3 text-[11px] italic leading-relaxed text-munity-muted">
-                  Consistent attendance correlates with rapid symptom reduction in recent weeks.
-                </p>
-              </div>
-            </section>
-
-            <section className="col-span-12 rounded-[20px] border border-munity-input-border/20 bg-munity-sidebar p-6 lg:col-span-5">
-              <h2 className="text-2xl font-semibold text-munity-text">Baseline Comparison</h2>
-              <div className="mt-6 grid grid-cols-2 gap-4">
-                <div className="rounded-xl bg-white p-4">
-                  <p className="text-xs font-medium text-munity-muted">Onboarding Mood</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Frown className="size-5 text-red-400" />
-                    <span className="font-bold">Severely Low</span>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-5">
+                <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-3">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-xl font-semibold text-munity-text">Anxiety over time</h2>
+                      <p className="mt-1 text-sm text-munity-muted">
+                        Self-reported GAD-7 scores from weekly check-ins
+                      </p>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
+                      <ArrowDownRight className="size-3.5" />
+                      Improving
+                    </span>
                   </div>
-                </div>
-                <div className="rounded-xl border border-munity-green/20 bg-white p-4">
-                  <p className="text-xs font-medium text-munity-muted">Current Mood</p>
-                  <div className="mt-1 flex items-center gap-2">
-                    <Smile className="size-5 text-munity-green" />
-                    <span className="font-bold">Stable / Positive</span>
+
+                  <div className="relative mt-8 h-56">
+                    <div className="absolute inset-y-0 left-0 flex w-8 flex-col justify-between text-xs text-munity-muted">
+                      <span>21</span>
+                      <span>14</span>
+                      <span>7</span>
+                      <span>0</span>
+                    </div>
+                    <svg
+                      viewBox="0 0 500 180"
+                      className="absolute inset-0 ml-8 h-full w-[calc(100%-2rem)]"
+                      preserveAspectRatio="none"
+                      aria-hidden
+                    >
+                      <line x1="0" y1="20" x2="500" y2="20" stroke="#e4e4cc" strokeWidth="1" />
+                      <line x1="0" y1="80" x2="500" y2="80" stroke="#e4e4cc" strokeWidth="1" />
+                      <line x1="0" y1="140" x2="500" y2="140" stroke="#e4e4cc" strokeWidth="1" />
+                      <polyline
+                        fill="none"
+                        stroke="#c5c8b8"
+                        strokeWidth="2"
+                        strokeDasharray="6 4"
+                        points="0,20 100,20 200,20 300,20 400,20 500,20"
+                        transform="translate(0, 46)"
+                      />
+                      <polyline
+                        fill="none"
+                        stroke="#3e5219"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        points={linePoints}
+                      />
+                      {chartPoints.map((point, index) => {
+                        const x = (index / (chartPoints.length - 1)) * 500;
+                        const y = scoreToY(point.score);
+                        return <circle key={point.label} cx={x} cy={y} r="5" fill="#3e5219" />;
+                      })}
+                    </svg>
                   </div>
-                </div>
-              </div>
-              <div className="mt-6 rounded-xl border border-dashed border-munity-gray bg-white/50 p-4">
-                <h4 className="text-sm font-bold tracking-wide text-munity-text">Key Shifts</h4>
-                <ul className="mt-3 space-y-3">
-                  {[
-                    "Improved sleep hygiene (6h → 7.5h avg)",
-                    "Decrease in panic frequency (2/week → 0/week)",
-                    "Social engagement remains a challenge area",
-                  ].map((item, i) => (
-                    <li key={item} className="flex items-start gap-3 text-sm font-semibold">
-                      {i < 2 ? (
-                        <Check className="mt-0.5 size-4 shrink-0 text-munity-green" />
-                      ) : (
-                        <span className="mt-0.5 size-4 shrink-0 text-center text-munity-muted">…</span>
-                      )}
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </section>
 
-            <section className="col-span-12 rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] lg:col-span-7">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-semibold text-munity-text">
-                  Commonly Discussed Themes
-                </h2>
-                <Info className="size-5 text-munity-muted" />
-              </div>
-              <div className="mt-6 flex flex-wrap gap-3">
-                {themeTags.map((tag) => (
-                  <span key={tag.label} className={`rounded-full ${tag.className}`}>
-                    {tag.label}
-                  </span>
-                ))}
-              </div>
-              <div className="mt-6 rounded-xl bg-munity-sidebar p-4">
-                <p className="text-sm font-semibold italic leading-relaxed text-munity-muted">
-                  &quot;Self-esteem&quot; has increased in frequency by{" "}
-                  <strong className="font-bold not-italic text-munity-green">30%</strong> in the
-                  last month, often co-occurring with positive developments in &quot;Relationships&quot;.
-                </p>
-              </div>
-            </section>
+                  <div className="mt-3 flex justify-between pl-8 text-xs font-medium text-munity-muted">
+                    {chartPoints.map((point) => (
+                      <span key={point.label}>{point.label}</span>
+                    ))}
+                  </div>
 
-            <section className="col-span-12 rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
-              <div className="grid gap-8 lg:grid-cols-2">
-                <div>
-                  <h2 className="text-2xl font-semibold text-munity-text">
-                    Patient Reflection Snapshot
-                  </h2>
-                  <p className="mt-2 text-sm font-semibold tracking-wide text-munity-muted">
-                    Interactive slider showing the patient&apos;s current self-perception relative to
-                    the last clinical assessment.
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-munity-border pt-5">
+                    <p className="text-sm text-munity-muted">
+                      Baseline was{" "}
+                      <span className="font-semibold text-munity-text">14</span> · Current is{" "}
+                      <span className="font-semibold text-munity-green">8</span>
+                    </p>
+                    <Link
+                      href={patientNavHref(patient.slug, "Clinical Notes")}
+                      className="inline-flex items-center gap-1 text-sm font-semibold text-munity-green hover:underline"
+                    >
+                      View session notes
+                      <ChevronRight className="size-4" />
+                    </Link>
+                  </div>
+                </section>
+
+                <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-2">
+                  <h2 className="text-xl font-semibold text-munity-text">Attendance</h2>
+                  <p className="mt-1 text-sm text-munity-muted">Last 10 scheduled sessions</p>
+
+                  <div className="mt-6 flex items-end justify-between gap-2">
+                    {attendanceSessions.map((session, index) => (
+                      <div key={session.label} className="flex flex-1 flex-col items-center gap-2">
+                        <motion.div
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ delay: index * 0.04, duration: 0.35 }}
+                          style={{ originY: 1 }}
+                          className={`h-24 w-full max-w-[28px] rounded-t-lg ${
+                            session.attended ? "bg-munity-green" : "bg-[#ffdad6]"
+                          }`}
+                        />
+                        <span className="text-[10px] font-semibold text-munity-muted">
+                          {session.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6">
+                    <div className="mb-2 flex justify-between text-sm">
+                      <span className="font-medium text-munity-muted">Completion rate</span>
+                      <span className="font-semibold text-munity-green">82%</span>
+                    </div>
+                    <div className="h-2 overflow-hidden rounded-full bg-munity-divider">
+                      <div className="h-full w-[82%] rounded-full bg-munity-green" />
+                    </div>
+                    <div className="mt-4 flex gap-4 text-xs text-munity-muted">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-sm bg-munity-green" />
+                        Attended
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="size-2.5 rounded-sm bg-[#ffdad6]" />
+                        Missed
+                      </span>
+                    </div>
+                  </div>
+                </section>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="size-5 text-munity-green" />
+                    <h2 className="text-xl font-semibold text-munity-text">Baseline comparison</h2>
+                  </div>
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl bg-munity-sidebar/60 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                        Onboarding
+                      </p>
+                      <p className="mt-2 text-lg font-semibold text-munity-text">Severely low</p>
+                      <p className="mt-1 text-sm text-munity-muted">Mood · Oct 2023</p>
+                    </div>
+                    <div className="rounded-2xl border border-munity-green/20 bg-munity-lime/30 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                        Current
+                      </p>
+                      <p className="mt-2 text-lg font-semibold text-munity-green">Stable / positive</p>
+                      <p className="mt-1 text-sm text-munity-muted">Mood · Today</p>
+                    </div>
+                  </div>
+
+                  <ul className="mt-6 space-y-3">
+                    {keyShifts.map((item) => (
+                      <li
+                        key={item.text}
+                        className="flex items-start gap-3 rounded-2xl border border-munity-border bg-munity-sidebar/30 px-4 py-3 text-sm text-munity-text"
+                      >
+                        {item.positive ? (
+                          <Check className="mt-0.5 size-4 shrink-0 text-munity-green" />
+                        ) : (
+                          <span className="mt-0.5 size-4 shrink-0 text-center text-munity-muted">
+                            ·
+                          </span>
+                        )}
+                        {item.text}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+                  <h2 className="text-xl font-semibold text-munity-text">Session themes</h2>
+                  <p className="mt-1 text-sm text-munity-muted">
+                    Topics most often discussed in recent notes
                   </p>
-                </div>
-                <div>
-                  <div className="mb-3 flex justify-between text-sm font-bold">
-                    <span>Feelings of Stability</span>
-                    <span className="text-munity-green">7.5 / 10</span>
+
+                  <div className="mt-6 flex flex-col gap-3">
+                    {themes.map((theme, index) => (
+                      <div key={theme.label} className="flex items-center gap-3">
+                        <span className="w-36 shrink-0 truncate text-sm font-medium text-munity-text">
+                          {theme.label}
+                        </span>
+                        <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-munity-divider">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(theme.count / maxThemeCount) * 100}%` }}
+                            transition={{ delay: index * 0.04, duration: 0.45 }}
+                            className="h-full rounded-full bg-munity-green"
+                          />
+                        </div>
+                        <span className="w-6 text-right text-xs font-semibold text-munity-muted">
+                          {theme.count}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="relative h-2 rounded bg-munity-lime">
-                    <div
-                      className="absolute -top-1 size-6 rounded-xl bg-munity-green shadow-[0_0_10px_rgba(62,82,25,0.2)]"
-                      style={{ left: "75%" }}
-                    />
-                  </div>
-                  <div className="mt-2 flex justify-between text-[10px] font-bold uppercase text-munity-muted">
-                    <span>Turbulent</span>
-                    <span>Grounded</span>
-                  </div>
-                </div>
+
+                  <p className="mt-6 rounded-2xl bg-munity-sidebar/50 px-4 py-3 text-sm leading-relaxed text-munity-muted">
+                    Self-esteem mentions are up{" "}
+                    <span className="font-semibold text-munity-green">30%</span> this month, often
+                    alongside relationship progress.
+                  </p>
+                </section>
               </div>
-            </section>
-          </div>
-        </AnimatedPage>
-        </CollapsibleSidebarLayout>
+            </AnimatedPage>
+          </CollapsibleSidebarLayout>
+        </div>
       </div>
-    </div>
     </SidebarProvider>
   );
 }

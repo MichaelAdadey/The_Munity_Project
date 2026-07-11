@@ -118,13 +118,22 @@ function ReviewStatusCard() {
         </div>
 
         <div className="mt-10 flex items-center justify-center">
-          <Button
-            href={routes.resources}
-            className="h-14 rounded-xl px-8 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
-          >
-            <Compass className="size-4" />
-            Explore Resources
-          </Button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              href={routes.therapistDashboard}
+              className="h-14 rounded-xl px-8 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)]"
+            >
+              Continue to dashboard
+            </Button>
+            <Button
+              href={routes.resources}
+              variant="outline"
+              className="h-14 rounded-xl px-8"
+            >
+              <Compass className="size-4" />
+              Explore Resources
+            </Button>
+          </div>
         </div>
       </motion.article>
 

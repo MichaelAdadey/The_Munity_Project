@@ -1,12 +1,7 @@
-import Navbar from '@/components/Navbar'
-import React from 'react'
+import { TherapyView } from "@/components/therapy/TherapyView";
+import { getMemberLoggedIn } from "@/lib/member-auth";
 
-function Therapy() {
-  return (
-    <div>
-        <Navbar />
-    </div>
-  )
+export default async function TherapyPage() {
+  const isLoggedIn = await getMemberLoggedIn();
+  return <TherapyView isLoggedIn={isLoggedIn} />;
 }
-
-export default Therapy

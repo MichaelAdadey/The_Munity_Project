@@ -1,7 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
-import { findMockAccount } from '@/lib/mock-credentials'
+import { findMockAccount, getMockAccountByRole } from '@/lib/mock-credentials'
 import { clearMockSession, setMockSession } from '@/lib/mock-session'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { createClient } from '@/lib/supabase/server'
@@ -67,6 +67,12 @@ export async function signUp(
   const fullName = `${firstName} ${lastName}`
 
   if (!isSupabaseConfigured()) {
+    const account = getMockAccountByRole('user')
+    await setMockSession({
+      ...account,
+      name: fullName,
+      email: email.trim().toLowerCase() || account.email,
+    })
     redirect('/home')
   }
 
@@ -90,6 +96,7 @@ export async function signUp(
  */
 export async function signInWithGoogle(): Promise<void> {
   if (!isSupabaseConfigured()) {
+    await setMockSession(getMockAccountByRole('user'))
     redirect('/home')
   }
 

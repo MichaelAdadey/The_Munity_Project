@@ -184,11 +184,15 @@ Logo asset: [`public/auth/logo-icon.png`](public/auth/logo-icon.png)
 | Path | Feature |
 |------|---------|
 | `/` | 🏠 Marketing landing |
-| `/login` · `/signup` | 🔐 Auth |
-| `/home` | 📰 Feed & mood check-in |
-| `/Communities` | 👥 Communities |
-| `/Therapy` | 💬 Therapist directory |
+| `/login` · `/signup` | 🔐 Auth (sets mock session in preview) |
+| `/home` | 📰 Feed, mood check-in, composer (auth) |
+| `/dashboard` | 📊 Member wellness dashboard (auth) |
+| `/Communities` · `/Communities/[slug]` | 👥 Browse / join communities |
+| `/Therapy` · `/Therapy/[id]` | 💬 Therapist directory + booking |
+| `/messages` | 💬 Threads + send (auth) |
+| `/profile` · `/settings` · `/saved` | 👤 Account surfaces (auth) |
 | `/resources` | 📚 Resource Hub (public; guests see Resources tab only) |
+| `/emergency` · `/privacy` · `/terms` · `/help` | 🆘 Crisis + legal stubs |
 
 **Resource categories:** Anxiety · Depression · Stress · Grief · Relationships · Addiction  
 → each has its own featured guide, cards, and trending list (`lib/resource-categories.ts`).
@@ -196,7 +200,7 @@ Logo asset: [`public/auth/logo-icon.png`](public/auth/logo-icon.png)
 ### 🩺 Therapists
 
 ```text
-Join → Onboarding (4 steps) → Review screen → Login → Clinical app
+Join → Onboarding (4 steps) → Review screen → Clinical app
 ```
 
 | Step | Path |
@@ -208,7 +212,7 @@ Join → Onboarding (4 steps) → Review screen → Login → Clinical app
 | ✅ Review | `/therapistcredentialauth` |
 | 🏥 Dashboard | `/therapistdashboard` |
 | 👥 Patients | `/therapistpatients` |
-| 📝 Notes | `/therapistclinicalnotes` |
+| 📝 Notes | `/therapistclinicalnotes` (+ per-patient notes persist in mock store) |
 | 📊 Analytics | `/therapistanalytics` |
 | 👤 Profile | `/therapistprofile` |
 
@@ -221,7 +225,20 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 | Path | Feature |
 |------|---------|
 | `/admin/login` | Admin sign-in |
-| `/admin` | Pending reviews, counts, deep links |
+| `/admin` | Platform overview |
+| `/admin/moderation` | Report queue (warn / remove / suspend / dismiss) |
+| `/admin/communities` · `/growth` · `/therapy` · `/resources` · `/settings` | Console sections |
+
+### 🔌 Preview data layer (for backend handoff)
+
+| File | Role |
+|------|------|
+| `lib/mock-db.ts` | Seed posts, communities, therapists, chats, reports, bookings |
+| `lib/mock-store.ts` | Client mutations + `localStorage` persistence (`munity-mock-store-v1`) |
+| `lib/mock-credentials.ts` · `lib/mock-session.ts` | Role-scoped demo auth cookie |
+| `lib/supabase/middleware.ts` | Gates member / therapist / admin routes in preview |
+
+Replace `mockStore.*` calls with API requests when wiring the real backend — UI shapes already match intended domain models.
 
 <p align="center">
   <img src="public/landing/community-graphic.png" alt="Munity community graphic" width="560" />
@@ -238,6 +255,7 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 │   ├── admin/                   # Admin login + console
 │   ├── therapistonboarding/     # 4-step application
 │   ├── therapist*/              # Clinical surfaces
+│   ├── Communities/ · Therapy/  # Member directories + detail routes
 │   ├── home/ · resources/       # Member + public
 │   └── login/ · signup/
 ├── 📂 components/
@@ -248,11 +266,12 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 │   ├── routes.ts                # 🧭 Canonical paths
 │   ├── mock-credentials.ts      # 🔑 Demo accounts
 │   ├── mock-session.ts          # Cookie session (preview)
+│   ├── mock-db.ts · mock-store.ts  # Interactive seed + mutations
 │   ├── onboarding-*.ts          # Application progress & drafts
 │   ├── resource-categories.ts   # Hub content by topic
 │   ├── ghana-therapist.ts       # GH licensing / payout options
 │   ├── supabase/                # Client · server · middleware
-│   └── data.ts                  # Seed content
+│   └── data.ts                  # Legacy seed (prefer mock-db)
 ├── 📂 hooks/
 ├── 📂 public/                   # 🖼️ Logos, landing, resources
 └── 📄 README.md

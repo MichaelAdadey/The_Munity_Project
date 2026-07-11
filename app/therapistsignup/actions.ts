@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { getMockAccountByRole } from "@/lib/mock-credentials";
+import { setMockSession } from "@/lib/mock-session";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/routes";
@@ -25,6 +27,11 @@ export async function createTherapistAccount(
   }
 
   if (!isSupabaseConfigured()) {
+    const account = getMockAccountByRole("therapist");
+    await setMockSession({
+      ...account,
+      email: email.toLowerCase() || account.email,
+    });
     return undefined;
   }
 
@@ -54,6 +61,7 @@ export async function signUpAsTherapist(
 
 export async function signInWithGoogleAsTherapist(): Promise<void> {
   if (!isSupabaseConfigured()) {
+    await setMockSession(getMockAccountByRole("therapist"));
     redirect(therapistOnboardingPath);
   }
 

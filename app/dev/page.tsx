@@ -10,6 +10,13 @@ import {
 
 const screens = [
   { title: "Landing Page", subtitle: "Public homepage", href: routes.home },
+  { title: "Member Home", subtitle: "Personalized peer support feed", href: routes.memberHome },
+  { title: "Communities", subtitle: "Browse peer support communities", href: routes.communities },
+  { title: "Therapy", subtitle: "Browse the therapy network", href: routes.therapy },
+  { title: "Messages", subtitle: "Member conversations", href: routes.messages },
+  { title: "Profile", subtitle: "Member profile and activity", href: routes.profile },
+  { title: "Emergency Support", subtitle: "Immediate support resources", href: routes.emergency },
+  { title: "Privacy Policy", subtitle: "Public privacy preview", href: routes.privacy },
   { title: "Login", subtitle: "Sign in to your Munity account", href: routes.login },
   {
     title: "Therapist Login",
@@ -77,6 +84,16 @@ const screens = [
     subtitle: "Therapeutic progress across your caseload",
     href: routes.therapistAnalytics,
   },
+  {
+    title: "Files",
+    subtitle: "Documents and worksheets across your caseload",
+    href: routes.therapistFiles,
+  },
+  {
+    title: "Care Plan",
+    subtitle: "Treatment goals across your caseload",
+    href: routes.therapistCarePlan,
+  },
   ...patientSlugs.flatMap((slug) => {
     const patient = patientsBySlug[slug];
     const paths = patientRoutes(slug);
@@ -92,9 +109,24 @@ const screens = [
         href: paths.clinicalNotes,
       },
       {
+        title: `${patient.name} — New Session Note`,
+        subtitle: "Create a new clinical session note",
+        href: paths.newSessionNote,
+      },
+      {
         title: `${patient.name} — Progress`,
         subtitle: "Therapeutic progress tracking",
         href: paths.progress,
+      },
+      {
+        title: `${patient.name} — Files`,
+        subtitle: "Patient documents and worksheets",
+        href: paths.files,
+      },
+      {
+        title: `${patient.name} — Care Plan`,
+        subtitle: "Treatment goals and review schedule",
+        href: paths.carePlan,
       },
     ];
   }),

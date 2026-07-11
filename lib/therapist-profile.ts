@@ -22,16 +22,16 @@ export type TherapistProfile = {
   memberSince: string;
 };
 
-/** Preview data until therapist profile is loaded from Supabase. */
+/** Preview data until therapist profile is loaded from Supabase. Matches demo login. */
 export const currentTherapistProfile: TherapistProfile = {
   title: "Dr.",
   gender: "Female",
-  firstName: "Ama",
-  lastName: "Mensah",
+  firstName: "Elena",
+  lastName: "Aris",
   professionalTitle: "Registered Clinical Psychologist",
   phone: "+233 24 123 4567",
   practiceLocation: "Greater Accra",
-  email: "ama.mensah@example.com",
+  email: "elena.aris@munity.app",
   bio: "Clinical psychologist with 8 years of experience supporting adults through anxiety, depression, and life transitions. Based in Accra, offering video and in-person sessions.",
   licensingBody: "Ghana Psychology Council (GPC)",
   licenseType: "Registered Clinical Psychologist",

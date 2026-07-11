@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { findMockAccount } from "@/lib/mock-credentials";
+import { findMockAccount, getMockAccountByRole } from "@/lib/mock-credentials";
 import { setMockSession } from "@/lib/mock-session";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
@@ -41,6 +41,7 @@ export async function signInAsTherapist(
 
 export async function signInWithGoogleAsTherapistLogin(): Promise<void> {
   if (!isSupabaseConfigured()) {
+    await setMockSession(getMockAccountByRole("therapist"));
     redirect(routes.therapistDashboard);
   }
 

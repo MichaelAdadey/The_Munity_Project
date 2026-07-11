@@ -3,7 +3,7 @@ import { Bell, Settings } from "lucide-react";
 import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMenu";
 import { routes } from "@/lib/routes";
 
-type NavItem = "Dashboard" | "Patients" | "Sessions" | "Analytics";
+type NavItem = "Dashboard" | "Patients";
 
 interface TopNavProps {
   active?: NavItem;
@@ -13,8 +13,6 @@ interface TopNavProps {
 const navItems: { label: NavItem; href: string }[] = [
   { label: "Dashboard", href: routes.therapistDashboard },
   { label: "Patients", href: routes.therapistPatients },
-  { label: "Sessions", href: routes.therapistClinicalNotes },
-  { label: "Analytics", href: routes.therapistAnalytics },
 ];
 
 export function TopNav({ active = "Patients", showSearch = false }: TopNavProps) {

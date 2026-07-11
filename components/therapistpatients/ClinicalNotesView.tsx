@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Check,
@@ -19,10 +20,22 @@ import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { assets } from "@/lib/assets";
+import { useMockStore } from "@/lib/mock-store";
 import type { PatientRecord } from "@/lib/routes";
-import { patientNavHref, routes } from "@/lib/routes";
+import { patientNavHref, patientRoutes, routes } from "@/lib/routes";
 
-const sessions = [
+type NoteSession = {
+  id: string | number;
+  date: string;
+  title: string;
+  excerpt: string;
+  tags?: string[];
+  active: boolean;
+  faded?: boolean;
+  body?: string;
+};
+
+const sessions: NoteSession[] = [
   {
     id: 12,
     date: "Today",
@@ -60,17 +73,37 @@ interface ClinicalNotesViewProps {
 }
 
 export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
+  const { sessionNotes } = useMockStore();
+  const router = useRouter();
   const { withLoading } = useLoading();
-  const [activeSessionId, setActiveSessionId] = useState(12);
+  const [activeSessionId, setActiveSessionId] = useState<string | number>(12);
   const [saved, setSaved] = useState(false);
   const avatar = assets.avatars[patient.avatarKey];
   const firstName = patient.name.split(" ")[0];
-  const activeSession = sessions.find((session) => session.id === activeSessionId) ?? sessions[0];
+  const persistedSessions = sessionNotes
+    .filter((note) => note.patientSlug === patient.slug)
+    .map((note) => ({
+      id: note.id,
+      date: new Date(`${note.sessionDate}T12:00:00`).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      }),
+      title: note.title,
+      excerpt: note.body,
+      tags: ["SAVED NOTE"],
+      body: note.body,
+      active: false,
+    }));
+  const allSessions = [...persistedSessions, ...sessions];
+  const activeSession =
+    allSessions.find((session) => session.id === activeSessionId) ?? allSessions[0];
+  const newNoteHref = patientRoutes(patient.slug).newSessionNote;
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
     <div className="min-h-screen bg-munity-bg">
-      <TopNav active="Sessions" showSearch />
+      <TopNav active="Patients" showSearch />
 
       <div className="w-full pt-16">
         <CollapsibleSidebarLayout
@@ -113,7 +146,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                 />
               </div>
               <div className="flex flex-col gap-3 overflow-auto">
-                {sessions.map((session) => {
+                {allSessions.map((session) => {
                   const isActive = session.id === activeSessionId;
                   return (
                   <motion.button
@@ -178,6 +211,10 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                   </h1>
                 </div>
                 <div className="flex gap-3">
+                  <Button variant="outline" onClick={() => router.push(newNoteHref)}>
+                    <PlusCircle className="size-4" />
+                    New note
+                  </Button>
                   <Button variant="ghost">
                     <Printer className="size-4" />
                     Export
@@ -203,10 +240,10 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                       Session Summary
                     </h3>
                     <div className="mt-3 rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text">
-                      Patient presented with heightened autonomic arousal today, specifically citing a
+                      {activeSession.body ?? `Patient presented with heightened autonomic arousal today, specifically citing a
                       recent restructuring at her firm. We spent the first 15 minutes of the session
-                      grounding and practicing bilateral stimulation techniques. {firstName} expressed
-                      concern about her performance despite positive feedback from peers.
+                      grounding and practicing bilateral stimulation techniques. ${firstName} expressed
+                      concern about her performance despite positive feedback from peers.`}
                     </div>
                   </section>
 

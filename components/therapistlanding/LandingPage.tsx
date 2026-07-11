@@ -17,7 +17,12 @@ import { LandingFooter } from "@/components/therapistlanding/LandingFooter";
 import { LandingHeader } from "@/components/therapistlanding/LandingHeader";
 import { TestimonialsCarousel } from "@/components/therapistlanding/TestimonialsCarousel";
 import { assets } from "@/lib/assets";
+import type { MockAccount } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
+
+export type LandingPageProps = {
+  session?: Pick<MockAccount, "name" | "role" | "redirectTo"> | null;
+};
 
 const stats = [
   { value: "50k+", label: "Active Members" },
@@ -57,10 +62,10 @@ const resourceTags = [
   { label: "Mood Tracking", icon: Activity },
 ];
 
-export function LandingPage() {
+export function LandingPage({ session = null }: LandingPageProps) {
   return (
     <div className="min-h-screen bg-munity-bg">
-      <LandingHeader />
+      <LandingHeader session={session} />
 
       <main className="pt-16">
         <HeroSection />
