@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/ui/Providers";
 import "./globals.css";
 import { createClient } from "@/lib/supabase/server";
-import { redirect, useRouter } from "next/navigation";
+import { redirect } from "next/navigation";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
