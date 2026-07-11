@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { RefreshCw } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
@@ -9,11 +9,42 @@ import { useMockStore } from "@/lib/mock-store";
 
 type AdminSection = "communities" | "growth" | "therapy" | "resources" | "settings";
 
-const growthMetrics = [
+type GrowthMetric = {
+  label: string;
+  value: string;
+  detail: string;
+};
+
+const initialGrowthMetrics: GrowthMetric[] = [
   { label: "New members", value: "1,284", detail: "+12.4% this month" },
   { label: "Active communities", value: "7", detail: "94% moderation coverage" },
   { label: "Weekly engagement", value: "68%", detail: "+4.1% from last week" },
 ];
+
+function refreshGrowthMetrics(current: GrowthMetric[]): GrowthMetric[] {
+  return current.map((metric) => {
+    if (metric.label === "New members") {
+      const next = 1284 + Math.floor(Math.random() * 18);
+      return {
+        ...metric,
+        value: next.toLocaleString(),
+        detail: `+${(12 + Math.random() * 1.2).toFixed(1)}% this month`,
+      };
+    }
+    if (metric.label === "Weekly engagement") {
+      const next = 66 + Math.floor(Math.random() * 6);
+      return {
+        ...metric,
+        value: `${next}%`,
+        detail: `+${(3.5 + Math.random() * 1.5).toFixed(1)}% from last week`,
+      };
+    }
+    return {
+      ...metric,
+      detail: `${92 + Math.floor(Math.random() * 5)}% moderation coverage`,
+    };
+  });
+}
 
 const resources = [
   { title: "Grounding in the moment", type: "Guide", status: "Published" },
@@ -21,7 +52,13 @@ const resources = [
   { title: "Building a sleep routine", type: "Worksheet", status: "Draft" },
 ];
 
-function AdminSubpageContent({ section }: { section: AdminSection }) {
+function AdminSubpageContent({
+  section,
+  growthMetrics,
+}: {
+  section: AdminSection;
+  growthMetrics: GrowthMetric[];
+}) {
   const { communities, therapists } = useMockStore();
   const { flash } = useLiveToast();
   const [resourceItems, setResourceItems] = useState(resources);
@@ -171,18 +208,37 @@ function AdminSubpageContent({ section }: { section: AdminSection }) {
   );
 }
 
-function GrowthRefreshButton() {
+function GrowthRefreshButton({ onRefresh }: { onRefresh: () => void }) {
   const { flash } = useLiveToast();
+  const [spinning, setSpinning] = useState(false);
+  const onRefreshRef = useRef(onRefresh);
+  onRefreshRef.current = onRefresh;
+
+  function runRefresh(showToast: boolean) {
+    setSpinning(true);
+    onRefreshRef.current();
+    if (showToast) {
+      flash("Growth insights refreshed with the latest platform activity.");
+    }
+    window.setTimeout(() => setSpinning(false), 700);
+  }
+
+  useEffect(() => {
+    const id = window.setInterval(() => runRefresh(false), 10_000);
+    return () => window.clearInterval(id);
+    // Auto-refresh every 10s; toast only on manual click
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <button
       type="button"
-      onClick={() => flash("Growth insights refreshed with the latest platform activity.")}
+      onClick={() => runRefresh(true)}
       className="flex size-9 items-center justify-center rounded-full border border-munity-border bg-white text-munity-green transition hover:bg-munity-lime/40"
       aria-label="Refresh growth insights"
-      title="Refresh growth insights"
+      title="Refresh growth insights (auto every 10s)"
     >
-      <RefreshCw className="size-4" />
+      <RefreshCw className={`size-4 ${spinning ? "animate-spin" : ""}`} />
     </button>
   );
 }
@@ -201,14 +257,23 @@ export function AdminSubpageView({
     resources: "Resource Overview",
     settings: "Admin Settings",
   }[section];
+  const [growthMetrics, setGrowthMetrics] = useState(initialGrowthMetrics);
+
+  function handleGrowthRefresh() {
+    setGrowthMetrics((current) => refreshGrowthMetrics(current));
+  }
 
   return (
     <AdminAppShell
       adminName={adminName}
       title={title}
-      actions={section === "growth" ? <GrowthRefreshButton /> : undefined}
+      actions={
+        section === "growth" ? (
+          <GrowthRefreshButton onRefresh={handleGrowthRefresh} />
+        ) : undefined
+      }
     >
-      <AdminSubpageContent section={section} />
+      <AdminSubpageContent section={section} growthMetrics={growthMetrics} />
     </AdminAppShell>
   );
 }
