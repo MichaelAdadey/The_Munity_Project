@@ -2,7 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
 import {
   Heart,
   ImageIcon,
@@ -12,7 +13,10 @@ import {
   Plus,
   Share2,
   Smile,
+  Sparkles,
   UserRound,
+  Wind,
+  X,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
@@ -27,24 +31,125 @@ const moods: { label: MoodLabel; bg: string }[] = [
   { label: "Anxious", bg: "bg-[#f3eef7]" },
 ];
 
+const mindfulMoments = [
+  "Box breathing: Inhale for 4, Hold for 4, Exhale for 4, Hold for 4. Repeat until you feel grounded.",
+  "Name 5 things you can see, 4 you can touch, 3 you can hear, 2 you can smell, 1 you can taste.",
+  "Place a hand on your chest. Feel three slow breaths before you reply to anything urgent.",
+  "Unclench your jaw. Drop your shoulders. Soften your gaze for ten seconds.",
+];
+
+const liveActivitySeed = [
+  { who: "Jordan", action: "supported a post in Mindful Paths", tone: "support" },
+  { who: "Priya", action: "joined Grief Garden", tone: "join" },
+  { who: "Marcus", action: "shared a calm check-in", tone: "post" },
+  { who: "Elena A.", action: "is available for sessions today", tone: "therapy" },
+  { who: "Campus Calm", action: "started a live peer circle", tone: "live" },
+];
+
 const cardClass =
   "rounded-[20px] border border-munity-border bg-white shadow-[0_4px_10px_rgba(85,107,47,0.05)]";
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0 },
+};
+
+function greetingForHour(hour: number) {
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
 
 export function HomeFeedView() {
   const store = useMockStore();
   const [showMoods, setShowMoods] = useState(true);
   const [composerText, setComposerText] = useState("");
   const [anonymous, setAnonymous] = useState(store.settings.anonymousDefault);
+  const [expandedComments, setExpandedComments] = useState<string | null>(null);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [toast, setToast] = useState<string | null>(null);
+  const [breathing, setBreathing] = useState(false);
+  const [breathPhase, setBreathPhase] = useState("Inhale");
+  const [breathCount, setBreathCount] = useState(4);
+  const [momentIndex, setMomentIndex] = useState(0);
+  const [activityIndex, setActivityIndex] = useState(0);
+  const [onlineNow, setOnlineNow] = useState(128);
+  const [justSupported, setJustSupported] = useState<string | null>(null);
+
+  const hour = new Date().getHours();
+  const greeting = greetingForHour(hour);
+  const firstName = store.profile.fullName.split(" ")[0];
+
   const joinedCommunities = store.communities.filter((community) =>
     store.memberships.includes(community.id),
   );
-  const suggestedGroups = store.communities.filter(
-    (community) => !store.memberships.includes(community.id),
-  ).slice(0, 2);
+  const suggestedGroups = store.communities
+    .filter((community) => !store.memberships.includes(community.id))
+    .slice(0, 2);
   const therapists = store.therapists.slice(0, 2);
+
+  const liveActivity = useMemo(() => {
+    const recentPost = store.posts[0];
+    const dynamic = recentPost
+      ? [
+          {
+            who: recentPost.anonymous ? "Someone" : recentPost.author.split(" ")[0],
+            action: `posted in ${recentPost.communityName ?? "the feed"}`,
+            tone: "post",
+          },
+          ...liveActivitySeed,
+        ]
+      : liveActivitySeed;
+    return dynamic;
+  }, [store.posts]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 2400);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setMomentIndex((value) => (value + 1) % mindfulMoments.length);
+    }, 8000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActivityIndex((value) => (value + 1) % liveActivity.length);
+      setOnlineNow((value) => value + (Math.random() > 0.5 ? 1 : -1));
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [liveActivity.length]);
+
+  useEffect(() => {
+    if (!breathing) return;
+    const phases = ["Inhale", "Hold", "Exhale", "Hold"] as const;
+    let phase = 0;
+    let count = 4;
+    setBreathPhase(phases[0]);
+    setBreathCount(4);
+    const timer = window.setInterval(() => {
+      count -= 1;
+      if (count <= 0) {
+        phase = (phase + 1) % phases.length;
+        count = 4;
+        setBreathPhase(phases[phase]);
+      }
+      setBreathCount(count);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [breathing]);
+
+  function flash(message: string) {
+    setToast(message);
+  }
 
   function selectMood(mood: MoodLabel) {
     mockStore.setMood(mood);
+    flash(`Mood set to ${mood}`);
   }
 
   function createPost() {
@@ -55,16 +160,46 @@ export function HomeFeedView() {
       feeling: store.moodToday ? `Feeling ${store.moodToday}` : undefined,
     });
     setComposerText("");
+    flash(anonymous ? "Posted anonymously" : "Shared with your communities");
+  }
+
+  function supportPost(postId: string) {
+    mockStore.toggleSupport(postId);
+    setJustSupported(postId);
+    window.setTimeout(() => setJustSupported(null), 500);
+  }
+
+  function submitComment(postId: string) {
+    const draft = commentDrafts[postId] ?? "";
+    if (!draft.trim()) return;
+    mockStore.addComment(postId, draft);
+    setCommentDrafts((prev) => ({ ...prev, [postId]: "" }));
+    flash("Comment added");
   }
 
   return (
     <MemberAppShell>
-      <div className="mx-auto grid max-w-[1280px] grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
+      <div className="relative mx-auto grid max-w-[1280px] grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-6 h-40 rounded-[32px] bg-[radial-gradient(circle_at_top,_rgba(214,231,161,0.35),_transparent_70%)]"
+        />
+
         {/* Left sidebar */}
-        <aside className="flex flex-col gap-5 lg:col-span-3">
-          <section className={`${cardClass} p-6`}>
+        <motion.aside
+          className="relative flex flex-col gap-5 lg:col-span-3"
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          transition={{ duration: 0.35 }}
+        >
+          <section className={`${cardClass} overflow-hidden p-6`}>
             <div className="flex flex-col items-center text-center">
-              <div className="rounded-full border-4 border-munity-lime/80 p-1.5 shadow-sm">
+              <motion.div
+                className="rounded-full border-4 border-munity-lime/80 p-1.5 shadow-sm"
+                animate={{ boxShadow: ["0 0 0 0 rgba(214,231,161,0.5)", "0 0 0 10px rgba(214,231,161,0)"] }}
+                transition={{ duration: 2.4, repeat: Infinity }}
+              >
                 <div className="relative size-16 overflow-hidden rounded-full">
                   <Image
                     src={store.profile.avatar}
@@ -73,11 +208,20 @@ export function HomeFeedView() {
                     className="object-cover"
                   />
                 </div>
-              </div>
+              </motion.div>
               <h2 className="mt-4 text-xl font-semibold tracking-tight text-munity-text">
                 {store.profile.fullName}
               </h2>
               <p className="mt-1 text-xs font-medium text-munity-muted">{store.profile.title}</p>
+              {store.moodToday ? (
+                <motion.p
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-3 rounded-full bg-munity-lime/50 px-3 py-1 text-[11px] font-semibold text-munity-olive-text"
+                >
+                  Feeling {store.moodToday} today
+                </motion.p>
+              ) : null}
               <div className="mt-5 flex w-full gap-2">
                 <div className="flex-1 rounded-xl bg-[#f5f3f3] px-3 py-3 text-center">
                   <p className="text-base font-bold text-munity-green">{store.profile.dayStreak}</p>
@@ -88,7 +232,43 @@ export function HomeFeedView() {
                   <p className="mt-0.5 text-[11px] font-medium text-munity-muted">Groups</p>
                 </div>
               </div>
+              <Link
+                href={routes.profile}
+                className="mt-4 text-xs font-semibold text-munity-green hover:underline"
+              >
+                View profile
+              </Link>
             </div>
+          </section>
+
+          <section className={`${cardClass} p-4`}>
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-munity-muted">
+                Live now
+              </p>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f7e4] px-2 py-1 text-[11px] font-semibold text-[#2f6b3a]">
+                <span className="relative flex size-2">
+                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#22c55e] opacity-60" />
+                  <span className="relative inline-flex size-2 rounded-full bg-[#22c55e]" />
+                </span>
+                {Math.max(96, onlineNow)} online
+              </span>
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={activityIndex}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28 }}
+                className="mt-3 text-sm leading-relaxed text-munity-text"
+              >
+                <span className="font-semibold text-munity-green">
+                  {liveActivity[activityIndex]?.who}
+                </span>{" "}
+                {liveActivity[activityIndex]?.action}
+              </motion.p>
+            </AnimatePresence>
           </section>
 
           <section className={`${cardClass} p-5`}>
@@ -96,33 +276,39 @@ export function HomeFeedView() {
               <h3 className="text-sm font-semibold tracking-wide text-munity-text">
                 Your Communities
               </h3>
-              <button
-                type="button"
+              <Link
+                href={routes.communities}
                 className="rounded-full p-1.5 text-munity-green transition hover:bg-munity-lime/40"
-                aria-label="Add community"
+                aria-label="Browse communities"
               >
                 <Plus className="size-4" />
-              </button>
+              </Link>
             </div>
             <div className="flex flex-col gap-1">
-              {joinedCommunities.map((community) => (
-                <Link
+              {joinedCommunities.map((community, index) => (
+                <motion.div
                   key={community.id}
-                  href={communityPath(community.slug)}
-                  className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-[#f5f3f3]"
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
                 >
-                  <span
-                    className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#d6e7a1] text-sm font-bold text-[#5a682f]"
+                  <Link
+                    href={communityPath(community.slug)}
+                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-[#f5f3f3]"
                   >
-                    {community.name.charAt(0)}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-semibold text-munity-text">
-                      {community.name}
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#d6e7a1] text-sm font-bold text-[#5a682f]">
+                      {community.name.charAt(0)}
                     </span>
-                    <span className="block text-xs text-munity-muted">{community.membersLabel}</span>
-                  </span>
-                </Link>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-munity-text">
+                        {community.name}
+                      </span>
+                      <span className="block text-xs text-munity-muted">
+                        {community.membersLabel}
+                      </span>
+                    </span>
+                  </Link>
+                </motion.div>
               ))}
             </div>
             <Link
@@ -132,11 +318,27 @@ export function HomeFeedView() {
               View all communities
             </Link>
           </section>
-        </aside>
+        </motion.aside>
 
         {/* Center feed */}
-        <section className="flex flex-col gap-5 lg:col-span-6">
-          <div className={`${cardClass} p-5 sm:p-6`}>
+        <section className="relative flex flex-col gap-5 lg:col-span-6">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`${cardClass} overflow-hidden p-5 sm:p-6`}
+          >
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-munity-muted">
+                  {greeting}
+                </p>
+                <h1 className="mt-1 text-2xl font-bold tracking-tight text-munity-green">
+                  {firstName}, how are you arriving today?
+                </h1>
+              </div>
+              <Sparkles className="size-5 shrink-0 text-munity-green/70" />
+            </div>
+
             <div className="flex gap-3 sm:gap-4">
               <div className="relative size-11 shrink-0 overflow-hidden rounded-full sm:size-12">
                 <Image
@@ -149,7 +351,7 @@ export function HomeFeedView() {
               <textarea
                 value={composerText}
                 onChange={(event) => setComposerText(event.target.value)}
-                placeholder={`What's on your mind, ${store.profile.fullName.split(" ")[0]}?`}
+                placeholder={`What's on your mind, ${firstName}?`}
                 className="min-h-[96px] w-full resize-none rounded-2xl border border-transparent bg-[#f5f3f3] px-4 py-3.5 text-base text-munity-text outline-none transition placeholder:text-munity-muted/55 focus:border-munity-green/20 focus:bg-white focus:ring-2 focus:ring-munity-green/10"
               />
             </div>
@@ -170,6 +372,7 @@ export function HomeFeedView() {
                 </button>
                 <button
                   type="button"
+                  onClick={() => flash("Photo upload comes with the backend")}
                   className="inline-flex items-center gap-2 rounded-full bg-[#f5f3f3] px-3.5 py-2 text-xs font-semibold text-munity-muted transition hover:bg-munity-lime/40"
                 >
                   <ImageIcon className="size-3.5" />
@@ -178,138 +381,277 @@ export function HomeFeedView() {
                 <button
                   type="button"
                   onClick={() => setAnonymous((value) => !value)}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#f5f3f3] px-3.5 py-2 text-xs font-semibold text-munity-muted transition hover:bg-munity-lime/40"
+                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                    anonymous
+                      ? "bg-munity-green text-white"
+                      : "bg-[#f5f3f3] text-munity-muted hover:bg-munity-lime/40"
+                  }`}
                 >
                   <UserRound className="size-3.5" />
                   {anonymous ? "Anonymous ✓" : "Anonymous"}
                 </button>
               </div>
-              <button
+              <motion.button
                 type="button"
+                whileTap={{ scale: 0.96 }}
                 onClick={createPost}
                 disabled={!composerText.trim()}
                 className="rounded-full bg-munity-green px-7 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark disabled:opacity-50"
               >
                 Post
-              </button>
+              </motion.button>
             </div>
 
-            {showMoods ? (
-              <div className="mt-4 grid grid-cols-5 gap-2 rounded-2xl bg-[#f5f3f3] p-3 sm:gap-3 sm:p-4">
-                {moods.map((mood) => {
-                  const active = store.moodToday === mood.label;
-                  const Icon = moodIcons[mood.label];
-                  return (
+            <AnimatePresence>
+              {showMoods ? (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 grid grid-cols-5 gap-2 rounded-2xl bg-[#f5f3f3] p-3 sm:gap-3 sm:p-4">
+                    {moods.map((mood) => {
+                      const active = store.moodToday === mood.label;
+                      const Icon = moodIcons[mood.label];
+                      return (
+                        <motion.button
+                          key={mood.label}
+                          type="button"
+                          whileHover={{ y: -2 }}
+                          whileTap={{ scale: 0.94 }}
+                          onClick={() => selectMood(mood.label)}
+                          className={`flex flex-col items-center gap-1.5 rounded-xl px-1 py-2 transition ${
+                            active
+                              ? "bg-white shadow-sm ring-2 ring-munity-green/25"
+                              : "hover:bg-white/70"
+                          }`}
+                        >
+                          <span
+                            className={`flex size-10 items-center justify-center rounded-full ${mood.bg}`}
+                          >
+                            <Icon className="size-9" />
+                          </span>
+                          <span
+                            className={`text-[11px] font-medium ${
+                              active ? "text-munity-green" : "text-munity-muted"
+                            }`}
+                          >
+                            {mood.label}
+                          </span>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
+
+          <AnimatePresence initial={false}>
+            {store.posts.map((post, index) => {
+              const comments = store.commentsByPost[post.id] ?? [];
+              const open = expandedComments === post.id;
+              const supported = store.supportedPostIds.includes(post.id);
+              return (
+                <motion.article
+                  key={post.id}
+                  layout
+                  initial={{ opacity: 0, y: 18 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ delay: Math.min(index * 0.04, 0.2), duration: 0.3 }}
+                  className={`${cardClass} p-5 sm:p-6 ${
+                    post.accent ? "border-l-4 border-l-munity-green" : ""
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      {post.anonymous ? (
+                        <div className="flex size-10 items-center justify-center rounded-full bg-[#efeded] text-munity-muted">
+                          <UserRound className="size-5" />
+                        </div>
+                      ) : (
+                        <div className="relative size-10 overflow-hidden rounded-full">
+                          <Image
+                            src={post.avatar ?? "/images/home-feed/sarah.jpg"}
+                            alt={post.author}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-semibold text-munity-text">{post.author}</p>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-munity-muted">
+                          <span>{post.time}</span>
+                          <span className="size-1 rounded-full bg-munity-input-border" />
+                          <span className="text-munity-olive-text">{post.feeling}</span>
+                          {post.communityName ? (
+                            <>
+                              <span className="size-1 rounded-full bg-munity-input-border" />
+                              <Link
+                                href={
+                                  post.communityId
+                                    ? communityPath(
+                                        store.communities.find((c) => c.id === post.communityId)
+                                          ?.slug ?? "mindful-paths",
+                                      )
+                                    : routes.communities
+                                }
+                                className="text-munity-green hover:underline"
+                              >
+                                {post.communityName}
+                              </Link>
+                            </>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
                     <button
-                      key={mood.label}
                       type="button"
-                      onClick={() => selectMood(mood.label)}
-                      className={`flex flex-col items-center gap-1.5 rounded-xl px-1 py-2 transition ${
-                        active
-                          ? "bg-white shadow-sm ring-2 ring-munity-green/25"
-                          : "hover:bg-white/70"
+                      className="rounded-full p-1.5 text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-text"
+                      aria-label="Post options"
+                    >
+                      <MoreHorizontal className="size-4" />
+                    </button>
+                  </div>
+
+                  <p className="mt-4 text-[15px] leading-relaxed text-munity-text">{post.content}</p>
+
+                  {post.image ? (
+                    <div className="relative mt-4 h-56 w-full overflow-hidden rounded-2xl sm:h-64">
+                      <Image src={post.image} alt="Post attachment" fill className="object-cover" />
+                    </div>
+                  ) : null}
+
+                  <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.92 }}
+                      onClick={() => supportPost(post.id)}
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition hover:bg-[#f5f3f3] hover:text-munity-green ${
+                        supported
+                          ? "bg-munity-lime/40 text-munity-green"
+                          : "text-munity-muted"
                       }`}
                     >
-                      <span
-                        className={`flex size-10 items-center justify-center rounded-full ${mood.bg}`}
+                      <motion.span
+                        animate={
+                          justSupported === post.id
+                            ? { scale: [1, 1.35, 1] }
+                            : { scale: 1 }
+                        }
+                        transition={{ duration: 0.35 }}
                       >
-                        <Icon className="size-9" />
-                      </span>
-                      <span
-                        className={`text-[11px] font-medium ${
-                          active ? "text-munity-green" : "text-munity-muted"
-                        }`}
-                      >
-                        {mood.label}
-                      </span>
+                        <Heart
+                          className={`size-4 ${supported ? "fill-current" : ""}`}
+                        />
+                      </motion.span>
+                      Support · {post.supports}
+                    </motion.button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedComments((current) =>
+                          current === post.id ? null : post.id,
+                        )
+                      }
+                      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition hover:bg-[#f5f3f3] hover:text-munity-green ${
+                        open ? "bg-munity-lime/30 text-munity-green" : "text-munity-muted"
+                      }`}
+                    >
+                      <MessageCircle className="size-4" />
+                      Comment · {post.comments}
                     </button>
-                  );
-                })}
-              </div>
-            ) : null}
-          </div>
-
-          {store.posts.map((post) => (
-            <article
-              key={post.id}
-              className={`${cardClass} p-5 sm:p-6 ${
-                post.accent ? "border-l-4 border-l-munity-green" : ""
-              }`}
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  {post.anonymous ? (
-                    <div className="flex size-10 items-center justify-center rounded-full bg-[#efeded] text-munity-muted">
-                      <UserRound className="size-5" />
-                    </div>
-                  ) : (
-                    <div className="relative size-10 overflow-hidden rounded-full">
-                      <Image
-                        src={post.avatar ?? "/images/home-feed/sarah.jpg"}
-                        alt={post.author}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <p className="text-sm font-semibold text-munity-text">{post.author}</p>
-                    <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs font-medium text-munity-muted">
-                      <span>{post.time}</span>
-                      <span className="size-1 rounded-full bg-munity-input-border" />
-                      <span className="text-munity-olive-text">{post.feeling}</span>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        mockStore.toggleSavedPost(post.id);
+                        flash(
+                          store.savedPostIds.includes(post.id)
+                            ? "Removed from saved"
+                            : "Saved for later",
+                        );
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-green"
+                    >
+                      <Share2 className="size-4" />
+                      {store.savedPostIds.includes(post.id) ? "Saved" : "Save"}
+                    </button>
                   </div>
-                </div>
-                <button
-                  type="button"
-                  className="rounded-full p-1.5 text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-text"
-                  aria-label="Post options"
-                >
-                  <MoreHorizontal className="size-4" />
-                </button>
-              </div>
 
-              <p className="mt-4 text-[15px] leading-relaxed text-munity-text">{post.content}</p>
-
-              {post.image ? (
-                <div className="relative mt-4 h-56 w-full overflow-hidden rounded-2xl sm:h-64">
-                  <Image src={post.image} alt="Post attachment" fill className="object-cover" />
-                </div>
-              ) : null}
-
-              <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
-                <button
-                  type="button"
-                  onClick={() => mockStore.toggleSupport(post.id)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold transition hover:bg-[#f5f3f3] hover:text-munity-green ${store.supportedPostIds.includes(post.id) ? "bg-munity-lime/40 text-munity-green" : "text-munity-muted"}`}
-                >
-                  <Heart className="size-4" />
-                  Support · {post.supports}
-                </button>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-green"
-                >
-                  <MessageCircle className="size-4" />
-                  Comment · {post.comments}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => mockStore.toggleSavedPost(post.id)}
-                  className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-xs font-semibold text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-green"
-                  aria-label="Share"
-                >
-                  <Share2 className="size-4" />
-                  {store.savedPostIds.includes(post.id) ? "Saved" : "Save"}
-                </button>
-              </div>
-            </article>
-          ))}
+                  <AnimatePresence>
+                    {open ? (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-4 space-y-3 rounded-2xl bg-[#f5f3f3] p-4">
+                          {comments.length ? (
+                            comments.map((comment) => (
+                              <motion.div
+                                key={comment.id}
+                                initial={{ opacity: 0, y: 6 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="rounded-xl bg-white px-3 py-2.5"
+                              >
+                                <div className="flex items-center justify-between gap-2">
+                                  <p className="text-xs font-semibold text-munity-green">
+                                    {comment.author}
+                                  </p>
+                                  <p className="text-[11px] text-munity-muted">{comment.time}</p>
+                                </div>
+                                <p className="mt-1 text-sm text-munity-text">{comment.content}</p>
+                              </motion.div>
+                            ))
+                          ) : (
+                            <p className="text-sm text-munity-muted">
+                              Be the first to leave a supportive comment.
+                            </p>
+                          )}
+                          <div className="flex gap-2">
+                            <input
+                              value={commentDrafts[post.id] ?? ""}
+                              onChange={(event) =>
+                                setCommentDrafts((prev) => ({
+                                  ...prev,
+                                  [post.id]: event.target.value,
+                                }))
+                              }
+                              onKeyDown={(event) => {
+                                if (event.key === "Enter") submitComment(post.id);
+                              }}
+                              placeholder="Write a kind reply…"
+                              className="min-w-0 flex-1 rounded-xl border border-munity-border bg-white px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-munity-green/15"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => submitComment(post.id)}
+                              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white"
+                            >
+                              Reply
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ) : null}
+                  </AnimatePresence>
+                </motion.article>
+              );
+            })}
+          </AnimatePresence>
         </section>
 
         {/* Right sidebar */}
-        <aside className="flex flex-col gap-5 lg:col-span-3">
+        <motion.aside
+          className="relative flex flex-col gap-5 lg:col-span-3"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.35 }}
+        >
           <section className="relative overflow-hidden rounded-[20px] bg-munity-olive p-5 shadow-[0_4px_10px_rgba(85,107,47,0.08)]">
             <div className="pointer-events-none absolute -bottom-10 -right-10 size-36 rounded-full bg-[#d0eba1]/15 blur-2xl" />
             <div className="relative">
@@ -319,42 +661,60 @@ export function HomeFeedView() {
                   Mindful Moment
                 </h3>
               </div>
-              <p className="mt-3 text-sm italic leading-relaxed text-munity-lime-light/95">
-                &ldquo;Box breathing: Inhale for 4, Hold for 4, Exhale for 4, Hold for 4. Repeat until
-                you feel grounded.&rdquo;
-              </p>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={momentIndex}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="mt-3 text-sm italic leading-relaxed text-munity-lime-light/95"
+                >
+                  &ldquo;{mindfulMoments[momentIndex]}&rdquo;
+                </motion.p>
+              </AnimatePresence>
               <button
                 type="button"
-                className="mt-4 text-xs font-semibold text-munity-lime-light underline underline-offset-4 transition hover:opacity-80"
+                onClick={() => setBreathing(true)}
+                className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-munity-lime-light underline underline-offset-4 transition hover:opacity-80"
               >
+                <Wind className="size-3.5" />
                 Try it now
               </button>
             </div>
           </section>
 
           <section className={`${cardClass} p-5`}>
-            <h3 className="text-sm font-semibold tracking-wide text-munity-text">Suggested Groups</h3>
+            <h3 className="text-sm font-semibold tracking-wide text-munity-text">
+              Suggested Groups
+            </h3>
             <div className="mt-4 flex flex-col gap-3">
               {suggestedGroups.map((group) => (
                 <div key={group.id} className="flex items-center justify-between gap-3">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <span
-                      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#d9eaa3] text-sm font-bold text-[#161f00]"
-                    >
+                  <Link
+                    href={communityPath(group.slug)}
+                    className="flex min-w-0 items-center gap-3"
+                  >
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#d9eaa3] text-sm font-bold text-[#161f00]">
                       {group.name.charAt(0)}
                     </span>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-munity-text">{group.name}</p>
+                      <p className="truncate text-sm font-semibold text-munity-text">
+                        {group.name}
+                      </p>
                       <p className="text-[11px] text-munity-muted">{group.membersLabel}</p>
                     </div>
-                  </div>
-                  <button
+                  </Link>
+                  <motion.button
                     type="button"
-                    onClick={() => mockStore.toggleMembership(group.id)}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => {
+                      mockStore.toggleMembership(group.id);
+                      flash(`Joined ${group.name}`);
+                    }}
                     className="shrink-0 rounded-full border border-munity-green/70 px-3 py-1.5 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/40"
                   >
                     Join
-                  </button>
+                  </motion.button>
                 </div>
               ))}
             </div>
@@ -391,7 +751,9 @@ export function HomeFeedView() {
                     <p className="truncate text-sm font-semibold text-munity-text">
                       {therapist.name}
                     </p>
-                    <p className="text-[11px] text-munity-muted">{therapist.specializations[0]}</p>
+                    <p className="text-[11px] text-munity-muted">
+                      {therapist.specializations[0]}
+                    </p>
                   </div>
                   <span
                     className={`size-2.5 shrink-0 rounded-full ring-2 ring-white ${
@@ -403,8 +765,81 @@ export function HomeFeedView() {
               ))}
             </div>
           </section>
-        </aside>
+        </motion.aside>
       </div>
+
+      <AnimatePresence>
+        {toast ? (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-munity-green px-5 py-3 text-sm font-semibold text-white shadow-lg"
+          >
+            {toast}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {breathing ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.92, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="relative w-full max-w-sm rounded-[28px] bg-munity-bg p-8 text-center shadow-2xl"
+            >
+              <button
+                type="button"
+                onClick={() => setBreathing(false)}
+                className="absolute right-4 top-4 rounded-full p-2 text-munity-muted hover:bg-white"
+                aria-label="Close breathing exercise"
+              >
+                <X className="size-4" />
+              </button>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-munity-muted">
+                Box breathing
+              </p>
+              <motion.div
+                className="mx-auto mt-8 flex size-36 items-center justify-center rounded-full bg-munity-lime/50"
+                animate={{
+                  scale:
+                    breathPhase === "Inhale"
+                      ? 1.15
+                      : breathPhase === "Exhale"
+                        ? 0.88
+                        : 1,
+                }}
+                transition={{ duration: 0.9, ease: "easeInOut" }}
+              >
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-munity-green">{breathPhase}</p>
+                  <p className="mt-1 text-4xl font-bold text-munity-olive-text">{breathCount}</p>
+                </div>
+              </motion.div>
+              <p className="mt-6 text-sm text-munity-muted">
+                Follow the circle. Four seconds each phase.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setBreathing(false);
+                  flash("Nice — breathe breaks help reset your day");
+                }}
+                className="mt-6 rounded-full bg-munity-green px-6 py-2.5 text-sm font-semibold text-white"
+              >
+                Done
+              </button>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </MemberAppShell>
   );
 }

@@ -30,6 +30,14 @@ import {
 
 const STORAGE_KEY = "munity-mock-store-v1";
 
+export type FeedComment = {
+  id: string;
+  postId: string;
+  author: string;
+  content: string;
+  time: string;
+};
+
 export type MockStoreState = {
   profile: MemberProfile;
   posts: FeedPost[];
@@ -44,6 +52,7 @@ export type MockStoreState = {
   savedPostIds: string[];
   savedResourceIds: string[];
   supportedPostIds: string[];
+  commentsByPost: Record<string, FeedComment[]>;
   moodToday: string | null;
   settings: MemberSettingsState;
 };
@@ -63,6 +72,33 @@ function createSeedState(): MockStoreState {
     savedPostIds: [...seedSavedPostIds],
     savedResourceIds: [...seedSavedResourceIds],
     supportedPostIds: [...seedSupportedPostIds],
+    commentsByPost: {
+      p1: [
+        {
+          id: "c-p1-1",
+          postId: "p1",
+          author: "Jordan Lee",
+          content: "5-4-3-2-1 saved me in a grocery store last week. Proud of you.",
+          time: "1h ago",
+        },
+        {
+          id: "c-p1-2",
+          postId: "p1",
+          author: "Priya Nair",
+          content: "Progress on hard days counts twice. Sending calm your way.",
+          time: "45m ago",
+        },
+      ],
+      p2: [
+        {
+          id: "c-p2-1",
+          postId: "p2",
+          author: "Alex Rivera",
+          content: "Trying this tomorrow morning — phone stays in the kitchen.",
+          time: "3h ago",
+        },
+      ],
+    },
     moodToday: null,
     settings: { ...seedSettings },
   };
@@ -99,6 +135,7 @@ function hydrate() {
       therapists: seedTherapists,
       profile: { ...seedMemberProfile, ...(parsed.profile ?? {}) },
       settings: { ...seedSettings, ...(parsed.settings ?? {}) },
+      commentsByPost: parsed.commentsByPost ?? createSeedState().commentsByPost,
     };
   } catch {
     state = createSeedState();
@@ -187,6 +224,29 @@ export const mockStore = {
         ),
       };
     });
+  },
+  addComment(postId: string, content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const comment: FeedComment = {
+      id: `c-${Date.now()}`,
+      postId,
+      author: state.profile.fullName,
+      content: trimmed,
+      time: "Just now",
+    };
+    setState((prev) => ({
+      ...prev,
+      commentsByPost: {
+        ...prev.commentsByPost,
+        [postId]: [...(prev.commentsByPost[postId] ?? []), comment],
+      },
+      posts: prev.posts.map((post) =>
+        post.id === postId
+          ? { ...post, comments: post.comments + 1 }
+          : post,
+      ),
+    }));
   },
   toggleSavedPost(postId: string) {
     setState((prev) => ({
