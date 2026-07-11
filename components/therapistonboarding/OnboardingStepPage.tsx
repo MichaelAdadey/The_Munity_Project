@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/AppButton";
 import { useLoading } from "@/components/ui/LoadingProvider";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import type { OnboardingStepId } from "@/lib/routes";
-import { onboardingSteps } from "@/lib/routes";
 
 interface OnboardingStepPageProps {
   stepId: OnboardingStepId;
@@ -48,7 +47,6 @@ export function OnboardingStepPage({
   const router = useRouter();
   const { withLoading } = useLoading();
   const { markStepComplete } = useOnboardingProgress();
-  const stepIndex = onboardingSteps.findIndex((step) => step.id === stepId);
 
   async function navigate(href: string, message: string) {
     await withLoading(async () => {
@@ -91,15 +89,8 @@ export function OnboardingStepPage({
       <main className="flex flex-1 flex-col">
         <AnimatedPage className="mx-auto w-full max-w-3xl">
           <header className="mb-10">
-            <motion.p
-              className="text-sm font-semibold tracking-wide text-munity-muted"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              Step {stepIndex + 1} of {onboardingSteps.length}
-            </motion.p>
             <motion.h2
-              className="mt-2 text-[32px] font-bold text-munity-text"
+              className="text-[32px] font-bold text-munity-text"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.05 }}
