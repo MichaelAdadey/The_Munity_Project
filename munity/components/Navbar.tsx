@@ -9,9 +9,9 @@ import React from "react";
 const Navbar = () => {
   const pageLink = [
     { pageName: "Home", pageLink: "/home" },
-    { pageName: "Communities", pageLink: "/communities" },
+    { pageName: "Communities", pageLink: "/Communities" },
     { pageName: "Resources", pageLink: "/resources" },
-    { pageName: "Therapy", pageLink: "/therapy" },
+    { pageName: "Therapy", pageLink: "/Therapy" },
   ];
 
   const pathname = usePathname();

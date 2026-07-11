@@ -2,10 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Plus_Jakarta_Sans } from "next/font/google";
 import { Providers } from "@/components/ui/Providers";
 import "./globals.css";
-import { createClient } from "@/lib/supabase/server";
-
-import { redirect } from "next/navigation";
-
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,19 +24,11 @@ export const metadata: Metadata = {
   description: "Mental Well-being",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // const supabase = await createClient()
-  // const {
-  //   data: { user },
-  // } = await supabase.auth.getUser();
-
-  // if (!user) {
-  //   redirect("/login");
-  // }
   return (
     <html
       lang="en"

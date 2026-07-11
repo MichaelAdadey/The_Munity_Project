@@ -42,11 +42,12 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protected app routes — redirect unauthenticated users to /login.
+  // Temporarily disabled so local preview works without auth.
   // const protectedPaths = [
   //   '/home',
-  //   '/communities',
+  //   '/Communities',
   //   '/messages',
-  //   '/therapy',
+  //   '/Therapy',
   //   '/profile',
   //   '/resources',
   //   '/saved',
@@ -62,14 +63,6 @@ export async function updateSession(request: NextRequest) {
   //   return NextResponse.redirect(url)
   // }
 
-  // const pathname = request.nextUrl.pathname;
-
-  // // Public routes
-  // const publicRoutes = ["/", "/login", "/signup"]
-
-  // if (!user && !publicRoutes.includes(pathname)) {
-  //   return NextResponse.redirect(new URL("/login", request.url))
-  // }
-
+  void user
   return response
 }
