@@ -13,6 +13,8 @@ import {
   Clock,
   User,
   Settings,
+  NotebookPen,
+  ChartColumn,
 } from "lucide-react";
 import type { OnboardingStepId, PatientNavSection, PatientSlug } from "@/lib/routes";
 import { onboardingSteps, patientNavHref, patientRoutes, routes } from "@/lib/routes";
@@ -204,7 +206,9 @@ export function OnboardingSidebar({
 export type TherapistNavItem =
   | "Dashboard"
   | "Appointments"
-  | "My Patients"
+  | "Patients"
+  | "Sessions"
+  | "Analysis"
   | "Availability"
   | "Profile"
   | "Settings";
@@ -220,11 +224,9 @@ const therapistNavItems: {
 }[] = [
   { label: "Dashboard", href: routes.therapistDashboard, icon: LayoutGrid },
   { label: "Appointments", href: routes.therapistAppointments, icon: Calendar },
-  {
-    label: "My Patients",
-    href: routes.therapistPatients,
-    icon: Users,
-  },
+  { label: "Patients", href: routes.therapistPatients, icon: Users },
+  { label: "Sessions", href: routes.therapistClinicalNotes, icon: NotebookPen },
+  { label: "Analysis", href: routes.therapistAnalytics, icon: ChartColumn },
   { label: "Availability", href: routes.therapistAvailability, icon: Clock },
   { label: "Profile", href: routes.therapistProfile, icon: User },
   { label: "Settings", href: routes.therapistSettings, icon: Settings },

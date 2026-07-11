@@ -41,8 +41,8 @@ const patients = patientSlugs.map((slug) => ({
 export function TherapistPatientsListView() {
   return (
     <TherapistAppShell
-      active="My Patients"
-      title="My Patients"
+      active="Patients"
+      title="Patients"
       subtitle={`${patients.length} active clients in your practice`}
       actions={
         <div className="relative w-full max-w-xs sm:w-64">

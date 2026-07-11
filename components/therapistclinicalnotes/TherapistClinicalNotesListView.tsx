@@ -73,8 +73,8 @@ const patients = patientSlugs.map((slug) => ({
 export function TherapistClinicalNotesListView() {
   return (
     <TherapistAppShell
-      active="Appointments"
-      title="Clinical Notes"
+      active="Sessions"
+      title="Sessions"
       subtitle="Session notes across your patient caseload"
       actions={
         <div className="relative w-full max-w-xs sm:w-64">

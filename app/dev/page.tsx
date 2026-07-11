@@ -63,17 +63,17 @@ const screens = [
     href: routes.therapistDashboard,
   },
   {
-    title: "My Patients",
+    title: "Patients",
     subtitle: "All active clients in your caseload",
     href: routes.therapistPatients,
   },
   {
-    title: "Clinical Notes",
+    title: "Sessions",
     subtitle: "Session notes across your patient caseload",
     href: routes.therapistClinicalNotes,
   },
   {
-    title: "Analytics",
+    title: "Analysis",
     subtitle: "Therapeutic progress across your caseload",
     href: routes.therapistAnalytics,
   },

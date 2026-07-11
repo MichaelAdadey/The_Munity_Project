@@ -81,8 +81,8 @@ const overviewStats = [
 export function TherapistAnalyticsListView() {
   return (
     <TherapistAppShell
-      active="Dashboard"
-      title="Analytics"
+      active="Analysis"
+      title="Analysis"
       subtitle="Therapeutic progress across your full patient caseload"
       actions={
         <div className="relative w-full max-w-xs sm:w-64">
