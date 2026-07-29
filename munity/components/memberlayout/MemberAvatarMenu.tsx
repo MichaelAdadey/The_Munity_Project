@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { LogOut, Settings, User } from "lucide-react";
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "@/lib/auth/actions";
 import { ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { useMockStore } from "@/lib/mock-store";
 import { routes } from "@/lib/routes";
