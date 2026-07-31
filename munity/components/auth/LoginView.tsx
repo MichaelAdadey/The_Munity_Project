@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { signIn, signInWithGoogle, type AuthState } from "@/app/(auth)/actions";
+import { signInWithGoogle } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
@@ -12,6 +12,9 @@ import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
 import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
+import { signIn, type AuthActionState  } from "@/lib/auth/actions";
+
+const initialState: AuthActionState = {};
 
 function GoogleIcon() {
   return (
@@ -43,7 +46,7 @@ function GoogleSubmitButton() {
     <Button
       type="submit"
       variant="secondary"
-      className="h-[54px] w-full rounded-xl"
+      className="h-13.5 w-full rounded-xl"
       loading={pending}
       loadingLabel="Connecting with Google…"
     >
@@ -54,13 +57,14 @@ function GoogleSubmitButton() {
 }
 
 function LoginButton() {
-  const { pending } = useFormStatus();
+  const {pending} = useFormStatus();
 
   return (
     <Button
       type="submit"
       className="h-12 w-full rounded-xl shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
       loading={pending}
+      disabled={pending}
     >
       {pending ? "Signing in…" : "Login"}
     </Button>
@@ -110,7 +114,7 @@ function AuthField({
 
 export function LoginView() {
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState<AuthState, FormData>(signIn, undefined);
+  const [state, formAction] = useActionState(signIn, initialState);
   const demoUser = getMockAccountByRole("user");
 
   return (
@@ -141,7 +145,7 @@ export function LoginView() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-[31.5px]">
+      <div className="flex w-full max-w-120 flex-col gap-[31.5px]">
         <AuthBrandHeader
           title="Welcome Back"
           subtitle="Continue your journey with Munity"
@@ -149,7 +153,7 @@ export function LoginView() {
 
         <MockCredentialsHint role="user" />
 
-        <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-[41px] pb-[41px] pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+        <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10.25 pb-10.25 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
             <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
