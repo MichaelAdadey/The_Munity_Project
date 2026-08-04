@@ -4,6 +4,7 @@ import { Bell, Lock, Moon, Shield, User } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
+import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const sections = [
   {
@@ -93,7 +94,10 @@ function Toggle({
 export function MemberSettingsView() {
   const store = useMockStore();
   const { flash } = useLiveToast();
-  const settingKeys: Record<string, Exclude<keyof typeof store.settings, "displayName">> = {
+  const settingKeys: Record<
+    string,
+    Exclude<keyof typeof store.settings, "displayName">
+  > = {
     "Session reminders": "pushNotifications",
     "Community replies": "emailNotifications",
     "Resource recommendations": "weeklyDigest",
@@ -102,6 +106,8 @@ export function MemberSettingsView() {
     "Allow therapist messages": "emailNotifications",
     "Anonymous posting by default": "anonymousDefault",
   };
+
+  const { profile } = useCurrentProfile();
 
   return (
     <MemberAppShell>
@@ -129,8 +135,12 @@ export function MemberSettingsView() {
                     <Icon className="size-5 text-munity-green" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-munity-text">{section.title}</h2>
-                    <p className="mt-1 text-sm text-munity-muted">{section.description}</p>
+                    <h2 className="text-lg font-semibold text-munity-text">
+                      {section.title}
+                    </h2>
+                    <p className="mt-1 text-sm text-munity-muted">
+                      {section.description}
+                    </p>
                   </div>
                 </div>
 
@@ -141,12 +151,14 @@ export function MemberSettingsView() {
                         key={item.label}
                         className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-munity-border bg-munity-sidebar/30 px-4 py-3"
                       >
-                        <span className="text-sm font-medium text-munity-muted">{item.label}</span>
+                        <span className="text-sm font-medium text-munity-muted">
+                          {item.label}
+                        </span>
                         <span className="text-sm font-semibold text-munity-text">
                           {item.label === "Display name"
-                            ? store.profile.fullName
+                            ? profile?.fullName
                             : item.label === "Email"
-                              ? store.profile.email
+                              ? profile?.email
                               : item.value}
                         </span>
                       </div>
@@ -160,11 +172,17 @@ export function MemberSettingsView() {
                       <Toggle
                         key={toggle.label}
                         label={toggle.label}
-                        on={settingKeys[toggle.label] ? store.settings[settingKeys[toggle.label]] : toggle.defaultOn}
+                        on={
+                          settingKeys[toggle.label]
+                            ? store.settings[settingKeys[toggle.label]]
+                            : toggle.defaultOn
+                        }
                         onToggle={() => {
                           const key = settingKeys[toggle.label];
                           if (key) {
-                            mockStore.updateSettings({ [key]: !store.settings[key] });
+                            mockStore.updateSettings({
+                              [key]: !store.settings[key],
+                            });
                             flash("Saved preference");
                           }
                         }}

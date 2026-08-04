@@ -114,6 +114,8 @@ export const signIn = async (
   const role = await getProfileRole(supabase, data.user.id);
   if (role === USER_ROLES.ADMIN) {
     redirect("/admin");
+  } else if (role === USER_ROLES.THERAPIST) {
+    redirect("/therapistdashboard")
   }
 
   // Successful login → leave the auth pages
@@ -169,15 +171,75 @@ export const signInAdmin = async (
     };
   }
 
-  // if (profile.role !== USER_ROLES.ADMIN) {
-  //   // Wrong portal — clear the session so they don't stay "logged in" as admin
-  //   await supabase.auth.signOut();
-  //   return {
-  //     error: `This account is not an admin (current role: ${profile.role}).`,
-  //   };
-  // }
+  if (profile.role !== USER_ROLES.ADMIN) {
+    // Wrong portal — clear the session so they don't stay "logged in" as admin
+    await supabase.auth.signOut();
+    return {
+      error: `This account is not an admin (current role: ${profile.role}).`,
+    };
+  }
 
   redirect("/admin");
+};
+
+
+export const signInTherapist = async (
+  _prevState: AuthActionState,
+  formData: FormData,
+): Promise<AuthActionState> => {
+  const raw = {
+    email: String(formData.get("email") ?? ""),
+    password: String(formData.get("password") ?? ""),
+  };
+
+  const parsed = loginSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithPassword(parsed.data);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  //   const role = await getProfileRole(data.user.id);
+  if (!data.user) {
+    return { error: "Login failed. No user returned." };
+  }
+
+  // IMPORTANT: reuse this same client (session is already in memory).
+  // Creating a new client here can miss cookies and make the profile
+  // query return null under RLS — which looks like "stuck on login".
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", data.user.id)
+    .maybeSingle();
+
+  if (profileError) {
+    await supabase.auth.signOut();
+    return { error: `Could not read profiles: ${profileError.message}` };
+  }
+
+  if (!profile) {
+    await supabase.auth.signOut();
+    return {
+      error:
+        "No profile row for this user. Create the Auth user, then run the admin seed UPDATE.",
+    };
+  }
+
+  if (profile.role !== USER_ROLES.THERAPIST) {
+    // Wrong portal — clear the session so they don't stay "logged in" as admin
+    await supabase.auth.signOut();
+    return {
+      error: `This account is not an admin (current role: ${profile.role}).`,
+    };
+  }
+
+  redirect("/therapistdashboard");
 };
 
 /**
