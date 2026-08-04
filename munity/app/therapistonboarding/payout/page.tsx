@@ -6,7 +6,8 @@ import { Field } from "@/components/ui/Field";
 import { ChipSelect } from "@/components/ui/ChipSelect";
 import { Select } from "@/components/ui/AppSelect";
 import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
-import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
+import { getOnboardingStepData, saveOnboardingStepData, getAllOnboardingStepData } from "@/lib/onboarding-data";
+import { submitTherapistOnboarding } from "@/app/therapistonboarding/actions";
 import { submitTherapistApplication } from "@/lib/therapist-application-review";
 import { routes } from "@/lib/routes";
 
@@ -87,6 +88,24 @@ export default function PayoutPage() {
         }
         if (hasBank && !bankName) {
           window.alert("Please select your bank.");
+          return false;
+        }
+        return true;
+      }}
+      onBeforeContinue={async () => {
+        const all = getAllOnboardingStepData();
+        if (!all["basic-info"] || !all.credentials || !all.specialties || !all.payout) {
+          window.alert("Please complete all onboarding steps before submitting.");
+          return false;
+        }
+        const result = await submitTherapistOnboarding({
+          basicInfo: all["basic-info"],
+          credentials: all.credentials,
+          specialties: all.specialties,
+          payout: all.payout,
+        });
+        if (result.error) {
+          window.alert(result.error);
           return false;
         }
         return true;
