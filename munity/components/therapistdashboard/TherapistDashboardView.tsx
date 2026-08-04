@@ -25,6 +25,7 @@ import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShel
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
 import { patientRoutes, routes } from "@/lib/routes";
+import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const stats = [
   {
@@ -119,6 +120,8 @@ export function TherapistDashboardView() {
   const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
   const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
 
+  const { profile } = useCurrentProfile();
+
   function startSession(session: (typeof todaysSchedule)[number]) {
     setActivePatient({
       name: session.name,
@@ -138,7 +141,7 @@ export function TherapistDashboardView() {
   return (
     <TherapistAppShell
       active="Dashboard"
-      title="Welcome back, Dr. Aris"
+      title={profile?.fullName ?? ""}
       subtitle="Here's an overview of your schedule today."
     >
       <section className="flex flex-col gap-3 rounded-2xl border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.4)] p-4 sm:flex-row sm:items-start sm:gap-4">
@@ -164,7 +167,7 @@ export function TherapistDashboardView() {
         items={[
           "Marcus completed a morning check-in · distress flag needs review.",
           "A weekly summary is ready for your clinical review.",
-          "Leo Richards opened today’s workplace stress worksheet.",
+          "Leo Richards opened today's workplace stress worksheet.",
         ]}
       />
 

@@ -8,6 +8,7 @@ import { ProfileAvatarMenu } from "@/components/therapistlayout/ProfileAvatarMen
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { NotificationsMenu } from "@/components/live/NotificationsMenu";
+import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
 
@@ -27,6 +28,7 @@ export function TherapistAppShell({
   actions,
   children,
 }: TherapistAppShellProps) {
+  const { profile } = useCurrentProfile();
   return (
     <LiveToastProvider>
     <SidebarProvider storageKey="munity-therapist-sidebar-open" expandedWidth={256}>
@@ -49,7 +51,7 @@ export function TherapistAppShell({
                 <div className="flex items-center gap-3 rounded-full bg-[#efeded] py-1 pl-1 pr-4">
                   <ProfileAvatarMenu />
                   <span className="text-sm font-semibold tracking-wide text-munity-text">
-                    {THERAPIST_DISPLAY_NAME}
+                    {profile?.fullName}
                   </span>
                 </div>
               </div>

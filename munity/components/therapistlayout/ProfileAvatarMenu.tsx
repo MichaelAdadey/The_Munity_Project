@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Calendar, LogOut, Palette, User } from "lucide-react";
-import { signOut } from "@/app/(auth)/actions";
+// import { signOut } from "@/app/(auth)/actions";
 import { ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { assets } from "@/lib/assets";
 import { routes } from "@/lib/routes";
@@ -13,6 +13,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { signOut } from "@/lib/auth/actions";
+import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const profileMenuItems = [
   { label: "My Profile", href: routes.therapistProfile, icon: User },
@@ -22,6 +24,7 @@ const profileMenuItems = [
 
 export function ProfileAvatarMenu() {
   const router = useRouter();
+  const { profile } = useCurrentProfile();
 
   return (
     <DropdownMenu>
@@ -47,7 +50,7 @@ export function ProfileAvatarMenu() {
             size={40}
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-munity-text">Dr. Elena Aris</p>
+            <p className="truncate text-sm font-semibold text-munity-text">{profile?.fullName}</p>
             <p className="truncate text-xs text-munity-muted">Therapist</p>
           </div>
         </div>

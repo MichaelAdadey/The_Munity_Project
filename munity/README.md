@@ -49,8 +49,8 @@ Use these when Supabase is **not** configured. Login screens also show and pre-f
 | **Access** | Member experience only |
 
 ```text
-Email:    alex.rivera@munity.app
-Password: User1234!
+Email:    example@gmail.com
+Password: 123456ab
 ```
 
 ### 🩺 Therapist
@@ -81,7 +81,7 @@ Password: Therapist1234!
 | **Access** | Admin console |
 
 ```text
-Email:    admin@munity.app
+Email:    admin2@gmail.com
 Password: Admin1234!
 ```
 
