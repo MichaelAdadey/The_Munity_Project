@@ -5,9 +5,9 @@ import { findMockAccount, getMockAccountByRole } from '@/lib/mock-credentials'
 import { clearMockSession, setMockSession } from '@/lib/mock-session'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { createClient } from '@/lib/supabase/server'
-import { routes } from '@/lib/routes'
+import { authErrorMessage } from '@/lib/auth/error-messages'
 
-export type AuthState = { error?: string } | undefined
+export type AuthState = { error?: string; success?: string } | undefined
 
 /**
  * Email + password sign in.
@@ -78,16 +78,32 @@ export async function signUp(
 
   const supabase = await createClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { full_name: fullName, first_name: firstName, last_name: lastName },
-      emailRedirectTo: `${siteUrl}/home`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent('/home')}`,
     },
   })
 
-  if (error) return { error: error.message }
+  if (error) {
+    return {
+      error: authErrorMessage(
+        error,
+        'Signup failed. Supabase could not save the new user — check your Supabase Auth/Postgres logs (this is usually the on_auth_user_created trigger on auth.users or a constraint on public.profiles).',
+      ),
+    }
+  }
+
+  // Email confirmation is ON in Supabase — there is no session yet. Ask the
+  // member to confirm before redirecting them into the app.
+  if (!data.session) {
+    return {
+      success:
+        'Account created. Check your email to confirm your address, then log back in.',
+    }
+  }
   redirect('/home')
 }
 
@@ -104,7 +120,9 @@ export async function signInWithGoogle(): Promise<void> {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${siteUrl}/auth/callback` },
+    options: {
+      redirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent('/home')}`,
+    },
   })
 
   if (error) redirect(`/login?error=${encodeURIComponent(error.message)}`)

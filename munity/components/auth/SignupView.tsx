@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { AlertCircle, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import { signInWithGoogle } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
@@ -55,14 +55,14 @@ function GoogleSubmitButton() {
   );
 }
 
-function CreateAccountButton() {
+function CreateAccountButton({ disabled = false }: { disabled?: boolean }) {
   const {pending} = useFormStatus();
 
   return (
     <Button
       type="submit"
       className="h-12 w-full rounded-xl shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
-      disabled={pending}
+      disabled={pending || disabled}
       loading={pending}
     >
       {pending ? "Creating account..." : "Create Account"}
@@ -151,6 +151,13 @@ export function SignupView() {
             </div>
           ) : null}
 
+          {state?.success ? (
+            <div className="mb-6 flex items-start gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+              <span>{state.success}</span>
+            </div>
+          ) : null}
+
           <form
             action={formAction}
             onSubmit={(event) => {
@@ -229,7 +236,7 @@ export function SignupView() {
               </div>
             </div>
 
-            <CreateAccountButton />
+            <CreateAccountButton disabled={Boolean(state?.success)} />
           </form>
 
           <div className="mt-6">

@@ -12,6 +12,9 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "../supabase/server";
+import { isSupabaseConfigured } from "../supabase/client";
+import { clearMockSession } from "../mock-session";
+import { authErrorMessage } from "./error-messages";
 import { USER_ROLES } from "./roles";
 import { loginSchema, patientSignupSchema } from "../validations/auth";
 import { UserRole } from "@/types/auth";
@@ -53,6 +56,7 @@ export const signUpPatient = async (
   const supabase = await createClient();
 
   // signUp creates auth.users; options.data becomes raw_user_meta_data
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -62,11 +66,20 @@ export const signUpPatient = async (
         last_name: lastName,
         role: USER_ROLES.PATIENT,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      // The confirmation link comes back to /auth/callback which exchanges
+      // the code for a session, then sends the member straight to /home.
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent("/home")}`,
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: authErrorMessage(
+        error,
+        "Signup failed. Supabase could not save the new user — check your Supabase Auth/Postgres logs (this is usually the on_auth_user_created trigger on auth.users or a constraint on public.profiles).",
+      ),
+    };
+  }
 
   // If email confirmation is ON in Supabase, the user must check their inbox.
   // If it's OFF, they are already signed in — redirect them to home/dashboard.
@@ -232,10 +245,10 @@ export const signInTherapist = async (
   }
 
   if (profile.role !== USER_ROLES.THERAPIST) {
-    // Wrong portal — clear the session so they don't stay "logged in" as admin
+    // Wrong portal — clear the session so they don't stay "logged in" as therapist
     await supabase.auth.signOut();
     return {
-      error: `This account is not an admin (current role: ${profile.role}).`,
+      error: `This account is not a therapist (current role: ${profile.role}).`,
     };
   }
 
@@ -261,9 +274,12 @@ const getProfileRole = async (
   return data.role as UserRole;
 };
 
-/** Sign out and clear the session cookies */
+/** Sign out and clear the session cookies (Supabase + preview mock). */
 export const signOut = async () => {
-  const supabase = await createClient();
-  await supabase.auth.signOut();
+  await clearMockSession();
+  if (isSupabaseConfigured()) {
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+  }
   redirect("/login");
 };

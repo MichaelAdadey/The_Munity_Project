@@ -3,7 +3,7 @@
 import { useActionState } from 'react'
 import { useFormStatus } from 'react-dom'
 import Link from 'next/link'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, CheckCircle2 } from 'lucide-react'
 import {
   signIn,
   signUp,
@@ -69,6 +69,12 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         <div className="flex items-start gap-2 rounded-xl bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{state.error}</span>
+        </div>
+      )}
+      {state?.success && (
+        <div className="flex items-start gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+          <span>{state.success}</span>
         </div>
       )}
 

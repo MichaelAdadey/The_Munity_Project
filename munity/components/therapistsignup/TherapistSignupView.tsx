@@ -4,7 +4,7 @@ import { useActionState, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import {
   signInWithGoogleAsTherapist,
   signUpAsTherapist,
@@ -56,7 +56,7 @@ function GoogleSubmitButton() {
   );
 }
 
-function CreateAccountButton() {
+function CreateAccountButton({ disabled = false }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
 
   return (
@@ -64,6 +64,7 @@ function CreateAccountButton() {
       type="submit"
       className="h-12 w-full rounded-xl shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
       loading={pending}
+      disabled={pending || disabled}
     >
       {pending ? "Creating account…" : "Create Account"}
     </Button>
@@ -158,6 +159,13 @@ export function TherapistSignupView() {
               <span>{state.error}</span>
             </div>
           ) : null}
+          
+          {state?.success ? (
+            <div className="mb-6 flex items-start gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
+              <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
+              <span>{state.success}</span>
+            </div>
+          ) : null}
 
           <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-6">
             <AuthField
@@ -200,7 +208,7 @@ export function TherapistSignupView() {
               </div>
             </div>
 
-            <CreateAccountButton />
+            <CreateAccountButton disabled={Boolean(state?.success)} />
           </form>
 
           <div className="mt-6">
