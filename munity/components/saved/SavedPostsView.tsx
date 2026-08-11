@@ -6,26 +6,41 @@ import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
-import { mockStore, useMockStore } from "@/lib/mock-store";
-import { communityPath, routes } from "@/lib/routes";
+// import { mockStore, useMockStore } from "@/lib/mock-store";
+import { routes } from "@/lib/routes";
+import { useSavedPosts } from "@/hooks/saved-posts";
+import { toggleSavePost } from "@/lib/feed/actions";
 
 export function SavedPostsView() {
-  const store = useMockStore();
+  const {posts, commentsByPost, loading, error, refresh} = useSavedPosts();
   const { flash } = useLiveToast();
   const [search, setSearch] = useState("");
+  const [removingId, setRemovingId] = useState<string | null>(null)
 
   const savedPosts = useMemo(() => {
-    const saved = store.posts.filter((post) => store.savedPostIds.includes(post.id));
     const query = search.trim().toLowerCase();
-    if (!query) return saved;
-    return saved.filter(
+    if (!query) return posts;
+    return posts.filter(
       (post) =>
         post.content.toLowerCase().includes(query) ||
         post.author.toLowerCase().includes(query) ||
-        post.feeling.toLowerCase().includes(query) ||
-        (post.communityName?.toLowerCase().includes(query) ?? false),
+        post.feeling.toLowerCase().includes(query),
+        // (post.communityName?.toLowerCase().includes(query) ?? false),
     );
-  }, [search, store.posts, store.savedPostIds]);
+  }, [search, posts]);
+
+  const handleUnsave = async (postId: string) => {
+    setRemovingId(postId);
+    try {
+      await toggleSavePost(postId)
+      flash("Removed from saved posts");
+      refresh()
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Couldn't remove post")
+    } finally {
+      setRemovingId(null)
+    }
+  }
 
   return (
     <MemberAppShell
@@ -41,11 +56,26 @@ export function SavedPostsView() {
           </p>
           <h1 className="mt-2 text-3xl font-bold text-munity-text">Saved Posts</h1>
           <p className="mt-1 text-base text-munity-muted">
-            Resources and posts you’ve bookmarked for later
+            Resources and posts you&apos;ve bookmarked for later
           </p>
         </header>
 
-        {savedPosts.length === 0 ? (
+        {loading ? (
+          <div className="flex items-center justify-center rounded-[20px] border border-munity-border bg-white px-6 py-16 text-sm text-munity-muted shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+            Loading saved posts…
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center gap-3 rounded-[20px] border border-munity-border bg-white px-6 py-16 text-center shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+            <p className="text-sm text-red-600">{error}</p>
+            <button
+              type="button"
+              onClick={refresh}
+              className="text-sm font-semibold text-munity-green hover:underline"
+            >
+              Try again
+            </button>
+          </div>
+        ) : savedPosts.length === 0 ? (
           <div className="flex flex-col items-center gap-3 rounded-[20px] border border-munity-border bg-white px-6 py-16 text-center shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
             <Bookmark className="size-8 text-munity-muted" />
             <p className="text-sm text-munity-muted">
@@ -80,27 +110,25 @@ export function SavedPostsView() {
               >
                 <div className="min-w-0 flex-1 py-1">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-munity-muted">
-                    {post.communityId && post.communityName ? (
+                    {/* {post.communityId && post.communityName ? (
                       <Link href={communityPath(store.communities.find((community) => community.id === post.communityId)?.slug ?? "")}>
                         {post.communityName}
                       </Link>
-                    ) : "Community post"}
+                    ) : "Community post"} */} Community post
                   </div>
                   <h2 className="mt-2 text-base font-semibold text-munity-text group-hover:text-munity-green">
                     {post.author}
                   </h2>
                   <p className="mt-1 line-clamp-2 text-sm text-munity-muted">{post.content}</p>
                   <p className="mt-3 flex gap-3 text-xs text-munity-muted">
-                    <span className="inline-flex items-center gap-1"><Heart className="size-3" />{post.supports}</span>
-                    <span className="inline-flex items-center gap-1"><MessageCircle className="size-3" />{post.comments}</span>
+                    <span className="inline-flex items-center gap-1"><Heart className="size-3" />{post.supportCount}</span>
+                    <span className="inline-flex items-center gap-1"><MessageCircle className="size-3" />{commentsByPost[post.id]?.length ?? post.commentCount}</span>
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => {
-                    mockStore.toggleSavedPost(post.id);
-                    flash("Removed from saved posts");
-                  }}
+                  onClick={() => handleUnsave(post.id)}
+                  disabled={removingId === post.id}
                   className="mt-1 size-5 shrink-0 text-munity-green"
                   aria-label="Unsave post"
                 >

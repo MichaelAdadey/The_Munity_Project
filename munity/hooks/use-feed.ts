@@ -150,7 +150,7 @@ export const useFeed = (): FeedState => {
   const [error, setError] = useState<string | null>(null);
 
   /** Safe to call from click handlers (Post, Support, etc.) */
-  const refresh = useCallback(() => {
+  const load = useCallback(() => {
     // Event-handler / deferred path — not sync inside an effect body
     void (async () => {
       try {
@@ -171,8 +171,12 @@ export const useFeed = (): FeedState => {
           setLoading(false);
         });
       }
-    });
+    })();
   }, []);
+
+  useEffect(() => {
+    load();
+  }, [load])
 
   useEffect(() => {
     let cancelled = false;
@@ -209,7 +213,7 @@ export const useFeed = (): FeedState => {
     };
   }, []);
 
-  return { posts, commentsByPost, loading, error, refresh };
+  return { posts, commentsByPost, loading, error, refresh: load };
 };
 
 /** Re-export time helper for post cards: formatRelativeTime(post.createdAt) */

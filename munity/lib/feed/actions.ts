@@ -101,11 +101,11 @@ export const toggleSupport = async (
     const { error } = await supabase
       .from("post_supports")
       .delete()
-      .eq("posts_id", postId)
+      .eq("post_id", postId)
       .eq("user_id", user.id);
     if (error) return { error: error.message };
   } else {
-    const { error } = await supabase.from("post_suppprts").insert({
+    const { error } = await supabase.from("post_supports").insert({
       post_id: postId,
       user_id: user.id,
     });
@@ -137,7 +137,7 @@ export const toggleSavePost = async (
     const { error } = await supabase
       .from("saved_posts")
       .delete()
-      .eq("posts_id", postId)
+      .eq("post_id", postId)
       .eq("user_id", user.id);
     if (error) return { error: error.message };
   } else {
