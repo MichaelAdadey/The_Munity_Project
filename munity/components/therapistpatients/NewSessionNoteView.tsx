@@ -100,33 +100,40 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   }
 
   function exportAsPDF() {
-    const html = `<!doctype html><html><head><meta charset=\"utf-8\"><title>Session note</title></head><body>${buildHTML()}</body></html>`;
-    const w = window.open("", "_blank");
-    if (!w) return;
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    // Give browser a moment then trigger print — user can Save as PDF
-    setTimeout(() => w.print(), 300);
+    if (typeof window === "undefined") return;
+    const content = buildHTML();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Session Note</title><style>body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#21311b;}h1{color:#3e5219;}h2{margin-top:16px;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url);
+    if (w) {
+      setTimeout(() => {
+        w.print();
+      }, 250);
+    }
   }
 
   function exportAsWord() {
-    const header = `<!doctype html><html><head><meta charset=\"utf-8\"></head><body>${buildHTML()}</body></html>`;
-    const blob = new Blob([header], { type: "application/msword" });
+    if (typeof window === "undefined") return;
+    const content = buildHTML();
+    const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/><title>Session Note</title><style>body{font-family:Calibri,sans-serif;line-height:1.5;}h1{color:#3e5219;margin-bottom:10px;}h2{margin-top:16px;margin-bottom:8px;}p{margin:6px 0;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-word" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${patient.name.replace(/\s+/g, "_")}_session_note.doc`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patient.name.replace(/\\s+/g, "_")}_session_note.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
   }
 
   function emailNote() {
-    const subject = encodeURIComponent(`Session note for ${patient.name}`);
-    const body = encodeURIComponent(buildPlainText());
-    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    if (typeof window === "undefined") return;
+    const text = buildPlainText();
+    const subject = `Session note for ${patient.name}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
   }
 
   function updateHomework(index: number, value: string) {
