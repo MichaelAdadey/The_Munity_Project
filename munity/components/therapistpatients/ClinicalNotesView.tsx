@@ -444,10 +444,7 @@ function ObservationCard({
   return (
     <div className="flex items-center justify-between rounded-xl border border-munity-input-border bg-munity-bg p-4">
       <span className="text-sm font-semibold tracking-wide text-munity-text">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${badgeClass}`}>{badge}</span>
-        <Pencil className="size-[18px] text-munity-muted" />
-      </div>
+      <span className={`rounded-full px-3 py-1 text-xs font-bold ${badgeClass}`}>{badge}</span>
     </div>
   );
 }
