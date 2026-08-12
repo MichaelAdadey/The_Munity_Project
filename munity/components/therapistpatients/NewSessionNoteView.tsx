@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Plus, Save, X } from "lucide-react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
@@ -136,27 +136,28 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
     window.location.href = mailto;
   }
 
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const focusNextRef = useRef(false);
+
   function updateHomework(index: number, value: string) {
     setHomework((prev) => prev.map((item, i) => (i === index ? value : item)));
   }
 
   function addHomework() {
-    setHomework((prev) => {
-      const next = [...prev, ""];
-      // wait for DOM update, then focus the new input
-      setTimeout(() => {
-        try {
-          const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("input[placeholder^=\"Homework task\"]"));
-          const last = inputs[inputs.length - 1];
-          last?.focus();
-        } catch {
-          // ignore
-        }
-      }, 50);
-      return next;
-    });
+    focusNextRef.current = true;
+    setHomework((prev) => [...prev, ""]);
     flash("Homework task added");
   }
+
+  useEffect(() => {
+    if (!focusNextRef.current) return;
+    focusNextRef.current = false;
+    // focus the last input after render
+    requestAnimationFrame(() => {
+      const el = inputsRef.current[inputsRef.current.length - 1];
+      el?.focus();
+    });
+  }, [homework.length]);
 
   function removeHomework(index: number) {
     setHomework((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== index)));
@@ -396,13 +397,14 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <div className="mt-5 flex flex-col gap-3">
                     {homework.map((task, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={task}
-                          onChange={(event) => updateHomework(index, event.target.value)}
-                          placeholder={`Homework task ${index + 1}`}
-                          className={fieldClassName}
-                        />
+                            <input
+                              ref={(el) => (inputsRef.current[index] = el)}
+                              type="text"
+                              value={task}
+                              onChange={(event) => updateHomework(index, event.target.value)}
+                              placeholder={`Homework task ${index + 1}`}
+                              className={fieldClassName}
+                            />
                         <button
                           type="button"
                           onClick={() => removeHomework(index)}
