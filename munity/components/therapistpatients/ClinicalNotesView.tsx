@@ -81,6 +81,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const [activeSessionId, setActiveSessionId] = useState<string | number>(12);
   const [saved, setSaved] = useState(false);
   const [tasks, setTasks] = useState([true, false]);
+  const [exportOpen, setExportOpen] = useState(false);
   const avatar = assets.avatars[patient.avatarKey];
   const firstName = patient.name.split(" ")[0];
   const persistedSessions: NoteSession[] = sessionNotes
@@ -98,6 +99,72 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
       body: note.body,
       active: false,
     }));
+
+  function buildNoteHTML(session: NoteSession) {
+    return `
+      <div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;padding:20px;color:#21311b;">
+        <h1 style="color:#3e5219;">${session.title}</h1>
+        <p><strong>Date:</strong> ${session.date}</p>
+        <p><strong>Patient:</strong> ${patient.name}</p>
+        <h2>Session Notes</h2>
+        <p>${(session.body || session.excerpt).replace(/\n/g, '<br/>')}</p>
+      </div>
+    `;
+  }
+
+  function buildNotePlainText(session: NoteSession) {
+    return [
+      session.title,
+      `Date: ${session.date}`,
+      `Patient: ${patient.name}`,
+      "",
+      "Session Notes:",
+      session.body || session.excerpt,
+    ].join("\n");
+  }
+
+  function exportNoteAsPDF() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const content = buildNoteHTML(session);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Clinical Note</title><style>body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#21311b;}h1{color:#3e5219;}h2{margin-top:16px;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url);
+    if (w) {
+      setTimeout(() => {
+        w.print();
+      }, 250);
+    }
+  }
+
+  function exportNoteAsWord() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const content = buildNoteHTML(session);
+    const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/><title>Clinical Note</title><style>body{font-family:Calibri,sans-serif;line-height:1.5;}h1{color:#3e5219;margin-bottom:10px;}h2{margin-top:16px;margin-bottom:8px;}p{margin:6px 0;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-word" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patient.name.replace(/\\s+/g, "_")}_clinical_note_${activeSessionId}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function emailNote() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const text = buildNotePlainText(session);
+    const subject = `Clinical Note: ${session.title}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
+  }
   const allSessions = [...persistedSessions, ...sessions];
   const activeSession =
     allSessions.find((session) => session.id === activeSessionId) ?? allSessions[0];
@@ -218,10 +285,46 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                     <PlusCircle className="size-4" />
                     New note
                   </Button>
-                  <Button variant="ghost">
-                    <Printer className="size-4" />
-                    Export
-                  </Button>
+                  <div className="relative">
+                    <Button variant="ghost" onClick={() => setExportOpen((s) => !s)}>
+                      <Printer className="size-4" />
+                      Export
+                    </Button>
+                    {exportOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-munity-border bg-white p-2 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportNoteAsPDF();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportNoteAsWord();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as Word
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            emailNote();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Email note
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <Button
                     onClick={() =>
                       withLoading(async () => {
