@@ -35,11 +35,11 @@ const SPECIALIZATIONS: Specialization[] = [
   "Depression",
   "CBT Therapy",
   "Family Issues",
-];
-
-const AVAILABILITY_OPTIONS: AvailabilityFilter[] = ["Today", "This Week", "Weekend"];
-
-const LANGUAGES = ["English", "Spanish", "Italian", "Mandarin"];
+                    {
+                      bookedTherapistId === therapist.id ||
+                      store.bookings.some((b) => b.therapistId === therapist.id)
+                        ? "Book"
+                        : "Book Session"}
 
 const SORT_OPTIONS: SortOption[] = [
   "Recommended",
