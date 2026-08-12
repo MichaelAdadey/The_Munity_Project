@@ -185,18 +185,6 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.97 }}
-                onClick={() => {
-                  if (!requireLogin()) return;
-                  setCreateOpen(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-6 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
-              >
-                <Plus className="size-3.5" />
-                Create Community
-              </motion.button>
-              <motion.button
-                type="button"
-                whileTap={{ scale: 0.97 }}
                 onClick={() => setHowOpen(true)}
                 className="rounded-xl border border-[#c5c8b8] bg-[rgba(251,249,248,0.5)] px-6 py-3 text-sm font-semibold tracking-wide text-munity-text backdrop-blur-sm transition hover:bg-white"
               >
