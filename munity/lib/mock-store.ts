@@ -612,6 +612,14 @@ export const mockStore = {
     }));
     return record;
   },
+  updateSessionNote(id: string | number, patch: Partial<Omit<SessionNoteRecord, "id" | "createdAt">>) {
+    setState((prev) => ({
+      ...prev,
+      sessionNotes: prev.sessionNotes.map((note) =>
+        note.id === id ? { ...note, ...patch } : note
+      ),
+    }));
+  },
   updateSettings(patch: Partial<MemberSettingsState>) {
     setState((prev) => ({
       ...prev,
