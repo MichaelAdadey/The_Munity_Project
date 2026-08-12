@@ -141,7 +141,20 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   }
 
   function addHomework() {
-    setHomework((prev) => [...prev, ""]);
+    setHomework((prev) => {
+      const next = [...prev, ""];
+      // wait for DOM update, then focus the new input
+      setTimeout(() => {
+        try {
+          const inputs = Array.from(document.querySelectorAll<HTMLInputElement>("input[placeholder^=\"Homework task\"]"));
+          const last = inputs[inputs.length - 1];
+          last?.focus();
+        } catch {
+          // ignore
+        }
+      }, 50);
+      return next;
+    });
     flash("Homework task added");
   }
 
@@ -368,7 +381,11 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={addHomework}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addHomework();
+                      }}
                       className="inline-flex items-center gap-1.5 text-sm font-semibold text-munity-green hover:underline"
                     >
                       <Plus className="size-4" />
