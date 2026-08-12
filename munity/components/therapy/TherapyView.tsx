@@ -404,7 +404,7 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
                     >
                       {bookedTherapistId === therapist.id ||
                       store.bookings.some((b) => b.therapistId === therapist.id)
-                        ? "Book another"
+                        ? "Book"
                         : "Book Session"}
                     </button>
                   </div>
