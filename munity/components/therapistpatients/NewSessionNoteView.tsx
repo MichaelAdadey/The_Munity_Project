@@ -152,14 +152,17 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   useEffect(() => {
     if (!focusNextRef.current) return;
     focusNextRef.current = false;
-    // focus the last input after render
+    // focus the newly added input (at index homework.length - 1)
     requestAnimationFrame(() => {
-      const el = inputsRef.current[inputsRef.current.length - 1];
+      const idx = homework.length - 1;
+      const el = inputsRef.current[idx];
       el?.focus();
     });
   }, [homework.length]);
 
   function removeHomework(index: number) {
+    // keep refs aligned
+    inputsRef.current.splice(index, 1);
     setHomework((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== index)));
   }
 
