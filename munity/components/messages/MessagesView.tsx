@@ -25,8 +25,14 @@ import {
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
-import { mockStore, useMockStore } from "@/lib/mock-store";
+import { mockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
+import {
+  ensureTherapistThread,
+  sendChatMessage,
+  useChatMessages,
+  useChats,
+} from "@/lib/messages/client-queries";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
 type CallMode = "voice" | "video";
@@ -41,13 +47,20 @@ function formatCallDuration(seconds: number) {
 }
 
 export function MessagesView() {
-  const store = useMockStore();
+  // const store = useMockStore();
   const searchParams = useSearchParams();
   const { flash } = useLiveToast();
+
+  const {
+    chats,
+    chatsLoading,
+    activeChatId,
+    setActiveChatId,
+    refresh: loadChats,
+  } = useChats(flash);
+  const { messagesByChat, loadMessages } = useChatMessages(activeChatId, flash);
+
   const [filter, setFilter] = useState<ChatFilter>("All");
-  const [activeChatId, setActiveChatId] = useState(
-    () => store.chats[0]?.id ?? "sarah",
-  );
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
   const [callMode, setCallMode] = useState<CallMode | null>(null);
@@ -62,31 +75,42 @@ export function MessagesView() {
     const chatId = searchParams.get("chat");
 
     if (therapistId) {
-      const ensured = mockStore.ensureTherapistChat(therapistId);
-      if (ensured) {
-        setActiveChatId(ensured);
-        mockStore.markChatRead(ensured);
-        setFilter("Therapists");
-      }
+      void (async () => {
+        try {
+          const threadId = await ensureTherapistThread(therapistId);
+          loadChats();
+          setActiveChatId(threadId);
+          setFilter("Therapists");
+        } catch (error) {
+          flash(
+            error instanceof Error
+              ? error.message
+              : "Couldn't open that conversation",
+          );
+        }
+      })();
       return;
     }
 
     if (chatId) {
       setActiveChatId(chatId);
-      mockStore.markChatRead(chatId);
     }
-  }, [searchParams]);
+  }, [searchParams, loadChats, flash, setActiveChatId]);
 
-  useEffect(() => {
-    if (!callMode) return;
-    setCallPhase("connecting");
-    setCallSeconds(0);
-    setMuted(false);
-    setCameraOff(false);
-    setCallMinimized(false);
-    const connectTimer = window.setTimeout(() => setCallPhase("connected"), 1400);
-    return () => window.clearTimeout(connectTimer);
-  }, [callMode, activeChatId]);
+  // ── Call UI (still a visual-only preview) ──────────────────────
+  // useEffect(() => {
+  //   if (!callMode) return;
+  //   setCallPhase("connecting");
+  //   setCallSeconds(0);
+  //   setMuted(false);
+  //   setCameraOff(false);
+  //   setCallMinimized(false);
+  //   const connectTimer = window.setTimeout(
+  //     () => setCallPhase("connected"),
+  //     1400,
+  //   );
+  //   return () => window.clearTimeout(connectTimer);
+  // }, [callMode, activeChatId]);
 
   useEffect(() => {
     if (!callMode || callPhase !== "connected") return;
@@ -96,33 +120,65 @@ export function MessagesView() {
     return () => window.clearInterval(tick);
   }, [callMode, callPhase]);
 
-  const filteredChats = store.chats.filter((chat) => {
+  const filteredChats = chats.filter((chat) => {
     const matchesFilter = filter === "All" || chat.filter === filter;
-    const matchesSearch = chat.name.toLowerCase().includes(search.trim().toLowerCase());
+    const matchesSearch = chat.name
+      .toLowerCase()
+      .includes(search.trim().toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
-  const activeChat = store.chats.find((chat) => chat.id === activeChatId) ?? store.chats[0];
-  if (!activeChat) return null;
-  const activeMessages = activeChat ? store.messages[activeChat.id] ?? [] : [];
+  const activeChat = chats.find((chat) => chat.id === activeChatId) ?? chats[0];
+
+  if (chatsLoading) {
+    return (
+      <MemberAppShell flush>
+        <div className="flex h-[calc(100dvh-4rem)] items-center justify-center text-sm text-munity-muted">
+          Loading conversations…
+        </div>
+      </MemberAppShell>
+    );
+  }
+
+  if (!activeChat) {
+    return (
+      <MemberAppShell flush>
+        <div className="flex h-[calc(100dvh-4rem)] flex-col items-center justify-center gap-2 text-center text-munity-muted">
+          <p className="text-sm font-medium">No conversations yet</p>
+          <p className="max-w-sm text-xs">
+            Book a session with a therapist to start messaging.
+          </p>
+        </div>
+      </MemberAppShell>
+    );
+  }
+  const activeMessages = messagesByChat[activeChat.id] ?? [];
   const showTherapistPanel = activeChat.filter === "Therapists";
   const therapistProfileHref = activeChat.therapistId
     ? therapyPath(activeChat.therapistId)
     : null;
-  const therapistMeta = activeChat.therapistId
-    ? store.therapists.find((item) => item.id === activeChat.therapistId)
-    : undefined;
+  // const therapistMeta = activeChat.therapistId
+  //   ? store.therapists.find((item) => item.id === activeChat.therapistId)
+  //   : undefined;
   const sharedMedia = [
     "/images/messages/media-stones.jpg",
     "/images/messages/media-brain.jpg",
     "/images/messages/media-coffee.jpg",
   ];
 
-  function sendMessage() {
-    if (!draft.trim()) return;
-    mockStore.sendMessage(activeChat.id, draft);
+  async function sendMessage() {
+    if (!draft.trim() || !activeChat) return;
+    const content = draft.trim();
     setDraft("");
-    flash("Message sent");
+    try {
+      await sendChatMessage(activeChat.id, content);
+      loadMessages(activeChat.id);
+      loadChats();
+      flash("Message sent");
+    } catch (error) {
+      setDraft(content);
+      flash(error instanceof Error ? error.message : "Couldn't send message");
+    }
   }
 
   function startCall(mode: CallMode) {
@@ -139,10 +195,7 @@ export function MessagesView() {
     const kind = callMode === "video" ? "Video call" : "Voice call";
     const duration =
       callPhase === "connected" ? formatCallDuration(callSeconds) : "0:00";
-    mockStore.sendMessage(
-      activeChat.id,
-      `${kind} ended · ${duration}`,
-    );
+    mockStore.sendMessage(activeChat.id, `${kind} ended · ${duration}`);
     flash(`${kind} ended`);
     setCallMode(null);
     setCallPhase("connecting");
@@ -160,14 +213,14 @@ export function MessagesView() {
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="flex h-[calc(100dvh-4rem)] bg-[#fbf9f8]">
+      <div className="flex h-[calc(100dvh-4rem)] bg-munity-bg">
         <section className="flex w-full shrink-0 flex-col border-r border-[rgba(197,200,184,0.3)] bg-white md:w-[384px]">
           <div className="flex flex-col gap-4 overflow-y-auto p-4">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-semibold text-munity-text">Chats</h1>
               <button
                 type="button"
-                className="rounded-full p-2 text-munity-muted transition hover:bg-[#f5f3f3]"
+                className="rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar"
                 aria-label="Compose message"
               >
                 <SquarePen className="size-5" />
@@ -201,19 +254,21 @@ export function MessagesView() {
                   <button
                     key={chat.id}
                     type="button"
-                    onClick={() => {
-                      setActiveChatId(chat.id);
-                      mockStore.markChatRead(chat.id);
-                    }}
+                    onClick={() => setActiveChatId(chat.id)}
                     className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition ${
                       active
                         ? "rounded-l-none border-l-4 border-munity-green bg-[rgba(214,231,161,0.3)] pl-4"
-                        : "hover:bg-[#f5f3f3]"
+                        : "hover:bg-munity-sidebar"
                     }`}
                   >
                     <div className="relative size-12 shrink-0">
                       <div className="relative size-12 overflow-hidden rounded-full">
-                        <Image src={chat.avatar} alt={chat.name} fill className="object-cover" />
+                        <Image
+                          src={chat.avatar}
+                          alt={chat.name}
+                          fill
+                          className="object-cover"
+                        />
                       </div>
                       {chat.online ? (
                         <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-white bg-[#22c55e]" />
@@ -248,7 +303,7 @@ export function MessagesView() {
           </div>
         </section>
 
-        <section className="hidden min-w-0 flex-1 flex-col bg-[#fbf9f8] md:flex">
+        <section className="hidden min-w-0 flex-1 flex-col bg-munity-bg md:flex">
           <div className="flex h-16 items-center justify-between border-b border-[rgba(197,200,184,0.3)] px-6">
             <div>
               <h2 className="text-sm font-semibold tracking-wide text-munity-text">
@@ -259,7 +314,9 @@ export function MessagesView() {
                   <LivePulse label="Active now" />
                 </p>
               ) : (
-                <p className="mt-0.5 text-xs font-medium text-munity-muted">Offline</p>
+                <p className="mt-0.5 text-xs font-medium text-munity-muted">
+                  Offline
+                </p>
               )}
             </div>
             <div className="flex items-center gap-2">
@@ -269,7 +326,7 @@ export function MessagesView() {
                 className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
                 aria-label="Voice call"
               >
-                <Phone className="size-[18px]" />
+                <Phone className="size-4.5" />
               </button>
               <button
                 type="button"
@@ -283,92 +340,104 @@ export function MessagesView() {
           </div>
 
           <AnimatePresence mode="wait">
-          <motion.div key={activeChat.id} initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }} className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
-            {activeMessages.length > 0 ? (
-              activeMessages.map((message) => {
-                if (message.kind === "date") {
-                  return (
-                    <div key={message.id} className="flex justify-center">
-                      <span className="rounded-full bg-[#efeded] px-4 py-1 text-xs font-medium text-munity-muted">
-                        {message.label}
-                      </span>
-                    </div>
-                  );
-                }
+            <motion.div
+              key={activeChat.id}
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              className="flex-1 space-y-6 overflow-y-auto px-6 py-6"
+            >
+              {activeMessages.length > 0 ? (
+                activeMessages.map((message) => {
+                  if (message.kind === "date") {
+                    return (
+                      <div key={message.id} className="flex justify-center">
+                        <span className="rounded-full bg-[#efeded] px-4 py-1 text-xs font-medium text-munity-muted">
+                          {message.label}
+                        </span>
+                      </div>
+                    );
+                  }
 
-                if (message.kind === "image") {
-                  return (
-                    <div key={message.id} className="flex justify-end">
-                      <div className="max-w-[374px]">
-                        <div className="overflow-hidden rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl bg-munity-green p-2 shadow-sm">
-                          <div className="relative aspect-square w-full overflow-hidden rounded-xl">
-                            <Image
-                              src={message.image}
-                              alt="Shared media"
-                              fill
-                              className="object-cover"
-                            />
+                  if (message.kind === "image") {
+                    return (
+                      <div key={message.id} className="flex justify-end">
+                        <div className="max-w-93.5">
+                          <div className="overflow-hidden rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl bg-munity-green p-2 shadow-sm">
+                            <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+                              <Image
+                                src={message.image}
+                                alt="Shared media"
+                                fill
+                                className="object-cover"
+                              />
+                            </div>
+                            <p className="px-2 pb-2 pt-2 text-base leading-relaxed text-white">
+                              {message.caption}
+                            </p>
                           </div>
-                          <p className="px-2 pb-2 pt-2 text-base leading-relaxed text-white">
-                            {message.caption}
+                          <p className="mt-1 pr-1 text-right text-xs font-medium text-munity-muted">
+                            {message.time}
                           </p>
                         </div>
-                        <p className="mt-1 pr-1 text-right text-xs font-medium text-munity-muted">
+                      </div>
+                    );
+                  }
+
+                  const isMe = message.from === "me";
+                  return (
+                    <div
+                      key={message.id}
+                      className={`flex items-end gap-3 ${isMe ? "justify-end" : "justify-start"}`}
+                    >
+                      {!isMe ? (
+                        <div className="relative size-8 shrink-0 overflow-hidden rounded-full">
+                          <Image
+                            src={activeChat.avatar}
+                            alt={activeChat.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      ) : null}
+                      <div
+                        className={`max-w-93.5 ${isMe ? "items-end" : "items-start"}`}
+                      >
+                        <div
+                          className={`px-4 py-4 text-base leading-relaxed shadow-sm ${
+                            isMe
+                              ? "rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl bg-munity-green text-white"
+                              : "rounded-tl-2xl rounded-tr-2xl rounded-br-2xl bg-[#eae8e7] text-munity-text"
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                        <p
+                          className={`mt-1 text-xs font-medium text-munity-muted ${
+                            isMe ? "pr-1 text-right" : "pl-1"
+                          }`}
+                        >
                           {message.time}
                         </p>
                       </div>
                     </div>
                   );
-                }
-
-                const isMe = message.from === "me";
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex items-end gap-3 ${isMe ? "justify-end" : "justify-start"}`}
-                  >
-                    {!isMe ? (
-                      <div className="relative size-8 shrink-0 overflow-hidden rounded-full">
-                        <Image
-                          src={activeChat.avatar}
-                          alt={activeChat.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                    ) : null}
-                    <div className={`max-w-[374px] ${isMe ? "items-end" : "items-start"}`}>
-                      <div
-                        className={`px-4 py-4 text-base leading-relaxed shadow-sm ${
-                          isMe
-                            ? "rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl bg-munity-green text-white"
-                            : "rounded-tl-2xl rounded-tr-2xl rounded-br-2xl bg-[#eae8e7] text-munity-text"
-                        }`}
-                      >
-                        {message.content}
-                      </div>
-                      <p
-                        className={`mt-1 text-xs font-medium text-munity-muted ${
-                          isMe ? "pr-1 text-right" : "pl-1"
-                        }`}
-                      >
-                        {message.time}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-munity-muted">
-                <p className="text-sm font-medium">Conversation with {activeChat.name}</p>
-                <p className="max-w-sm text-xs">No messages yet. Start the conversation below.</p>
-              </div>
-            )}
-          </motion.div>
+                })
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-munity-muted">
+                  <p className="text-sm font-medium">
+                    Conversation with {activeChat.name}
+                  </p>
+                  <p className="max-w-sm text-xs">
+                    No messages yet. Start the conversation below.
+                  </p>
+                </div>
+              )}
+            </motion.div>
           </AnimatePresence>
 
-          <div className="border-t border-[rgba(197,200,184,0.3)] bg-[#fbf9f8] px-4 py-4">
-            <div className="flex items-center gap-3 rounded-2xl border border-[rgba(197,200,184,0.2)] bg-[#f5f3f3] p-2">
+          <div className="border-t border-[rgba(197,200,184,0.3)] bg-munity-bg px-4 py-4">
+            <div className="flex items-center gap-3 rounded-2xl border border-[rgba(197,200,184,0.2)] bg-munity-sidebar p-2">
               <button
                 type="button"
                 className="rounded-xl p-2 text-munity-muted transition hover:bg-white"
@@ -381,7 +450,7 @@ export function MessagesView() {
                 className="rounded-xl p-2 text-munity-muted transition hover:bg-white"
                 aria-label="Add image"
               >
-                <ImageIcon className="size-[18px]" />
+                <ImageIcon className="size-4.5" />
               </button>
               <input
                 type="text"
@@ -390,23 +459,27 @@ export function MessagesView() {
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
-                    sendMessage();
+                    void sendMessage();
                   }
                 }}
                 placeholder="Type a message..."
                 className="min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-munity-text outline-none placeholder:text-[rgba(69,72,60,0.5)]"
               />
-              {draft ? <span className="text-xs font-medium text-munity-muted">Typing…</span> : null}
+              {draft ? (
+                <span className="text-xs font-medium text-munity-muted">
+                  Typing…
+                </span>
+              ) : null}
               <button
                 type="button"
                 className="rounded-xl p-2 text-munity-muted transition hover:bg-white"
                 aria-label="Voice message"
               >
-                <Mic className="size-[18px]" />
+                <Mic className="size-4.5" />
               </button>
               <button
                 type="button"
-                onClick={sendMessage}
+                onClick={() => sendMessage()}
                 className="flex size-10 items-center justify-center rounded-xl bg-munity-green text-white transition hover:bg-munity-green-dark"
                 aria-label="Send message"
               >
@@ -417,7 +490,7 @@ export function MessagesView() {
         </section>
 
         {showTherapistPanel ? (
-          <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] xl:flex">
+          <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-[rgba(197,200,184,0.3)] bg-munity-sidebar xl:flex">
             <div className="px-6 pt-6">
               <div className="flex flex-col items-center">
                 <div className="relative size-24">
@@ -437,7 +510,7 @@ export function MessagesView() {
                   {activeChat.name}
                 </h3>
                 <p className="mt-1 text-xs font-medium text-munity-muted">
-                  {therapistMeta?.credentials ?? "Therapist"}
+                  Therapist
                 </p>
                 <div className="mt-4 flex items-center gap-2">
                   {therapistProfileHref ? (
@@ -453,7 +526,7 @@ export function MessagesView() {
                     className="rounded-xl bg-munity-lime p-2 text-munity-olive-text transition hover:brightness-95"
                     aria-label="Save contact"
                   >
-                    <Bookmark className="size-[18px]" />
+                    <Bookmark className="size-4.5" />
                   </button>
                 </div>
               </div>
@@ -463,7 +536,10 @@ export function MessagesView() {
                   <h4 className="text-sm font-semibold tracking-wide text-munity-muted">
                     Shared Media
                   </h4>
-                  <button type="button" className="text-xs font-medium text-munity-green">
+                  <button
+                    type="button"
+                    className="text-xs font-medium text-munity-green"
+                  >
                     See all
                   </button>
                 </div>
@@ -473,7 +549,12 @@ export function MessagesView() {
                       key={src}
                       className="relative aspect-square overflow-hidden rounded-lg bg-[#eae8e7]"
                     >
-                      <Image src={src} alt="Shared media" fill className="object-cover" />
+                      <Image
+                        src={src}
+                        alt="Shared media"
+                        fill
+                        className="object-cover"
+                      />
                     </div>
                   ))}
                 </div>
@@ -488,14 +569,14 @@ export function MessagesView() {
                     type="button"
                     className="flex items-center gap-3 rounded-xl p-3 text-sm font-semibold tracking-wide text-munity-text transition hover:bg-white/70"
                   >
-                    <Calendar className="size-[18px]" />
+                    <Calendar className="size-4.5" />
                     Schedule Session
                   </button>
                   <button
                     type="button"
                     className="flex items-center gap-3 rounded-xl p-3 text-sm font-semibold tracking-wide text-munity-text transition hover:bg-white/70"
                   >
-                    <BellOff className="size-[18px]" />
+                    <BellOff className="size-4.5" />
                     Mute Notifications
                   </button>
                   <button
@@ -519,7 +600,7 @@ export function MessagesView() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
+            className="fixed inset-0 z-80 flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -532,7 +613,9 @@ export function MessagesView() {
                   type="button"
                   onClick={() => {
                     setCallMinimized(true);
-                    flash("Call minimized — keep chatting while you stay on the line");
+                    flash(
+                      "Call minimized — keep chatting while you stay on the line",
+                    );
                   }}
                   className="flex size-9 items-center justify-center rounded-full bg-black/35 text-white transition hover:bg-black/50"
                   aria-label="Minimize call"
@@ -542,7 +625,7 @@ export function MessagesView() {
               </div>
 
               {callMode === "video" ? (
-                <div className="relative h-[360px] w-full bg-[#1a2214]">
+                <div className="relative h-90 w-full bg-[#1a2214]">
                   {!cameraOff ? (
                     <Image
                       src={activeChat.avatar}
@@ -563,7 +646,7 @@ export function MessagesView() {
                       <p className="text-sm text-white/70">Camera is off</p>
                     </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a2214] via-transparent to-black/30" />
+                  <div className="absolute inset-0 bg-linear-to-t from-[#1a2214] via-transparent to-black/30" />
                   <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border-2 border-white/40 bg-munity-green shadow-lg">
                     <div className="flex h-full items-center justify-center text-xs font-semibold text-white/90">
                       You
@@ -610,7 +693,11 @@ export function MessagesView() {
                     }`}
                     aria-label={muted ? "Unmute" : "Mute"}
                   >
-                    {muted ? <MicOff className="size-5" /> : <Mic className="size-5" />}
+                    {muted ? (
+                      <MicOff className="size-5" />
+                    ) : (
+                      <Mic className="size-5" />
+                    )}
                   </button>
 
                   {callMode === "video" ? (
@@ -625,7 +712,9 @@ export function MessagesView() {
                           ? "bg-white text-munity-text"
                           : "bg-white/15 text-white hover:bg-white/25"
                       }`}
-                      aria-label={cameraOff ? "Turn camera on" : "Turn camera off"}
+                      aria-label={
+                        cameraOff ? "Turn camera on" : "Turn camera off"
+                      }
                     >
                       {cameraOff ? (
                         <VideoOff className="size-5" />
@@ -660,7 +749,7 @@ export function MessagesView() {
             initial={{ opacity: 0, y: 24, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            className="fixed bottom-5 right-5 z-[80] w-[280px] overflow-hidden rounded-2xl border border-white/20 bg-[#24301c] text-white shadow-2xl"
+            className="fixed bottom-5 right-5 z-80 w-70 overflow-hidden rounded-2xl border border-white/20 bg-[#24301c] text-white shadow-2xl"
           >
             <button
               type="button"
@@ -676,7 +765,9 @@ export function MessagesView() {
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">{activeChat.name}</p>
+                <p className="truncate text-sm font-semibold">
+                  {activeChat.name}
+                </p>
                 <p className="mt-0.5 text-xs text-munity-lime/90">
                   {callMode === "video" ? "Video" : "Voice"} ·{" "}
                   {callPhase === "connecting"
@@ -694,11 +785,17 @@ export function MessagesView() {
                   flash(muted ? "Microphone on" : "Microphone muted");
                 }}
                 className={`flex size-9 items-center justify-center rounded-full transition ${
-                  muted ? "bg-white text-munity-text" : "bg-white/15 hover:bg-white/25"
+                  muted
+                    ? "bg-white text-munity-text"
+                    : "bg-white/15 hover:bg-white/25"
                 }`}
                 aria-label={muted ? "Unmute" : "Mute"}
               >
-                {muted ? <MicOff className="size-4" /> : <Mic className="size-4" />}
+                {muted ? (
+                  <MicOff className="size-4" />
+                ) : (
+                  <Mic className="size-4" />
+                )}
               </button>
               <button
                 type="button"
