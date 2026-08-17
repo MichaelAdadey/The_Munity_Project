@@ -15,12 +15,14 @@ import {
   VideoOff,
 } from "lucide-react";
 import { useLiveToast } from "@/components/live/LiveFeedback";
-import { chatIdFromPatient } from "@/lib/therapist-chats";
+// import { chatIdFromPatient } from "@/lib/therapist-chats";
 import { therapistMessagesPath } from "@/lib/routes";
+import { ensureTherapistThread } from "@/lib/messages/client-queries";
 
 export type TherapistSessionKind = "video" | "chat";
 
 export type TherapistSessionPatient = {
+  patientUuid: string;
   name: string;
   patientId: string;
   avatar: string;
@@ -63,37 +65,37 @@ export function TherapistSessionOverlays({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!patient || !kind) return;
-    setPhase("connecting");
-    setSeconds(0);
-    setMuted(false);
-    setCameraOff(false);
-    setMinimized(false);
-    setDraft("");
-    setMessages([
-      {
-        id: "m1",
-        from: "them",
-        content:
-          kind === "chat"
-            ? "Hi Doctor — I’m ready whenever you are."
-            : "I’ve joined the waiting room.",
-        time: "Just now",
-      },
-      {
-        id: "m2",
-        from: "me",
-        content:
-          kind === "chat"
-            ? "Thanks for checking in. How has your day felt so far?"
-            : "Connecting now — we’ll start in a moment.",
-        time: "Just now",
-      },
-    ]);
-    const timer = window.setTimeout(() => setPhase("connected"), 1200);
-    return () => window.clearTimeout(timer);
-  }, [patient, kind]);
+  // useEffect(() => {
+  //   if (!patient || !kind) return;
+  //   setPhase("connecting");
+  //   setSeconds(0);
+  //   setMuted(false);
+  //   setCameraOff(false);
+  //   setMinimized(false);
+  //   setDraft("");
+  //   setMessages([
+  //     {
+  //       id: "m1",
+  //       from: "them",
+  //       content:
+  //         kind === "chat"
+  //           ? "Hi Doctor — I’m ready whenever you are."
+  //           : "I’ve joined the waiting room.",
+  //       time: "Just now",
+  //     },
+  //     {
+  //       id: "m2",
+  //       from: "me",
+  //       content:
+  //         kind === "chat"
+  //           ? "Thanks for checking in. How has your day felt so far?"
+  //           : "Connecting now — we’ll start in a moment.",
+  //       time: "Just now",
+  //     },
+  //   ]);
+  //   const timer = window.setTimeout(() => setPhase("connected"), 1200);
+  //   return () => window.clearTimeout(timer);
+  // }, [patient, kind]);
 
   useEffect(() => {
     if (!patient || !kind || kind !== "video" || phase !== "connected") return;
@@ -120,11 +122,19 @@ export function TherapistSessionOverlays({
     onClose();
   }
 
-  function expandToMessages() {
-    const chatId = chatIdFromPatient(activePatient);
-    flash(`Opening full chat with ${activePatient.name}`);
-    onClose();
-    router.push(therapistMessagesPath({ chatId }));
+  async function expandToMessages() {
+    try {
+      const threadId = await ensureTherapistThread(activePatient.patientUuid);
+      flash(`Opening full chat with ${activePatient.name}`)
+      onClose();
+      router.push(therapistMessagesPath({ chatId: threadId}))
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Couldn't open that conversation")
+    }
+    // const chatId = chatIdFromPatient(activePatient);
+    // flash(`Opening full chat with ${activePatient.name}`);
+    // onClose();
+    // router.push(therapistMessagesPath({ chatId }));
   }
 
   function sendMessage() {
@@ -154,7 +164,7 @@ export function TherapistSessionOverlays({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
+          className="fixed inset-0 z-80 flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 12 }}
@@ -174,7 +184,7 @@ export function TherapistSessionOverlays({
                 <Minimize2 className="size-4" />
               </button>
             </div>
-            <div className="relative h-[360px] w-full bg-[#1a2214]">
+            <div className="relative h-90 w-full bg-[#1a2214]">
               {!cameraOff ? (
                 <Image
                   src={activePatient.avatar}
@@ -195,7 +205,7 @@ export function TherapistSessionOverlays({
                   <p className="text-sm text-white/70">Camera is off</p>
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#1a2214] via-transparent to-black/30" />
+              <div className="absolute inset-0 bg-linear-to-t from-[#1a2214] via-transparent to-black/30" />
               <div className="absolute bottom-4 right-4 flex h-28 w-20 items-center justify-center overflow-hidden rounded-xl border-2 border-white/40 bg-munity-green text-xs font-semibold">
                 You
               </div>
@@ -259,7 +269,7 @@ export function TherapistSessionOverlays({
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 16 }}
-          className="fixed bottom-5 right-5 z-[80] w-[280px] overflow-hidden rounded-2xl border border-white/20 bg-[#24301c] text-white shadow-2xl"
+          className="fixed bottom-5 right-5 z-80 w-70 overflow-hidden rounded-2xl border border-white/20 bg-[#24301c] text-white shadow-2xl"
         >
           <button
             type="button"
@@ -308,14 +318,14 @@ export function TherapistSessionOverlays({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-80 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
           onClick={onClose}
         >
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             onClick={(event) => event.stopPropagation()}
-            className="flex h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-[24px] border border-[#d8dbcf] bg-white shadow-2xl"
+            className="flex h-[min(90dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-3xl border border-[#d8dbcf] bg-white shadow-2xl"
           >
             <div className="flex shrink-0 items-center gap-3 border-b border-munity-border px-5 py-4">
               <div className="relative size-11 overflow-hidden rounded-full">
@@ -336,7 +346,7 @@ export function TherapistSessionOverlays({
               </div>
               <button
                 type="button"
-                onClick={expandToMessages}
+                onClick={() => expandToMessages()}
                 className="inline-flex items-center gap-1.5 rounded-xl border border-munity-green px-3 py-2 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/30"
               >
                 <Maximize2 className="size-3.5" />
@@ -345,12 +355,12 @@ export function TherapistSessionOverlays({
               <button
                 type="button"
                 onClick={endSession}
-                className="rounded-xl border border-[#c5c8b8] px-3 py-2 text-xs font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
+                className="rounded-xl border border-munity-input-border px-3 py-2 text-xs font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
               >
                 Close
               </button>
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#fbf9f8] px-5 py-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-munity-bg px-5 py-4">
               <div className="space-y-3">
                 {messages.map((message) => {
                   const mine = message.from === "me";
@@ -360,7 +370,7 @@ export function TherapistSessionOverlays({
                       className={`flex ${mine ? "justify-end" : "justify-start"}`}
                     >
                       <div
-                        className={`max-w-[80%] break-words rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+                        className={`max-w-[80%] wrap-break-word rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                           mine
                             ? "rounded-br-md bg-munity-green text-white"
                             : "rounded-bl-md bg-white text-munity-text"
@@ -382,7 +392,7 @@ export function TherapistSessionOverlays({
               </div>
             </div>
             <div className="shrink-0 border-t border-munity-border bg-white p-4">
-              <div className="flex items-center gap-2 rounded-2xl border border-[#c5c8b8] bg-[#f5f3f3] p-2">
+              <div className="flex items-center gap-2 rounded-2xl border border-munity-input-border bg-munity-sidebar p-2">
                 <input
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
