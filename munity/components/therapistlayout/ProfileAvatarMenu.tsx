@@ -65,7 +65,7 @@ export function ProfileAvatarMenu() {
         <DropdownMenuSeparator className="my-1 bg-munity-divider" />
         <DropdownMenuItem
           variant="destructive"
-          className="cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium focus:bg-red-50"
+          className="cursor-pointer rounded-lg px-3 py-2.5 text-sm font-medium focus:bg-red-50 dark:focus:bg-red-950/40"
           onClick={() => signOut()}
         >
           <LogOut className="size-4" />

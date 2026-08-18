@@ -111,7 +111,7 @@ export function MemberAppShell({
   return (
     <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] px-4 py-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-munity-border/30 bg-munity-sidebar px-4 py-4 lg:flex">
         <Link href={routes.memberHome} className="mb-8 block px-4 pt-2">
           <p className="text-2xl font-bold leading-tight text-munity-green">Munity</p>
           <p className="text-xs font-medium text-munity-muted">Nurtured Stability</p>
@@ -146,17 +146,17 @@ export function MemberAppShell({
         </Link>
       </aside>
 
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-[rgba(197,200,184,0.2)] bg-[rgba(251,249,248,0.8)] shadow-sm backdrop-blur-md lg:left-64">
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/20 bg-munity-bg/80 shadow-sm backdrop-blur-md lg:left-64">
         <div className="flex h-16 items-center justify-end gap-4 px-6 lg:px-10">
           {showSearch ? (
             <div className="relative mr-auto hidden sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-gray-500" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
               <input
                 type="search"
                 value={searchValue}
                 onChange={(event) => onSearchChange?.(event.target.value)}
                 placeholder={searchPlaceholder}
-                className="h-9 w-64 rounded-full bg-[#f5f3f3] py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-gray-500"
+                className="h-9 w-64 rounded-full bg-munity-sidebar py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-munity-gray"
               />
             </div>
           ) : null}

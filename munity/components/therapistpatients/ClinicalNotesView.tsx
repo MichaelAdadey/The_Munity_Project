@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Check,
   Pencil,
@@ -82,6 +82,12 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const [saved, setSaved] = useState(false);
   const [tasks, setTasks] = useState([true, false]);
   const [exportOpen, setExportOpen] = useState(false);
+  const [homeworkTexts, setHomeworkTexts] = useState<string[]>([
+    "Daily 5-minute boxed breathing during commute.",
+    'Journaling identifying 3 "Evidence Against" a negative thought.',
+  ]);
+  const hwInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const hwFocusNext = useRef(false);
   const [titleState, setTitleState] = useState("");
   const [summaryState, setSummaryState] = useState("");
   const [observationsState, setObservationsState] = useState("");
@@ -195,6 +201,15 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
       if (activeSession.body.includes("Poor")) setMoodState("Poor (1-2)");
     }
   }, [activeSessionId]);
+
+  useEffect(() => {
+    if (!hwFocusNext.current) return;
+    hwFocusNext.current = false;
+    requestAnimationFrame(() => {
+      const el = hwInputsRef.current[hwInputsRef.current.length - 1];
+      el?.focus();
+    });
+  }, [homeworkTexts.length]);
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">

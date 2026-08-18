@@ -3,6 +3,7 @@
 import { Bell, Lock, Moon, Shield, User } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { useLiveToast } from "@/components/live/LiveFeedback";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 
 const sections = [
@@ -55,7 +56,10 @@ const sections = [
     title: "Appearance",
     description: "Display preferences for your workspace.",
     icon: Moon,
-    toggles: [{ label: "Reduce motion", defaultOn: false }],
+    toggles: [
+      { label: "Dark mode", themeToggle: true, defaultOn: false },
+      { label: "Reduce motion", defaultOn: false },
+    ],
   },
 ] as const;
 
@@ -93,6 +97,7 @@ function Toggle({
 export function MemberSettingsView() {
   const store = useMockStore();
   const { flash } = useLiveToast();
+  const { darkMode, setDarkMode } = useTheme();
   const settingKeys: Record<string, Exclude<keyof typeof store.settings, "displayName">> = {
     "Session reminders": "pushNotifications",
     "Community replies": "emailNotifications",
@@ -160,8 +165,20 @@ export function MemberSettingsView() {
                       <Toggle
                         key={toggle.label}
                         label={toggle.label}
-                        on={settingKeys[toggle.label] ? store.settings[settingKeys[toggle.label]] : toggle.defaultOn}
+                        on={
+                          "themeToggle" in toggle && toggle.themeToggle
+                            ? darkMode
+                            : settingKeys[toggle.label]
+                              ? store.settings[settingKeys[toggle.label]]
+                              : toggle.defaultOn
+                        }
                         onToggle={() => {
+                          if ("themeToggle" in toggle && toggle.themeToggle) {
+                            setDarkMode(!darkMode);
+                            flash(darkMode ? "Dark mode disabled" : "Dark mode enabled");
+                            return;
+                          }
+
                           const key = settingKeys[toggle.label];
                           if (key) {
                             mockStore.updateSettings({ [key]: !store.settings[key] });

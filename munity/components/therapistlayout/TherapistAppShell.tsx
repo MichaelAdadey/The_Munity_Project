@@ -46,7 +46,7 @@ export function TherapistAppShell({
               <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                 {actions}
                 <NotificationsMenu role="therapist" />
-                <div className="flex items-center gap-3 rounded-full bg-[#efeded] py-1 pl-1 pr-4">
+                <div className="flex items-center gap-3 rounded-full bg-munity-divider py-1 pl-1 pr-4">
                   <ProfileAvatarMenu />
                   <span className="text-sm font-semibold tracking-wide text-munity-text">
                     {THERAPIST_DISPLAY_NAME}
