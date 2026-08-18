@@ -11,6 +11,8 @@ import {
   LayoutGrid,
   LifeBuoy,
   MessageCircle,
+  PanelLeft,
+  PanelLeftClose,
   Search,
   Settings,
   Stethoscope,
@@ -19,6 +21,7 @@ import {
 import { MemberAvatarMenu } from "@/components/memberlayout/MemberAvatarMenu";
 import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
+import { SidebarProvider, useSidebar } from "@/components/therapistlayout/SidebarContext";
 import { routes } from "@/lib/routes";
 
 export type MemberNavItem =
@@ -66,52 +69,72 @@ interface MemberAppShellProps {
   flush?: boolean;
 }
 
-export function MemberAppShell({
+export function MemberAppShell({ isLoggedIn = true, ...rest }: MemberAppShellProps) {
+  if (!isLoggedIn) {
+    return <GuestShell>{rest.children}</GuestShell>;
+  }
+
+  return (
+    <SidebarProvider storageKey="munity-member-sidebar-open">
+      <LoggedInShell {...rest} />
+    </SidebarProvider>
+  );
+}
+
+function GuestShell({ children }: { children: ReactNode }) {
+  return (
+    <LiveToastProvider>
+      <div className="min-h-screen bg-munity-bg">
+        <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
+          <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
+            <Link href={routes.home} className="text-2xl font-bold text-munity-green">
+              Munity
+            </Link>
+            <div className="flex items-center gap-2">
+              <Link
+                href={routes.login}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-munity-green transition hover:bg-white"
+              >
+                Log in
+              </Link>
+              <Link
+                href={routes.signup}
+                className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+              >
+                Sign up
+              </Link>
+            </div>
+          </div>
+        </header>
+        <div className="pt-16">{children}</div>
+      </div>
+    </LiveToastProvider>
+  );
+}
+
+function LoggedInShell({
   children,
-  isLoggedIn = true,
   showSearch = false,
   searchPlaceholder = "Search...",
   searchValue,
   onSearchChange,
   flush = false,
-}: MemberAppShellProps) {
+}: Omit<MemberAppShellProps, "isLoggedIn">) {
   const pathname = usePathname();
-
-  if (!isLoggedIn) {
-    return (
-      <LiveToastProvider>
-        <div className="min-h-screen bg-munity-bg">
-          <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
-            <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
-              <Link href={routes.home} className="text-2xl font-bold text-munity-green">
-                Munity
-              </Link>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={routes.login}
-                  className="rounded-xl px-4 py-2 text-sm font-semibold text-munity-green transition hover:bg-white"
-                >
-                  Log in
-                </Link>
-                <Link
-                  href={routes.signup}
-                  className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
-                >
-                  Sign up
-                </Link>
-              </div>
-            </div>
-          </header>
-          <div className="pt-16">{children}</div>
-        </div>
-      </LiveToastProvider>
-    );
+  const sidebar = useSidebar();
+  if (!sidebar) {
+    throw new Error("LoggedInShell must be used within SidebarProvider");
   }
+  const { open, toggle } = sidebar;
 
   return (
     <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-munity-border/30 bg-munity-sidebar px-4 py-4 lg:flex">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-munity-border/30 bg-munity-sidebar px-4 py-4 transition-transform duration-300 ease-in-out lg:flex ${
+          open ? "lg:translate-x-0" : "lg:-translate-x-full"
+        }`}
+      >
         <Link href={routes.memberHome} className="mb-8 block px-4 pt-2">
           <p className="text-2xl font-bold leading-tight text-munity-green">Munity</p>
           <p className="text-xs font-medium text-munity-muted">Nurtured Stability</p>
@@ -146,8 +169,25 @@ export function MemberAppShell({
         </Link>
       </aside>
 
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/20 bg-munity-bg/80 shadow-sm backdrop-blur-md lg:left-64">
-        <div className="flex h-16 items-center justify-end gap-4 px-6 lg:px-10">
+      <header
+        className={`fixed inset-x-0 top-0 z-50 border-b border-munity-border/20 bg-munity-bg/80 shadow-sm backdrop-blur-md transition-[left] duration-300 ease-in-out ${
+          open ? "lg:left-64" : "lg:left-0"
+        }`}
+      >
+        <div className="flex h-16 items-center gap-4 px-6 lg:px-10">
+          <button
+            type="button"
+            onClick={toggle}
+            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+            aria-expanded={open}
+            className="hidden rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-green lg:inline-flex"
+          >
+            {open ? (
+              <PanelLeftClose className="size-5" />
+            ) : (
+              <PanelLeft className="size-5" />
+            )}
+          </button>
           {showSearch ? (
             <div className="relative mr-auto hidden sm:block">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
@@ -160,12 +200,18 @@ export function MemberAppShell({
               />
             </div>
           ) : null}
-          <NotificationsMenu role="member" />
-          <MemberAvatarMenu />
+          <div className="ml-auto flex items-center gap-4">
+            <NotificationsMenu role="member" />
+            <MemberAvatarMenu />
+          </div>
         </div>
       </header>
 
-      <div className={`pt-16 lg:pl-64 ${flush ? "" : ""}`}>
+      <div
+        className={`pt-16 transition-[padding-left] duration-300 ease-in-out ${
+          open ? "lg:pl-64" : "lg:pl-0"
+        }`}
+      >
         {flush ? children : <div className="px-6 py-8 lg:px-10">{children}</div>}
       </div>
     </div>
