@@ -103,15 +103,6 @@ export const notificationsByRole: Record<NotificationRole, AppNotification[]> = 
       unread: true,
     },
     {
-      id: "t3",
-      title: "Care plan due",
-      detail: "Alex Mercer’s weekly review is ready.",
-      time: "2h ago",
-      href: routes.therapistCarePlan,
-      category: "Care plans",
-      icon: Calendar,
-    },
-    {
       id: "t4",
       title: "Availability gap",
       detail: "Thursday afternoon still has open slots.",

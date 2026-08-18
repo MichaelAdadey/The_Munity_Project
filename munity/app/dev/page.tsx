@@ -90,11 +90,6 @@ const screens = [
     subtitle: "Documents and worksheets across your caseload",
     href: routes.therapistFiles,
   },
-  {
-    title: "Care Plan",
-    subtitle: "Treatment goals across your caseload",
-    href: routes.therapistCarePlan,
-  },
   ...patientSlugs.flatMap((slug) => {
     const patient = patientsBySlug[slug];
     const paths = patientRoutes(slug);
@@ -123,11 +118,6 @@ const screens = [
         title: `${patient.name} — Files`,
         subtitle: "Patient documents and worksheets",
         href: paths.files,
-      },
-      {
-        title: `${patient.name} — Care Plan`,
-        subtitle: "Treatment goals and review schedule",
-        href: paths.carePlan,
       },
     ];
   }),
