@@ -3,9 +3,11 @@
 import Image from "next/image";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send } from "lucide-react";
+import { Phone, Send, Video } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
+import { useCallSession, type CallMode } from "@/hooks/useCallSession";
 import { assets } from "@/lib/assets";
 import { chatIdFromPatient } from "@/lib/therapist-chats";
 
@@ -109,6 +111,7 @@ function TherapistMessagesContent() {
   const [draft, setDraft] = useState("");
   const [threads, setThreads] = useState(seedMessages);
   const [search, setSearch] = useState("");
+  const call = useCallSession();
 
   useEffect(() => {
     const chatId = searchParams.get("chat");
@@ -147,6 +150,30 @@ function TherapistMessagesContent() {
     }));
     setDraft("");
     flash("Message sent");
+  }
+
+  function logMessage(content: string) {
+    if (!activeChat) return;
+    const message: ThreadMessage = {
+      id: `m-${Date.now()}`,
+      from: "me",
+      content,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setThreads((prev) => ({
+      ...prev,
+      [activeChat.id]: [...(prev[activeChat.id] ?? []), message],
+    }));
+  }
+
+  function startCall(mode: CallMode) {
+    if (!activeChat) return;
+    call.start(mode);
+    flash(
+      mode === "video"
+        ? `Starting video call with ${activeChat.name}`
+        : `Calling ${activeChat.name}…`,
+    );
   }
 
   if (!activeChat) return null;
@@ -212,7 +239,27 @@ function TherapistMessagesContent() {
               <h3 className="text-sm font-semibold text-munity-text">{activeChat.name}</h3>
               <p className="text-xs text-munity-muted">{activeChat.patientId}</p>
             </div>
-            {activeChat.online ? <LivePulse label="Active now" /> : null}
+            <div className="flex items-center gap-3">
+              {activeChat.online ? <LivePulse label="Active now" /> : null}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => startCall("voice")}
+                  className="rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-green"
+                  aria-label="Voice call"
+                >
+                  <Phone className="size-[18px]" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startCall("video")}
+                  className="rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-green"
+                  aria-label="Video call"
+                >
+                  <Video className="size-5" />
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-[#fbf9f8] px-6 py-5">
@@ -270,6 +317,17 @@ function TherapistMessagesContent() {
           </div>
         </section>
       </div>
+
+      <CallOverlay
+        session={call}
+        participantName={activeChat.name}
+        participantAvatar={activeChat.avatar}
+        flash={flash}
+        onEnd={({ kind, duration }) => {
+          logMessage(`${kind} ended · ${duration}`);
+          flash(`${kind} ended`);
+        }}
+      />
     </TherapistAppShell>
   );
 }
