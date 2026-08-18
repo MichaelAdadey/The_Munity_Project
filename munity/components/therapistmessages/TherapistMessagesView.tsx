@@ -69,10 +69,9 @@ function TherapistMessagesContent() {
   return (
     <TherapistAppShell
       active="Messages"
-      title="Messages"
-      subtitle="Patient consultations and text sessions."
+      headerVariant="compact"
       actions={
-        <div className="relative hidden sm:block">
+        <div className="relative mr-auto hidden sm:block">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
           <input
             type="search"
@@ -84,7 +83,7 @@ function TherapistMessagesContent() {
         </div>
       }
     >
-      <div className="flex h-[calc(100dvh-12rem)] overflow-hidden rounded-2xl border border-[rgba(197,200,184,0.3)] bg-[#fbf9f8]">
+      <div className="flex h-[calc(100dvh-7rem)] overflow-hidden bg-[#fbf9f8]">
         <section className="flex w-full shrink-0 flex-col border-r border-[rgba(197,200,184,0.3)] bg-white md:w-[384px]">
           <div className="flex flex-col gap-4 overflow-y-auto p-4">
             <div className="flex items-center justify-between">
