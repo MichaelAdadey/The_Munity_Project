@@ -626,12 +626,10 @@ export type TherapistChatThread = {
   unread?: boolean;
 };
 
-export type TherapistChatMessage = {
-  id: string;
-  from: "me" | "them";
-  content: string;
-  time: string;
-};
+/** Mirrors `ChatMessage`'s shape exactly, so the therapist thread renders with the same date-separator/bubble treatment as member messages. */
+export type TherapistChatMessage =
+  | { id: string; kind: "date"; label: string }
+  | { id: string; kind: "text"; from: "them" | "me"; content: string; time: string };
 
 export const seedTherapistChats: TherapistChatThread[] = [
   {
@@ -664,42 +662,51 @@ export const seedTherapistChats: TherapistChatThread[] = [
 
 export const seedTherapistMessages: Record<string, TherapistChatMessage[]> = {
   "marcus-thorne": [
+    { id: "d1", kind: "date", label: "Today" },
     {
       id: "m1",
+      kind: "text",
       from: "them",
       content: "I’ve joined the waiting room for our video session.",
       time: "1:58 PM",
     },
     {
       id: "m2",
+      kind: "text",
       from: "me",
       content: "Thanks Marcus — I’ll connect in a moment. How are you feeling right now?",
       time: "1:59 PM",
     },
   ],
   "sarah-jenkins": [
+    { id: "d1", kind: "date", label: "Today" },
     {
       id: "m1",
+      kind: "text",
       from: "them",
       content: "Hi Doctor — I’m ready whenever you are.",
       time: "4:28 PM",
     },
     {
       id: "m2",
+      kind: "text",
       from: "me",
       content: "Thanks for checking in. How has your day felt so far?",
       time: "4:29 PM",
     },
   ],
   "leo-richards": [
+    { id: "d1", kind: "date", label: "Yesterday" },
     {
       id: "m1",
+      kind: "text",
       from: "them",
       content: "The workplace stress worksheet helped today.",
       time: "Yesterday",
     },
     {
       id: "m2",
+      kind: "text",
       from: "me",
       content: "Glad to hear that. Let’s review what worked in our next session.",
       time: "Yesterday",

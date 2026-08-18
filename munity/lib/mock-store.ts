@@ -646,6 +646,7 @@ export const mockStore = {
     if (!trimmed) return;
     const message: TherapistChatMessage = {
       id: `m-${Date.now()}`,
+      kind: "text",
       from: "me",
       content: trimmed,
       time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
