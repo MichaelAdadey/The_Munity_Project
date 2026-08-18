@@ -10,7 +10,7 @@ import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 
-const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
+// const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
 
 interface TherapistAppShellProps {
   active: TherapistNavItem;

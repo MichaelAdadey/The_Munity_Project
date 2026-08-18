@@ -163,13 +163,13 @@ export type BookableDay = {
   slots: string[];
 };
 
-function weekdayFromDate(date: Date): WeekDay {
+export function weekdayFromDate(date: Date): WeekDay {
   // JS: 0 = Sunday … 6 = Saturday
   const map: WeekDay[] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   return map[date.getDay()]!;
 }
 
-function formatDayLabel(date: Date, day: WeekDay) {
+export function formatDayLabel(date: Date, day: WeekDay) {
   const month = date.toLocaleDateString("en-GB", { month: "short" });
   return `${day} ${date.getDate()} ${month}`;
 }
