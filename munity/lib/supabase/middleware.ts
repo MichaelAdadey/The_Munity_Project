@@ -28,6 +28,7 @@ const therapistProtectedPrefixes = [
   '/therapistsettings',
   '/therapistanalytics',
   '/therapistfiles',
+  '/therapistcareplan',
   '/therapistprofile',
   '/therapistnotifications',
   '/therapistmessages',
