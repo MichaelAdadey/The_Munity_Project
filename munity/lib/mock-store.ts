@@ -15,6 +15,8 @@ import {
   seedSessionNotes,
   seedSettings,
   seedSupportedPostIds,
+  seedTherapistChats,
+  seedTherapistMessages,
   seedTherapists,
   type Booking,
   type BookingPriority,
@@ -26,6 +28,8 @@ import {
   type MemberSettingsState,
   type ModerationReport,
   type SessionNoteRecord,
+  type TherapistChatMessage,
+  type TherapistChatThread,
   type TherapistRecord,
 } from "@/lib/mock-db";
 
@@ -100,6 +104,8 @@ export type MockStoreState = {
   bookings: Booking[];
   chats: ChatThread[];
   messages: Record<string, ChatMessage[]>;
+  therapistChats: TherapistChatThread[];
+  therapistMessages: Record<string, TherapistChatMessage[]>;
   reports: ModerationReport[];
   sessionNotes: SessionNoteRecord[];
   savedPostIds: string[];
@@ -121,6 +127,8 @@ function createSeedState(): MockStoreState {
     bookings: structuredClone(seedBookings),
     chats: structuredClone(seedChats),
     messages: structuredClone(seedMessages),
+    therapistChats: structuredClone(seedTherapistChats),
+    therapistMessages: structuredClone(seedTherapistMessages),
     reports: structuredClone(seedReports),
     sessionNotes: structuredClone(seedSessionNotes),
     savedPostIds: [...seedSavedPostIds],
@@ -629,6 +637,34 @@ export const mockStore = {
     setState((prev) => ({
       ...prev,
       chats: prev.chats.map((chat) =>
+        chat.id === chatId ? { ...chat, unread: false } : chat,
+      ),
+    }));
+  },
+  sendTherapistMessage(chatId: string, content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const message: TherapistChatMessage = {
+      id: `m-${Date.now()}`,
+      from: "me",
+      content: trimmed,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setState((prev) => {
+      const thread = prev.therapistMessages[chatId] ?? [];
+      return {
+        ...prev,
+        therapistMessages: { ...prev.therapistMessages, [chatId]: [...thread, message] },
+        therapistChats: prev.therapistChats.map((chat) =>
+          chat.id === chatId ? { ...chat, preview: trimmed, time: "now", unread: false } : chat,
+        ),
+      };
+    });
+  },
+  markTherapistChatRead(chatId: string) {
+    setState((prev) => ({
+      ...prev,
+      therapistChats: prev.therapistChats.map((chat) =>
         chat.id === chatId ? { ...chat, unread: false } : chat,
       ),
     }));

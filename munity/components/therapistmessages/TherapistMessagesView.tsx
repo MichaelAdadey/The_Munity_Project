@@ -8,162 +8,49 @@ import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShel
 import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { useCallSession, type CallMode } from "@/hooks/useCallSession";
-import { assets } from "@/lib/assets";
+import { mockStore, useMockStore } from "@/lib/mock-store";
 import { chatIdFromPatient } from "@/lib/therapist-chats";
 
 export { chatIdFromPatient };
 
-type ThreadMessage = {
-  id: string;
-  from: "me" | "them";
-  content: string;
-  time: string;
-};
-
-type TherapistChat = {
-  id: string;
-  name: string;
-  patientId: string;
-  preview: string;
-  time: string;
-  avatar: string;
-  online?: boolean;
-};
-
-const chats: TherapistChat[] = [
-  {
-    id: "marcus-thorne",
-    name: "Marcus Thorne",
-    patientId: "#MT-82",
-    preview: "I’ve joined the waiting room.",
-    time: "2:00 PM",
-    avatar: assets.avatars.alex,
-    online: true,
-  },
-  {
-    id: "sarah-jenkins",
-    name: "Sarah Jenkins",
-    patientId: "#SJ-41",
-    preview: "Hi Doctor — I’m ready whenever you are.",
-    time: "4:30 PM",
-    avatar: assets.avatars.elena,
-    online: true,
-  },
-  {
-    id: "leo-richards",
-    name: "Leo Richards",
-    patientId: "#LR-2847",
-    preview: "The workplace stress worksheet helped today.",
-    time: "Yesterday",
-    avatar: assets.avatars.leo,
-  },
-];
-
-const seedMessages: Record<string, ThreadMessage[]> = {
-  "marcus-thorne": [
-    {
-      id: "m1",
-      from: "them",
-      content: "I’ve joined the waiting room for our video session.",
-      time: "1:58 PM",
-    },
-    {
-      id: "m2",
-      from: "me",
-      content: "Thanks Marcus — I’ll connect in a moment. How are you feeling right now?",
-      time: "1:59 PM",
-    },
-  ],
-  "sarah-jenkins": [
-    {
-      id: "m1",
-      from: "them",
-      content: "Hi Doctor — I’m ready whenever you are.",
-      time: "4:28 PM",
-    },
-    {
-      id: "m2",
-      from: "me",
-      content: "Thanks for checking in. How has your day felt so far?",
-      time: "4:29 PM",
-    },
-  ],
-  "leo-richards": [
-    {
-      id: "m1",
-      from: "them",
-      content: "The workplace stress worksheet helped today.",
-      time: "Yesterday",
-    },
-    {
-      id: "m2",
-      from: "me",
-      content: "Glad to hear that. Let’s review what worked in our next session.",
-      time: "Yesterday",
-    },
-  ],
-};
-
 function TherapistMessagesContent() {
+  const store = useMockStore();
   const searchParams = useSearchParams();
   const { flash } = useLiveToast();
-  const [activeChatId, setActiveChatId] = useState(chats[0]?.id ?? "marcus-thorne");
+  const [activeChatId, setActiveChatId] = useState(
+    () => store.therapistChats[0]?.id ?? "marcus-thorne",
+  );
   const [draft, setDraft] = useState("");
-  const [threads, setThreads] = useState(seedMessages);
   const [search, setSearch] = useState("");
   const call = useCallSession();
 
   useEffect(() => {
     const chatId = searchParams.get("chat");
-    if (chatId && chats.some((chat) => chat.id === chatId)) {
+    if (chatId && store.therapistChats.some((chat) => chat.id === chatId)) {
       setActiveChatId(chatId);
+      mockStore.markTherapistChatRead(chatId);
     }
-  }, [searchParams]);
+  }, [searchParams, store.therapistChats]);
 
   const filteredChats = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return chats;
-    return chats.filter(
+    if (!query) return store.therapistChats;
+    return store.therapistChats.filter(
       (chat) =>
         chat.name.toLowerCase().includes(query) ||
         chat.patientId.toLowerCase().includes(query),
     );
-  }, [search]);
+  }, [search, store.therapistChats]);
 
-  const activeChat = chats.find((chat) => chat.id === activeChatId) ?? chats[0];
-  const activeMessages = activeChat ? threads[activeChat.id] ?? [] : [];
+  const activeChat =
+    store.therapistChats.find((chat) => chat.id === activeChatId) ?? store.therapistChats[0];
+  const activeMessages = activeChat ? store.therapistMessages[activeChat.id] ?? [] : [];
 
   function sendMessage() {
     if (!activeChat || !draft.trim()) return;
-    const message: ThreadMessage = {
-      id: `m-${Date.now()}`,
-      from: "me",
-      content: draft.trim(),
-      time: new Date().toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-      }),
-    };
-    setThreads((prev) => ({
-      ...prev,
-      [activeChat.id]: [...(prev[activeChat.id] ?? []), message],
-    }));
+    mockStore.sendTherapistMessage(activeChat.id, draft);
     setDraft("");
     flash("Message sent");
-  }
-
-  function logMessage(content: string) {
-    if (!activeChat) return;
-    const message: ThreadMessage = {
-      id: `m-${Date.now()}`,
-      from: "me",
-      content,
-      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
-    };
-    setThreads((prev) => ({
-      ...prev,
-      [activeChat.id]: [...(prev[activeChat.id] ?? []), message],
-    }));
   }
 
   function startCall(mode: CallMode) {
@@ -207,7 +94,10 @@ function TherapistMessagesContent() {
                 <button
                   key={chat.id}
                   type="button"
-                  onClick={() => setActiveChatId(chat.id)}
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    mockStore.markTherapistChatRead(chat.id);
+                  }}
                   className={`flex w-full items-start gap-3 rounded-xl p-3 text-left transition ${
                     active
                       ? "border-l-4 border-munity-green bg-munity-lime/30 pl-2.5"
@@ -225,8 +115,17 @@ function TherapistMessagesContent() {
                       <span className="shrink-0 text-[11px] text-munity-muted">{chat.time}</span>
                     </div>
                     <p className="mt-0.5 text-xs text-munity-muted">{chat.patientId}</p>
-                    <p className="mt-1 truncate text-xs text-munity-muted">{chat.preview}</p>
+                    <p
+                      className={`mt-1 truncate text-xs ${
+                        chat.unread ? "font-semibold text-munity-green" : "text-munity-muted"
+                      }`}
+                    >
+                      {chat.preview}
+                    </p>
                   </div>
+                  {chat.unread ? (
+                    <span className="mt-2 size-2 shrink-0 rounded-full bg-munity-green" />
+                  ) : null}
                 </button>
               );
             })}
@@ -324,7 +223,7 @@ function TherapistMessagesContent() {
         participantAvatar={activeChat.avatar}
         flash={flash}
         onEnd={({ kind, duration }) => {
-          logMessage(`${kind} ended · ${duration}`);
+          mockStore.sendTherapistMessage(activeChat.id, `${kind} ended · ${duration}`);
           flash(`${kind} ended`);
         }}
       />

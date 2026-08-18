@@ -609,6 +609,104 @@ export const seedMessages: Record<string, ChatMessage[]> = {
   ],
 };
 
+/**
+ * Therapist-side inbox: the patients messaging a therapist, as distinct
+ * from `ChatThread`/`ChatMessage` above (a member's own conversations).
+ * Same shape/persistence setup as the member messages store, kept as a
+ * separate dataset since the two sides represent different rosters.
+ */
+export type TherapistChatThread = {
+  id: string;
+  name: string;
+  patientId: string;
+  preview: string;
+  time: string;
+  avatar: string;
+  online?: boolean;
+  unread?: boolean;
+};
+
+export type TherapistChatMessage = {
+  id: string;
+  from: "me" | "them";
+  content: string;
+  time: string;
+};
+
+export const seedTherapistChats: TherapistChatThread[] = [
+  {
+    id: "marcus-thorne",
+    name: "Marcus Thorne",
+    patientId: "#MT-82",
+    preview: "I’ve joined the waiting room.",
+    time: "2:00 PM",
+    avatar: "/images/profile/avatar.jpg",
+    online: true,
+  },
+  {
+    id: "sarah-jenkins",
+    name: "Sarah Jenkins",
+    patientId: "#SJ-41",
+    preview: "Hi Doctor — I’m ready whenever you are.",
+    time: "4:30 PM",
+    avatar: "/images/therapy/elena-vance.jpg",
+    online: true,
+  },
+  {
+    id: "leo-richards",
+    name: "Leo Richards",
+    patientId: "#LR-2847",
+    preview: "The workplace stress worksheet helped today.",
+    time: "Yesterday",
+    avatar: "/images/home-feed/mark.jpg",
+  },
+];
+
+export const seedTherapistMessages: Record<string, TherapistChatMessage[]> = {
+  "marcus-thorne": [
+    {
+      id: "m1",
+      from: "them",
+      content: "I’ve joined the waiting room for our video session.",
+      time: "1:58 PM",
+    },
+    {
+      id: "m2",
+      from: "me",
+      content: "Thanks Marcus — I’ll connect in a moment. How are you feeling right now?",
+      time: "1:59 PM",
+    },
+  ],
+  "sarah-jenkins": [
+    {
+      id: "m1",
+      from: "them",
+      content: "Hi Doctor — I’m ready whenever you are.",
+      time: "4:28 PM",
+    },
+    {
+      id: "m2",
+      from: "me",
+      content: "Thanks for checking in. How has your day felt so far?",
+      time: "4:29 PM",
+    },
+  ],
+  "leo-richards": [
+    {
+      id: "m1",
+      from: "them",
+      content: "The workplace stress worksheet helped today.",
+      time: "Yesterday",
+    },
+    {
+      id: "m2",
+      from: "me",
+      content: "Glad to hear that. Let’s review what worked in our next session.",
+      time: "Yesterday",
+    },
+  ],
+};
+
 export const seedBookings: Booking[] = [
   {
     id: "b1",
