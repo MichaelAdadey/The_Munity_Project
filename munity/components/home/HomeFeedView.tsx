@@ -10,7 +10,6 @@ import {
   ImageIcon,
   Lightbulb,
   MessageCircle,
-  MoreHorizontal,
   Plus,
   Smile,
   UserRound,
@@ -20,11 +19,15 @@ import {
   X,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { EditPostDialog } from "@/components/home/EditPostDialog";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
+import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
 import { MunitySunIcon } from "@/components/icons/MunityIcons";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { startCalmAmbient } from "@/lib/calm-ambient";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
+import type { FeedPost } from "@/lib/mock-db";
 
 const demoPhotoLibrary = [
   { id: "forest", src: "/images/home-feed/forest-walk.png", label: "Forest walk" },
@@ -93,6 +96,11 @@ export function HomeFeedView() {
   const [onlineNow, setOnlineNow] = useState(128);
   const [justSupported, setJustSupported] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [lightboxPost, setLightboxPost] = useState<{ image: string; author: string } | null>(
+    null,
+  );
+  const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -107,9 +115,10 @@ export function HomeFeedView() {
   const therapists = store.therapists.slice(0, 2);
 
   const visiblePosts = useMemo(() => {
+    const activePosts = store.posts.filter((post) => !post.archived);
     const query = search.trim().toLowerCase();
-    if (!query) return store.posts;
-    return store.posts.filter(
+    if (!query) return activePosts;
+    return activePosts.filter(
       (post) =>
         post.content.toLowerCase().includes(query) ||
         post.author.toLowerCase().includes(query) ||
@@ -699,19 +708,36 @@ export function HomeFeedView() {
                         </div>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      className="rounded-full p-1.5 text-munity-muted transition hover:bg-[#f5f3f3] hover:text-munity-text"
-                      aria-label="Post options"
-                    >
-                      <MoreHorizontal className="size-4" />
-                    </button>
+                    <PostOptionsMenu
+                      post={post}
+                      isOwner={post.authorId === "me"}
+                      open={openMenuPostId === post.id}
+                      onOpenChange={(nextOpen) =>
+                        setOpenMenuPostId(nextOpen ? post.id : null)
+                      }
+                      onEdit={() => setEditingPost(post)}
+                      flash={flash}
+                    />
                   </div>
 
-                  <p className="mt-4 text-[15px] leading-relaxed text-munity-text">{post.content}</p>
+                  <p className="mt-4 text-[15px] leading-relaxed text-munity-text">
+                    {post.content}
+                    {post.edited ? (
+                      <span className="ml-1.5 text-xs font-medium text-munity-muted">
+                        (edited)
+                      </span>
+                    ) : null}
+                  </p>
 
                   {post.image ? (
-                    <div className="relative mt-4 h-56 w-full overflow-hidden rounded-2xl sm:h-64">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLightboxPost({ image: post.image as string, author: post.author })
+                      }
+                      aria-label="View full-size image"
+                      className="relative mt-4 block h-56 w-full cursor-zoom-in overflow-hidden rounded-2xl sm:h-64"
+                    >
                       {post.image.startsWith("data:") ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
@@ -727,7 +753,7 @@ export function HomeFeedView() {
                           className="object-cover"
                         />
                       )}
-                    </div>
+                    </button>
                   ) : null}
 
                   <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
@@ -1056,6 +1082,23 @@ export function HomeFeedView() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <ImageLightbox
+        open={lightboxPost !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setLightboxPost(null);
+        }}
+        images={lightboxPost ? [lightboxPost.image] : []}
+        altText={lightboxPost ? `Photo from ${lightboxPost.author}'s post` : "Post image"}
+      />
+
+      <EditPostDialog
+        post={editingPost}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setEditingPost(null);
+        }}
+        flash={flash}
+      />
     </MemberAppShell>
   );
 }

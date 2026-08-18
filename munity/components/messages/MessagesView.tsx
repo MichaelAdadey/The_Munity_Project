@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  AlertTriangle,
   Ban,
   BellOff,
   Bookmark,
@@ -24,7 +25,9 @@ import {
   VideoOff,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { VideoStream } from "@/components/messages/VideoStream";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
+import { useCallMedia } from "@/hooks/useCallMedia";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
 
@@ -53,9 +56,11 @@ export function MessagesView() {
   const [callMode, setCallMode] = useState<CallMode | null>(null);
   const [callPhase, setCallPhase] = useState<CallPhase>("connecting");
   const [callSeconds, setCallSeconds] = useState(0);
-  const [muted, setMuted] = useState(false);
-  const [cameraOff, setCameraOff] = useState(false);
   const [callMinimized, setCallMinimized] = useState(false);
+  const media = useCallMedia();
+  const { start: startMedia, stop: stopMedia } = media;
+  const muted = !media.micEnabled;
+  const cameraOff = !media.cameraEnabled || !media.hasCameraTrack;
 
   useEffect(() => {
     const therapistId = searchParams.get("therapist");
@@ -81,12 +86,13 @@ export function MessagesView() {
     if (!callMode) return;
     setCallPhase("connecting");
     setCallSeconds(0);
-    setMuted(false);
-    setCameraOff(false);
     setCallMinimized(false);
+    // Permissions are only ever requested here, once the user has actually
+    // started a call — never on mount or page load.
+    startMedia(callMode);
     const connectTimer = window.setTimeout(() => setCallPhase("connected"), 1400);
     return () => window.clearTimeout(connectTimer);
-  }, [callMode, activeChatId]);
+  }, [callMode, activeChatId, startMedia]);
 
   useEffect(() => {
     if (!callMode || callPhase !== "connected") return;
@@ -144,11 +150,10 @@ export function MessagesView() {
       `${kind} ended · ${duration}`,
     );
     flash(`${kind} ended`);
+    stopMedia();
     setCallMode(null);
     setCallPhase("connecting");
     setCallSeconds(0);
-    setMuted(false);
-    setCameraOff(false);
     setCallMinimized(false);
   }
 
@@ -543,31 +548,47 @@ export function MessagesView() {
 
               {callMode === "video" ? (
                 <div className="relative h-[360px] w-full bg-[#1a2214]">
-                  {!cameraOff ? (
+                  {/* Remote participant. There's no signaling/WebRTC layer yet, so
+                      media.remoteStream is always null and we fall back to their
+                      avatar — the same placeholder we'd show if their camera were off. */}
+                  {media.remoteStream ? (
+                    <VideoStream
+                      stream={media.remoteStream}
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
                     <Image
                       src={activeChat.avatar}
                       alt={activeChat.name}
                       fill
                       className="object-cover opacity-90"
                     />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#1a2214]">
-                      <div className="relative size-24 overflow-hidden rounded-full border-4 border-white/20">
-                        <Image
-                          src={activeChat.avatar}
-                          alt={activeChat.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <p className="text-sm text-white/70">Camera is off</p>
-                    </div>
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a2214] via-transparent to-black/30" />
-                  <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border-2 border-white/40 bg-munity-green shadow-lg">
-                    <div className="flex h-full items-center justify-center text-xs font-semibold text-white/90">
-                      You
+                  {callPhase === "connecting" ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#1a2214]/70">
+                      <span className="size-8 animate-spin rounded-full border-2 border-white/25 border-t-white" />
+                      <p className="text-sm text-white/80">Connecting…</p>
                     </div>
+                  ) : null}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a2214] via-transparent to-black/30" />
+
+                  {/* Your own camera preview. */}
+                  <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border-2 border-white/40 bg-munity-green shadow-lg">
+                    {!cameraOff && media.stream ? (
+                      <VideoStream
+                        stream={media.stream}
+                        muted
+                        mirrored
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-1 text-center text-white/90">
+                        <VideoOff className="size-4" />
+                        <p className="text-[10px] font-semibold">
+                          {media.hasCameraTrack ? "Camera off" : "No camera"}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -596,12 +617,24 @@ export function MessagesView() {
                     : formatCallDuration(callSeconds)}
                 </p>
 
+                {media.error ? (
+                  <div className="mx-auto mt-4 flex max-w-sm items-start gap-2 rounded-xl border border-[#ba1a1a]/40 bg-[#ba1a1a]/15 px-3 py-2 text-left text-xs text-white/90">
+                    <AlertTriangle className="mt-0.5 size-3.5 shrink-0 text-[#ff8a80]" />
+                    <span>{media.error}</span>
+                  </div>
+                ) : null}
+
                 <div className="mt-8 flex items-center justify-center gap-4">
                   <button
                     type="button"
                     onClick={() => {
-                      setMuted((prev) => !prev);
-                      flash(muted ? "Microphone on" : "Microphone muted");
+                      if (!media.hasMicTrack) {
+                        flash("Microphone unavailable");
+                        return;
+                      }
+                      const willBeMuted = media.micEnabled;
+                      media.toggleMic();
+                      flash(willBeMuted ? "Microphone muted" : "Microphone on");
                     }}
                     className={`flex size-14 items-center justify-center rounded-full transition ${
                       muted
@@ -617,8 +650,13 @@ export function MessagesView() {
                     <button
                       type="button"
                       onClick={() => {
-                        setCameraOff((prev) => !prev);
-                        flash(cameraOff ? "Camera on" : "Camera off");
+                        if (!media.hasCameraTrack) {
+                          flash("Camera unavailable");
+                          return;
+                        }
+                        const willBeOff = media.cameraEnabled;
+                        media.toggleCamera();
+                        flash(willBeOff ? "Camera off" : "Camera on");
                       }}
                       className={`flex size-14 items-center justify-center rounded-full transition ${
                         cameraOff
@@ -645,7 +683,7 @@ export function MessagesView() {
                   </button>
                 </div>
                 <p className="mt-5 text-xs text-white/50">
-                  Preview call · no live audio/video in this demo
+                  Your camera and mic are live — the other side is simulated in this preview
                 </p>
               </div>
             </motion.div>
@@ -690,8 +728,13 @@ export function MessagesView() {
               <button
                 type="button"
                 onClick={() => {
-                  setMuted((prev) => !prev);
-                  flash(muted ? "Microphone on" : "Microphone muted");
+                  if (!media.hasMicTrack) {
+                    flash("Microphone unavailable");
+                    return;
+                  }
+                  const willBeMuted = media.micEnabled;
+                  media.toggleMic();
+                  flash(willBeMuted ? "Microphone muted" : "Microphone on");
                 }}
                 className={`flex size-9 items-center justify-center rounded-full transition ${
                   muted ? "bg-white text-munity-text" : "bg-white/15 hover:bg-white/25"

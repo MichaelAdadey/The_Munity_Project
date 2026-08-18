@@ -20,6 +20,8 @@ export type FeedPost = {
   communityName: string | null;
   accent?: boolean;
   createdAt: string;
+  archived?: boolean;
+  edited?: boolean;
 };
 
 export type CommunityRecord = {

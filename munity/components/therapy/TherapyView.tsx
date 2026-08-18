@@ -39,7 +39,7 @@ const SPECIALIZATIONS: Specialization[] = [
 
 const AVAILABILITY_OPTIONS: AvailabilityFilter[] = ["Today", "This Week", "Weekend"];
 
-const LANGUAGES = ["English", "Spanish", "Italian", "Mandarin"];
+const LANGUAGES = ["English", "Spanish", "Twi", "Ga", "Ewe", "Dagbani", "Fante", "Dagaare"];
 
 const SORT_OPTIONS: SortOption[] = [
   "Recommended",
@@ -245,7 +245,7 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
                     Session Price
                   </p>
                   <p className="text-xs font-medium text-munity-green">
-                    ${PRICE_MIN} - ${maxPrice}
+                    ₵{PRICE_MIN} - ₵{maxPrice}
                   </p>
                 </div>
                 <input
@@ -379,7 +379,7 @@ export function TherapyView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
                     <div className="text-right">
                       <p className="text-xs font-medium text-munity-muted">Session</p>
                       <p className="mt-0.5 text-sm font-semibold tracking-wide text-munity-green">
-                        ${therapist.rate}/hr
+                        ₵{therapist.rate}/hr
                       </p>
                     </div>
                   </div>

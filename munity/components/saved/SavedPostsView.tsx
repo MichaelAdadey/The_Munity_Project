@@ -5,17 +5,26 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { EditPostDialog } from "@/components/home/EditPostDialog";
+import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
 import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes } from "@/lib/routes";
+import type { FeedPost } from "@/lib/mock-db";
 
 export function SavedPostsView() {
   const store = useMockStore();
   const { flash } = useLiveToast();
   const [search, setSearch] = useState("");
+  const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
 
   const savedPosts = useMemo(() => {
-    const saved = store.posts.filter((post) => store.savedPostIds.includes(post.id));
+    // Archived posts must stay visible here even if later "Unsaved" —
+    // otherwise Unsave would strand them with no way back to the feed.
+    const saved = store.posts.filter(
+      (post) => store.savedPostIds.includes(post.id) || post.archived,
+    );
     const query = search.trim().toLowerCase();
     if (!query) return saved;
     return saved.filter(
@@ -85,6 +94,11 @@ export function SavedPostsView() {
                         {post.communityName}
                       </Link>
                     ) : "Community post"}
+                    {post.archived ? (
+                      <span className="rounded-full bg-munity-lime/40 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-munity-olive-text">
+                        Archived
+                      </span>
+                    ) : null}
                   </div>
                   <h2 className="mt-2 text-base font-semibold text-munity-text group-hover:text-munity-green">
                     {post.author}
@@ -95,22 +109,42 @@ export function SavedPostsView() {
                     <span className="inline-flex items-center gap-1"><MessageCircle className="size-3" />{post.comments}</span>
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    mockStore.toggleSavedPost(post.id);
-                    flash("Removed from saved posts");
-                  }}
-                  className="mt-1 size-5 shrink-0 text-munity-green"
-                  aria-label="Unsave post"
-                >
-                  <Bookmark className="size-5 fill-current" />
-                </button>
+                <div className="flex shrink-0 items-start gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      mockStore.toggleSavedPost(post.id);
+                      flash("Removed from saved posts");
+                    }}
+                    className="mt-1 size-5 text-munity-green"
+                    aria-label="Unsave post"
+                  >
+                    <Bookmark className="size-5 fill-current" />
+                  </button>
+                  <PostOptionsMenu
+                    post={post}
+                    isOwner={post.authorId === "me"}
+                    open={openMenuPostId === post.id}
+                    onOpenChange={(nextOpen) =>
+                      setOpenMenuPostId(nextOpen ? post.id : null)
+                    }
+                    onEdit={() => setEditingPost(post)}
+                    flash={flash}
+                  />
+                </div>
               </motion.article>
             ))}
           </motion.div>
         )}
       </div>
+
+      <EditPostDialog
+        post={editingPost}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setEditingPost(null);
+        }}
+        flash={flash}
+      />
     </MemberAppShell>
   );
 }

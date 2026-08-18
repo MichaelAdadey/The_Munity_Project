@@ -117,7 +117,7 @@ export function BookSessionSheet({
                 >
                   {therapistName}
                 </h2>
-                <p className="mt-1 text-sm text-munity-muted">${rate}/hr · pick an open slot</p>
+                <p className="mt-1 text-sm text-munity-muted">₵{rate}/hr · pick an open slot</p>
               </div>
               <button
                 type="button"

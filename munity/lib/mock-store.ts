@@ -316,6 +316,84 @@ export const mockStore = {
       ),
     }));
   },
+  updatePost(postId: string, patch: { content?: string; image?: string | null }) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              ...(patch.content !== undefined ? { content: patch.content.trim() } : {}),
+              ...(patch.image !== undefined ? { image: patch.image } : {}),
+              edited: true,
+            }
+          : post,
+      ),
+    }));
+  },
+  deletePost(postId: string) {
+    setState((prev) => {
+      const commentsByPost = { ...prev.commentsByPost };
+      delete commentsByPost[postId];
+      return {
+        ...prev,
+        posts: prev.posts.filter((post) => post.id !== postId),
+        savedPostIds: prev.savedPostIds.filter((id) => id !== postId),
+        supportedPostIds: prev.supportedPostIds.filter((id) => id !== postId),
+        commentsByPost,
+      };
+    });
+  },
+  archivePost(postId: string) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId ? { ...post, archived: true } : post,
+      ),
+      // Archived posts move into Saved Posts rather than disappearing entirely.
+      savedPostIds: prev.savedPostIds.includes(postId)
+        ? prev.savedPostIds
+        : [...prev.savedPostIds, postId],
+    }));
+  },
+  unarchivePost(postId: string) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId ? { ...post, archived: false } : post,
+      ),
+      // Intentionally leaves savedPostIds untouched: if the post was also
+      // explicitly saved, it should stay saved after returning to the feed.
+    }));
+  },
+  reportPost(postId: string, reason: string) {
+    const post = state.posts.find((item) => item.id === postId);
+    if (!post) return null;
+    const report: ModerationReport = {
+      id: `r-${Date.now()}`,
+      reporter: state.profile.fullName,
+      reporterInitials: state.profile.fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase(),
+      target: post.anonymous ? "Anonymous Member" : post.author,
+      targetSnippet: post.content.slice(0, 140),
+      reason,
+      reasonTone: "neutral",
+      status: "Pending",
+      severity: "LOW",
+      caseContent: post.content,
+      postedIn: post.communityName ?? "Home feed",
+      postedAgo: post.time,
+      sentiment: "Under review",
+      prevFlags: 0,
+      reporterTrust: 90,
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({ ...prev, reports: [report, ...prev.reports] }));
+    return report;
+  },
   toggleSavedPost(postId: string) {
     setState((prev) => ({
       ...prev,

@@ -103,7 +103,7 @@ export function TherapistDetailView({
               <p className="font-semibold text-munity-text">
                 {booked && latestBooking
                   ? latestBooking.when
-                  : `${therapist.nextAvailable} · $${therapist.rate}/hr`}
+                  : `${therapist.nextAvailable} · ₵${therapist.rate}/hr`}
               </p>
             </div>
             <div className="flex gap-3">
