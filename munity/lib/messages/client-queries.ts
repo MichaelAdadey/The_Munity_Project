@@ -12,6 +12,7 @@ export type ChatSummary = {
   unread: boolean;
   filter: "Therapists" | "Groups";
   therapistId: string | null;
+  patientId: string | null;
 };
 
 export type ChatMessage =
@@ -101,6 +102,7 @@ export const fetchChats = async (): Promise<ChatSummary[]> => {
       unread: (row.unread_count ?? 0) > 0,
       filter: "Therapists" as const,
       therapistId: iAmPatient ? row.therapist_id : null,
+      patientId: iAmPatient ? null : row.patient_id,
     };
   });
 };
@@ -262,6 +264,20 @@ export const ensureTherapistThread = async (
   const { data, error } = await supabase.rpc("get_or_create_thread", {
     p_therapist_id: therapistId,
   });
+  if (error) throw new Error(error.message);
+  return data as string;
+};
+
+export const ensurePatientThread = async (
+  patientId: string,
+): Promise<string> => {
+  const supabase = createClient();
+  const { data, error } = await supabase.rpc(
+    "get_or_create_thread_for_patient",
+    {
+      p_patient_id: patientId,
+    },
+  );
   if (error) throw new Error(error.message);
   return data as string;
 };

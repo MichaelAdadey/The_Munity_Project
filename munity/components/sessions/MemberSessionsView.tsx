@@ -14,11 +14,21 @@ import {
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
-import { mockStore, useMockStore } from "@/lib/mock-store";
-import type { Booking, BookingPriority } from "@/lib/mock-db";
+// import { mockStore, useMockStore } from "@/lib/mock-store";
+// import type { Booking, BookingPriority } from "@/lib/mock-db";
 import { messagesPath, routes, therapyPath } from "@/lib/routes";
+import { SessionBooking } from "@/lib/sessions/queries";
+import {
+  archiveBooking,
+  cancelBooking,
+  deleteBooking,
+  setBookingPriority,
+  unarchiveBooking,
+} from "@/lib/sessions/actions";
+import { useRouter } from "next/navigation";
 
 type SessionTab = "upcoming" | "past" | "archived";
+type BookingPriority = "low" | "normal" | "high" | "urgent";
 
 const priorityOptions: { value: BookingPriority; label: string }[] = [
   { value: "low", label: "Low" },
@@ -41,24 +51,28 @@ const priorityRank: Record<BookingPriority, number> = {
   low: 3,
 };
 
-function isUpcoming(booking: Booking, now: number) {
+function isUpcoming(booking: SessionBooking, now: number) {
   if (booking.archived) return false;
-  if (booking.status === "completed" || booking.status === "cancelled") return false;
+  if (booking.status === "completed" || booking.status === "cancelled")
+    return false;
   return new Date(booking.scheduledAt).getTime() >= now;
 }
 
-function isPast(booking: Booking, now: number) {
+function isPast(booking: SessionBooking, now: number) {
   if (booking.archived) return false;
-  if (booking.status === "completed" || booking.status === "cancelled") return true;
+  if (booking.status === "completed" || booking.status === "cancelled")
+    return true;
   return new Date(booking.scheduledAt).getTime() < now;
 }
 
 function SessionCard({
   booking,
   tab,
+  onChanged,
 }: {
-  booking: Booking;
+  booking: SessionBooking;
   tab: SessionTab;
+  onChanged: () => void;
 }) {
   const { flash } = useLiveToast();
 
@@ -72,7 +86,9 @@ function SessionCard({
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-lg font-semibold text-munity-text">{booking.therapistName}</p>
+          <p className="text-lg font-semibold text-munity-text">
+            {booking.therapistName}
+          </p>
           <p className="mt-1 inline-flex items-center gap-2 text-sm text-munity-muted">
             <Clock3 className="size-3.5" />
             {booking.when}
@@ -94,12 +110,21 @@ function SessionCard({
           Session priority
           <select
             value={booking.priority}
-            onChange={(event) => {
+            onChange={async (event) => {
               const priority = event.target.value as BookingPriority;
-              mockStore.setBookingPriority(booking.id, priority);
-              flash(`Priority set to ${priority}`);
+              try {
+                await setBookingPriority(booking.id, priority);
+                flash(`Priority set to ${priority}`);
+                onChanged();
+              } catch (error) {
+                flash(
+                  error instanceof Error
+                    ? error.message
+                    : "Couldn't update priority",
+                );
+              }
             }}
-            className="h-10 min-w-[140px] rounded-xl border border-munity-input-border bg-munity-bg px-3 text-sm font-semibold text-munity-text outline-none focus:border-munity-green"
+            className="h-10 min-w-35 rounded-xl border border-munity-input-border bg-munity-bg px-3 text-sm font-semibold text-munity-text outline-none focus:border-munity-green"
           >
             {priorityOptions.map((option) => (
               <option key={option.value} value={option.value}>
@@ -127,9 +152,18 @@ function SessionCard({
           {tab === "past" ? (
             <button
               type="button"
-              onClick={() => {
-                mockStore.archiveBooking(booking.id);
-                flash("Session archived");
+              onClick={async () => {
+                try {
+                  await archiveBooking(booking.id);
+                  flash("Session archived");
+                  onChanged();
+                } catch (error) {
+                  flash(
+                    error instanceof Error
+                      ? error.message
+                      : "Couldn't archive session",
+                  );
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-munity-border px-3 py-2 text-xs font-semibold text-munity-muted transition hover:border-munity-green/40 hover:text-munity-text"
             >
@@ -141,9 +175,18 @@ function SessionCard({
           {tab === "archived" ? (
             <button
               type="button"
-              onClick={() => {
-                mockStore.unarchiveBooking(booking.id);
-                flash("Session restored from archive");
+              onClick={async () => {
+                try {
+                  await unarchiveBooking(booking.id);
+                  flash("Session restored from archive");
+                  onChanged();
+                } catch (error) {
+                  flash(
+                    error instanceof Error
+                      ? error.message
+                      : "Couldn't restore session",
+                  );
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-munity-border px-3 py-2 text-xs font-semibold text-munity-muted transition hover:border-munity-green/40 hover:text-munity-text"
             >
@@ -152,13 +195,22 @@ function SessionCard({
             </button>
           ) : null}
 
-          {(tab === "past" || tab === "archived") && (
+          {((tab === "past" && booking.archived) || tab === "archived") && (
             <button
               type="button"
-              onClick={() => {
+              onClick={async () => {
                 if (!window.confirm("Delete this session permanently?")) return;
-                mockStore.deleteBooking(booking.id);
-                flash("Session deleted");
+                try {
+                  await deleteBooking(booking.id);
+                  flash("Session deleted");
+                  onChanged();
+                } catch (error) {
+                  flash(
+                    error instanceof Error
+                      ? error.message
+                      : "Couldn't delete session",
+                  );
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-[#ffdad6] bg-[#ffdad6]/40 px-3 py-2 text-xs font-semibold text-[#93000a] transition hover:brightness-95"
             >
@@ -170,10 +222,20 @@ function SessionCard({
           {tab === "upcoming" ? (
             <button
               type="button"
-              onClick={() => {
-                if (!window.confirm("Cancel and remove this upcoming session?")) return;
-                mockStore.deleteBooking(booking.id);
-                flash("Upcoming session removed");
+              onClick={async () => {
+                if (!window.confirm("Cancel and remove this upcoming session?"))
+                  return;
+                try {
+                  await cancelBooking(booking.id);
+                  flash("Upcoming session removed");
+                  onChanged()
+                } catch (error) {
+                  flash(
+                    error instanceof Error
+                      ? error.message
+                      : "Couldn't cancel session",
+                  );
+                }
               }}
               className="inline-flex items-center gap-1.5 rounded-xl border border-munity-border px-3 py-2 text-xs font-semibold text-munity-muted transition hover:border-[#ffdad6] hover:text-[#93000a]"
             >
@@ -187,33 +249,44 @@ function SessionCard({
   );
 }
 
-export function MemberSessionsView() {
-  const store = useMockStore();
+export function MemberSessionsView({
+  bookings,
+}: {
+  bookings: SessionBooking[];
+}) {
+  const router = useRouter();
   const [tab, setTab] = useState<SessionTab>("upcoming");
-  const now = Date.now();
+  const [now] = useState(() => Date.now());
 
   const lists = useMemo(() => {
-    const upcoming = store.bookings
+    const upcoming = bookings
       .filter((booking) => isUpcoming(booking, now))
       .sort((a, b) => {
-        const priorityDiff = priorityRank[a.priority] - priorityRank[b.priority];
+        const priorityDiff =
+          priorityRank[a.priority] - priorityRank[b.priority];
         if (priorityDiff !== 0) return priorityDiff;
-        return new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+        return (
+          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()
+        );
       });
-    const past = store.bookings
+    const past = bookings
       .filter((booking) => isPast(booking, now))
       .sort(
         (a, b) =>
           new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
       );
-    const archived = store.bookings
+    const archived = bookings
       .filter((booking) => booking.archived)
       .sort(
         (a, b) =>
           new Date(b.scheduledAt).getTime() - new Date(a.scheduledAt).getTime(),
       );
     return { upcoming, past, archived };
-  }, [now, store.bookings]);
+  }, [now, bookings]);
+
+  function refresh() {
+    router.refresh();
+  }
 
   const tabs: {
     id: SessionTab;
@@ -272,14 +345,18 @@ export function MemberSessionsView() {
                     }`}
                   >
                     <span>
-                      <span className="block text-sm font-semibold">{item.label}</span>
+                      <span className="block text-sm font-semibold">
+                        {item.label}
+                      </span>
                       <span className="mt-0.5 block text-[11px] opacity-80">
                         {item.description}
                       </span>
                     </span>
                     <span
                       className={`rounded-full px-2 py-0.5 text-xs font-bold ${
-                        active ? "bg-white/70 text-munity-green" : "bg-munity-sidebar"
+                        active
+                          ? "bg-white/70 text-munity-green"
+                          : "bg-munity-sidebar"
                       }`}
                     >
                       {item.count}
@@ -301,8 +378,12 @@ export function MemberSessionsView() {
 
         <section className="min-w-0 flex-1">
           <header className="mb-6">
-            <h1 className="text-3xl font-bold text-munity-text">{activeMeta.label} sessions</h1>
-            <p className="mt-1 text-sm text-munity-muted">{activeMeta.description}</p>
+            <h1 className="text-3xl font-bold text-munity-text">
+              {activeMeta.label} sessions
+            </h1>
+            <p className="mt-1 text-sm text-munity-muted">
+              {activeMeta.description}
+            </p>
           </header>
 
           <AnimatePresence mode="popLayout">
@@ -337,7 +418,12 @@ export function MemberSessionsView() {
             ) : (
               <div className="flex flex-col gap-4">
                 {activeList.map((booking) => (
-                  <SessionCard key={booking.id} booking={booking} tab={tab} />
+                  <SessionCard
+                    key={booking.id}
+                    booking={booking}
+                    tab={tab}
+                    onChanged={refresh}
+                  />
                 ))}
               </div>
             )}

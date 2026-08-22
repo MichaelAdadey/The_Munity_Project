@@ -1,7 +1,8 @@
 import { TherapistMessagesView } from "@/components/therapistmessages/TherapistMessagesView";
-import { requireMockRole } from "@/lib/require-session";
+import { requireRole } from "@/lib/require-role";
+import { routes } from "@/lib/routes";
 
 export default async function TherapistMessagesPage() {
-  await requireMockRole("therapist");
+  await requireRole(["therapist"], routes.therapistLogin);
   return <TherapistMessagesView />;
 }
