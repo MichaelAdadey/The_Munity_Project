@@ -14,7 +14,7 @@ export type TherapistProfile = {
   licenseType: string;
   licenseNumber: string;
   licenseExpiry: string;
-  verificationStatus: "verified" | "pending" | "in-review";
+  verificationStatus: "verified" | "pending" | "in-review" | "rejected";
   specialties: string[];
   payoutMethods: string[];
   mobileMoneyNetwork?: string;

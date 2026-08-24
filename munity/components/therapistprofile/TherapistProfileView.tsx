@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   BadgeCheck,
   Briefcase,
+  Camera,
   CreditCard,
   Mail,
   MapPin,
@@ -26,15 +27,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { assets } from "@/lib/assets";
-import { routes } from "@/lib/routes";
 import {
-  currentTherapistProfile,
   getTherapistDisplayName,
-  loadTherapistProfile,
-  saveTherapistProfile,
   type TherapistProfile,
 } from "@/lib/therapist-profile";
+import { updateTherapistProfile } from "@/app/therapistprofile/actions";
+import { createClient } from "@/lib/supabase/client";
+import { assets } from "@/lib/assets";
+import { routes } from "@/lib/routes";
 
 type EditSection = "profile" | "personal" | "credentials" | "specialties" | "payout";
 
@@ -146,24 +146,72 @@ function VerificationBadge({ status }: { status: TherapistProfile["verificationS
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
       <Shield className="size-3.5" />
-      {status === "in-review" ? "Verification in review" : "Verification pending"}
+      {status === "in-review" ? "Verification in review" : status === "rejected" ? "Verification rejected" : "Verification pending"}
     </span>
   );
 }
 
-export function TherapistProfileView() {
+export function TherapistProfileView({
+  initialProfile,
+  userId,
+}: {
+  initialProfile: TherapistProfile;
+  userId: string;
+}) {
   const { flash } = useLiveToast();
-  const [profile, setProfile] = useState<TherapistProfile>(currentTherapistProfile);
-  const [hydrated, setHydrated] = useState(false);
+  const [profile, setProfile] = useState<TherapistProfile>(initialProfile);
   const [editSection, setEditSection] = useState<EditSection | null>(null);
-  const [draft, setDraft] = useState<TherapistProfile>(currentTherapistProfile);
+  const [draft, setDraft] = useState<TherapistProfile>(initialProfile);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    const loaded = loadTherapistProfile();
-    setProfile(loaded);
-    setDraft(loaded);
-    setHydrated(true);
-  }, []);
+  async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      flash("Please choose an image file.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      flash("Image must be under 5MB.");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    const supabase = createClient();
+    const ext = file.name.split(".").pop();
+    const path = `${userId}/avatar-${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("avatars")
+      .upload(path, file, { cacheControl: "3600", upsert: false });
+
+    if (uploadError) {
+      setIsUploadingAvatar(false);
+      flash(`Upload failed: ${uploadError.message}`);
+      return;
+    }
+
+    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const newAvatarUrl = publicUrlData.publicUrl;
+
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: newAvatarUrl })
+      .eq("id", userId);
+
+    setIsUploadingAvatar(false);
+
+    if (updateError) {
+      flash(`Could not save avatar: ${updateError.message}`);
+      return;
+    }
+
+    setProfile((prev) => ({ ...prev, avatarUrl: newAvatarUrl }));
+    flash("Profile picture updated");
+  }
 
   const displayName = getTherapistDisplayName(profile);
 
@@ -172,7 +220,7 @@ export function TherapistProfileView() {
     setEditSection(section);
   }
 
-  function saveDraft() {
+  async function saveDraft() {
     const next: TherapistProfile = {
       ...draft,
       firstName: draft.firstName.trim() || profile.firstName,
@@ -185,8 +233,17 @@ export function TherapistProfileView() {
       specialties: draft.specialties.length ? draft.specialties : profile.specialties,
       payoutMethods: draft.payoutMethods.length ? draft.payoutMethods : profile.payoutMethods,
     };
+
+    setIsSaving(true);
+    const result = await updateTherapistProfile(next);
+    setIsSaving(false);
+
+    if (result?.error) {
+      flash(`Could not save: ${result.error}`);
+      return;
+    }
+
     setProfile(next);
-    saveTherapistProfile(next);
     setEditSection(null);
     flash("Profile updated");
   }
@@ -209,20 +266,6 @@ export function TherapistProfileView() {
     }));
   }
 
-  if (!hydrated) {
-    return (
-      <TherapistAppShell
-        active="Profile"
-        title="Profile"
-        subtitle="Your public therapist profile and practice details."
-      >
-        <div className="rounded-[20px] border border-munity-border bg-white p-8 text-sm text-munity-muted">
-          Loading profile…
-        </div>
-      </TherapistAppShell>
-    );
-  }
-
   return (
     <TherapistAppShell
       active="Profile"
@@ -242,12 +285,35 @@ export function TherapistProfileView() {
       >
         <div className="bg-gradient-to-r from-munity-lime/40 via-munity-green/5 to-transparent px-8 py-8">
           <div className="flex flex-wrap items-center gap-6">
-            <div className="relative size-24 overflow-hidden rounded-2xl border-4 border-white shadow-md">
-              <Image
-                src={assets.avatars.clinician}
-                alt={displayName}
-                fill
-                className="object-cover"
+            <div className="relative size-24 shrink-0">
+              <div className="relative size-24 overflow-hidden rounded-2xl border-4 border-white shadow-md">
+                <Image
+                  src={profile.avatarUrl || assets.avatars.clinician}
+                  alt={displayName}
+                  fill
+                  className="object-cover"
+                />
+                {isUploadingAvatar ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                    <span className="text-xs font-semibold text-white">Uploading…</span>
+                  </div>
+                ) : null}
+              </div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="absolute -bottom-1 -right-1 flex size-8 items-center justify-center rounded-full border-2 border-white bg-munity-green text-white shadow-md transition hover:bg-munity-green-dark disabled:opacity-50"
+                aria-label="Change profile picture"
+              >
+                <Camera className="size-4" />
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                className="hidden"
               />
             </div>
             <div className="min-w-0 flex-1">
@@ -594,9 +660,10 @@ export function TherapistProfileView() {
             <button
               type="button"
               onClick={saveDraft}
-              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+              disabled={isSaving}
+              className="rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark disabled:opacity-50"
             >
-              Save changes
+              {isSaving ? "Saving…" : "Save changes"}
             </button>
           </DialogFooter>
         </DialogContent>
