@@ -84,7 +84,7 @@ export function FileUpload({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-2 text-sm font-medium text-red-600"
+            className="mt-2 text-sm font-medium text-red-600 dark:text-red-400"
           >
             {error}
           </motion.p>

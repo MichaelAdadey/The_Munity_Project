@@ -4,14 +4,16 @@ import { useState } from "react";
 import { Bell, Lock, Moon, Shield } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
-type ToggleKey = "emailAlerts" | "smsAlerts" | "crisisFlags" | "darkMode" | "twoFactor";
+type ToggleKey = "emailAlerts" | "smsAlerts" | "crisisFlags" | "twoFactor";
+type SettingsToggleKey = ToggleKey | "darkMode";
 
 const settingsGroups: {
   title: string;
   description: string;
   icon: typeof Bell;
-  items: { key: ToggleKey; label: string; detail: string }[];
+  items: { key: SettingsToggleKey; label: string; detail: string }[];
 }[] = [
   {
     title: "Notifications",
@@ -55,7 +57,7 @@ const settingsGroups: {
       {
         key: "darkMode",
         label: "Dark mode",
-        detail: "Preview preference (coming soon)",
+        detail: "Use a darker palette across the clinical workspace",
       },
     ],
   },
@@ -63,15 +65,21 @@ const settingsGroups: {
 
 export function TherapistSettingsView() {
   const { flash } = useLiveToast();
+  const { darkMode, setDarkMode } = useTheme();
   const [toggles, setToggles] = useState<Record<ToggleKey, boolean>>({
     emailAlerts: true,
     smsAlerts: false,
     crisisFlags: true,
-    darkMode: false,
     twoFactor: true,
   });
 
-  function toggle(key: ToggleKey) {
+  function toggle(key: SettingsToggleKey) {
+    if (key === "darkMode") {
+      setDarkMode(!darkMode);
+      flash(darkMode ? "Dark mode disabled" : "Dark mode enabled");
+      return;
+    }
+
     setToggles((current) => ({ ...current, [key]: !current[key] }));
     flash(`${key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())} updated`);
   }
@@ -114,15 +122,19 @@ export function TherapistSettingsView() {
                     <button
                       type="button"
                       role="switch"
-                      aria-checked={toggles[item.key]}
+                      aria-checked={item.key === "darkMode" ? darkMode : toggles[item.key]}
                       onClick={() => toggle(item.key)}
                       className={`relative h-7 w-12 rounded-full transition ${
-                        toggles[item.key] ? "bg-munity-green" : "bg-munity-divider"
+                        (item.key === "darkMode" ? darkMode : toggles[item.key])
+                          ? "bg-munity-green"
+                          : "bg-munity-divider"
                       }`}
                     >
                       <span
                         className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition ${
-                          toggles[item.key] ? "left-5" : "left-0.5"
+                          (item.key === "darkMode" ? darkMode : toggles[item.key])
+                            ? "left-5"
+                            : "left-0.5"
                         }`}
                       />
                     </button>

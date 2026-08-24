@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { EditPostDialog } from "@/components/home/EditPostDialog";
+import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
 import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
 // import { mockStore, useMockStore } from "@/lib/mock-store";
 import { routes } from "@/lib/routes";
@@ -139,6 +141,14 @@ export function SavedPostsView() {
           </motion.div>
         )}
       </div>
+
+      <EditPostDialog
+        post={editingPost}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setEditingPost(null);
+        }}
+        flash={flash}
+      />
     </MemberAppShell>
   );
 }

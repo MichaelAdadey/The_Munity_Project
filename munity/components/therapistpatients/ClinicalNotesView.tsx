@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Check,
   Pencil,
@@ -81,6 +81,18 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const [activeSessionId, setActiveSessionId] = useState<string | number>(12);
   const [saved, setSaved] = useState(false);
   const [tasks, setTasks] = useState([true, false]);
+  const [exportOpen, setExportOpen] = useState(false);
+  const [homeworkTexts, setHomeworkTexts] = useState<string[]>([
+    "Daily 5-minute boxed breathing during commute.",
+    'Journaling identifying 3 "Evidence Against" a negative thought.',
+  ]);
+  const hwInputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const hwFocusNext = useRef(false);
+  const [titleState, setTitleState] = useState("");
+  const [summaryState, setSummaryState] = useState("");
+  const [observationsState, setObservationsState] = useState("");
+  const [moodState, setMoodState] = useState("Fair (5-6)");
+  const [riskState, setRiskState] = useState("Low risk");
   const avatar = assets.avatars[patient.avatarKey];
   const firstName = patient.name.split(" ")[0];
   const persistedSessions: NoteSession[] = sessionNotes
@@ -98,10 +110,106 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
       body: note.body,
       active: false,
     }));
+
+  function buildNoteHTML(session: NoteSession) {
+    return `
+      <div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;padding:20px;color:#21311b;">
+        <h1 style="color:#3e5219;">${session.title}</h1>
+        <p><strong>Date:</strong> ${session.date}</p>
+        <p><strong>Patient:</strong> ${patient.name}</p>
+        <h2>Session Notes</h2>
+        <p>${(session.body || session.excerpt).replace(/\n/g, '<br/>')}</p>
+      </div>
+    `;
+  }
+
+  function buildNotePlainText(session: NoteSession) {
+    return [
+      session.title,
+      `Date: ${session.date}`,
+      `Patient: ${patient.name}`,
+      "",
+      "Session Notes:",
+      session.body || session.excerpt,
+    ].join("\n");
+  }
+
+  function exportNoteAsPDF() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const content = buildNoteHTML(session);
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Clinical Note</title><style>body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#21311b;}h1{color:#3e5219;}h2{margin-top:16px;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url);
+    if (w) {
+      setTimeout(() => {
+        w.print();
+      }, 250);
+    }
+  }
+
+  function exportNoteAsWord() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const content = buildNoteHTML(session);
+    const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/><title>Clinical Note</title><style>body{font-family:Calibri,sans-serif;line-height:1.5;}h1{color:#3e5219;margin-bottom:10px;}h2{margin-top:16px;margin-bottom:8px;}p{margin:6px 0;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-word" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patient.name.replace(/\\s+/g, "_")}_clinical_note_${activeSessionId}.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function emailNote() {
+    if (typeof window === "undefined") return;
+    const session = allSessions.find((s) => s.id === activeSessionId);
+    if (!session) return;
+    const text = buildNotePlainText(session);
+    const subject = `Clinical Note: ${session.title}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
+  }
   const allSessions = [...persistedSessions, ...sessions];
   const activeSession =
     allSessions.find((session) => session.id === activeSessionId) ?? allSessions[0];
   const newNoteHref = patientRoutes(patient.slug).newSessionNote;
+
+  useEffect(() => {
+    if (!activeSession) return;
+    setTitleState(activeSession.title ?? "");
+    setSummaryState(activeSession.body ?? activeSession.excerpt ?? "");
+    // default clinical observations text (editable)
+    setObservationsState(
+      `Observed significant psychomotor agitation (hand wringing) when discussing her direct supervisor. Cognitive distortions identified: catastrophizing ("I'll be the first to be let go") and personalizing organizational changes. Affect remained congruent with mood throughout. Significant insight displayed during the role-playing exercise regarding her internal locus of control.`
+    );
+    // keep previous selections if present in the body text
+    if (activeSession.body) {
+      if (activeSession.body.includes("Low risk")) setRiskState("Low risk");
+      if (activeSession.body.includes("Moderate risk")) setRiskState("Moderate risk");
+      if (activeSession.body.includes("Elevated risk")) setRiskState("Elevated risk");
+      if (activeSession.body.includes("Excellent")) setMoodState("Excellent (9-10)");
+      if (activeSession.body.includes("Good")) setMoodState("Good (7-8)");
+      if (activeSession.body.includes("Fair")) setMoodState("Fair (5-6)");
+      if (activeSession.body.includes("Low (3-4)")) setMoodState("Low (3-4)");
+      if (activeSession.body.includes("Poor")) setMoodState("Poor (1-2)");
+    }
+  }, [activeSessionId]);
+
+  useEffect(() => {
+    if (!hwFocusNext.current) return;
+    hwFocusNext.current = false;
+    requestAnimationFrame(() => {
+      const el = hwInputsRef.current[hwInputsRef.current.length - 1];
+      el?.focus();
+    });
+  }, [homeworkTexts.length]);
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
@@ -209,19 +317,57 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                     <span className="text-munity-gray">•</span>
                     <span className="font-semibold tracking-wide text-munity-muted">{activeSession.date}</span>
                   </div>
-                  <h1 className="text-2xl font-semibold text-munity-text">
-                    {activeSession.title}
-                  </h1>
+                  <input
+                    value={titleState}
+                    onChange={(e) => setTitleState(e.target.value)}
+                    className="text-2xl font-semibold text-munity-text w-full bg-transparent outline-none"
+                  />
                 </div>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={() => router.push(newNoteHref)}>
                     <PlusCircle className="size-4" />
                     New note
                   </Button>
-                  <Button variant="ghost">
-                    <Printer className="size-4" />
-                    Export
-                  </Button>
+                  <div className="relative">
+                    <Button variant="ghost" onClick={() => setExportOpen((s) => !s)}>
+                      <Printer className="size-4" />
+                      Export
+                    </Button>
+                    {exportOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-munity-border bg-white p-2 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportNoteAsPDF();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportNoteAsWord();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as Word
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            emailNote();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Email note
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <Button
                     onClick={() =>
                       withLoading(async () => {
@@ -244,12 +390,12 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                     <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-green">
                       Session Summary
                     </h3>
-                    <div className="mt-3 rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text">
-                      {activeSession.body ?? `Patient presented with heightened autonomic arousal today, specifically citing a
-                      recent restructuring at her firm. We spent the first 15 minutes of the session
-                      grounding and practicing bilateral stimulation techniques. ${firstName} expressed
-                      concern about her performance despite positive feedback from peers.`}
-                    </div>
+                    <textarea
+                      value={summaryState}
+                      onChange={(e) => setSummaryState(e.target.value)}
+                      className="mt-3 w-full rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text resize-y"
+                      rows={6}
+                    />
                   </section>
 
                   <section>
@@ -257,16 +403,24 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                       Clinical Observations
                     </h3>
                     <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <ObservationCard
-                        label="Mood Rating"
-                        badge="FAIR (6/10)"
-                        badgeClass="bg-munity-lime text-munity-olive-text"
-                      />
-                      <ObservationCard
-                        label="Risk Assessment"
-                        badge="LOW RISK"
-                        badgeClass="bg-munity-divider text-munity-muted"
-                      />
+                      <div className="flex items-center justify-between rounded-xl border border-munity-input-border bg-munity-bg p-4">
+                        <span className="text-sm font-semibold tracking-wide text-munity-text">Mood Rating</span>
+                        <select value={moodState} onChange={(e) => setMoodState(e.target.value)} className="rounded-full border border-munity-input-border bg-white px-3 py-1 text-sm">
+                          <option>Excellent (9-10)</option>
+                          <option>Good (7-8)</option>
+                          <option>Fair (5-6)</option>
+                          <option>Low (3-4)</option>
+                          <option>Poor (1-2)</option>
+                        </select>
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-munity-input-border bg-munity-bg p-4">
+                        <span className="text-sm font-semibold tracking-wide text-munity-text">Risk Assessment</span>
+                        <select value={riskState} onChange={(e) => setRiskState(e.target.value)} className="rounded-full border border-munity-input-border bg-white px-3 py-1 text-sm">
+                          <option>Low risk</option>
+                          <option>Moderate risk</option>
+                          <option>Elevated risk</option>
+                        </select>
+                      </div>
                     </div>
                     <div className="mt-4 rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text">
                       Observed significant psychomotor agitation (hand wringing) when discussing her
@@ -283,7 +437,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                     </h3>
                     <div className="mt-3 space-y-3">
                       <button type="button" onClick={() => { setTasks((items) => [!items[0], items[1]]); flash("Homework task updated"); }} className="flex w-full items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3 text-left">
-                        <span className={`flex size-[22px] items-center justify-center rounded ${tasks[0] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
+                        <span className={`flex size-5.5 items-center justify-center rounded ${tasks[0] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
                           {tasks[0] ? <Check className="size-4" strokeWidth={3} /> : null}
                         </span>
                         <span className="text-base leading-relaxed">
@@ -291,7 +445,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                         </span>
                       </button>
                       <button type="button" onClick={() => { setTasks((items) => [items[0], !items[1]]); flash("Homework task updated"); }} className="flex w-full items-center gap-3 rounded-xl border border-munity-input-border bg-white p-3 text-left">
-                        <span className={`flex size-[22px] items-center justify-center rounded ${tasks[1] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
+                        <span className={`flex size-5.5 items-center justify-center rounded ${tasks[1] ? "bg-munity-green text-white" : "border border-munity-input-border"}`}>
                           {tasks[1] ? <Check className="size-4" strokeWidth={3} /> : null}
                         </span>
                         <span className="text-base leading-relaxed">
@@ -341,10 +495,7 @@ function ObservationCard({
   return (
     <div className="flex items-center justify-between rounded-xl border border-munity-input-border bg-munity-bg p-4">
       <span className="text-sm font-semibold tracking-wide text-munity-text">{label}</span>
-      <div className="flex items-center gap-2">
-        <span className={`rounded-full px-3 py-1 text-xs font-bold ${badgeClass}`}>{badge}</span>
-        <Pencil className="size-[18px] text-munity-muted" />
-      </div>
+      <span className={`rounded-full px-3 py-1 text-xs font-bold ${badgeClass}`}>{badge}</span>
     </div>
   );
 }

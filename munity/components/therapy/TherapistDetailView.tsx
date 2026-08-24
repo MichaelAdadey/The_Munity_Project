@@ -103,7 +103,7 @@ export function TherapistDetailView({
               <p className="font-semibold text-munity-text">
                 {booked && latestBooking
                   ? latestBooking.when
-                  : `${therapist.nextAvailable} · $${therapist.rate}/hr`}
+                  : `${therapist.nextAvailable} · ₵${therapist.rate}/hr`}
               </p>
             </div>
             <div className="flex gap-3">
@@ -129,7 +129,7 @@ export function TherapistDetailView({
                 className="inline-flex items-center gap-2 rounded-xl bg-munity-green px-5 py-3 text-sm font-semibold text-white"
               >
                 <Calendar className="size-4" />
-                {booked ? "Book another" : "Book Session"}
+                {booked ? "Book" : "Book Session"}
               </button>
             </div>
           </div>

@@ -248,7 +248,7 @@ export default function BasicInfoPage() {
           After your application is verified, use these to sign in to your therapist account.
         </p>
         {accountError ? (
-          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">{accountError}</p>
+          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">{accountError}</p>
         ) : null}
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
           <Field label="Email Address">

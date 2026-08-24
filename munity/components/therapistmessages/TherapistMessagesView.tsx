@@ -3,8 +3,10 @@
 import Image from "next/image";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ImageIcon, Mic, Phone, Plus, Search, Send, Video } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
+import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 // import { assets } from "@/lib/assets";
 import { chatIdFromPatient } from "@/lib/therapist-chats";
@@ -108,12 +110,14 @@ export { chatIdFromPatient };
 // };
 
 function TherapistMessagesContent() {
+  const store = useMockStore();
   const searchParams = useSearchParams();
   const { flash } = useLiveToast();
   // const [activeChatId, setActiveChatId] = useState(chats[0]?.id ?? "marcus-thorne");
   const [draft, setDraft] = useState("");
   // const [threads, setThreads] = useState(seedMessages);
   const [search, setSearch] = useState("");
+  const call = useCallSession();
 
   const {
     chats,
@@ -136,8 +140,8 @@ function TherapistMessagesContent() {
 
   const filteredChats = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return chats;
-    return chats.filter(
+    if (!query) return store.therapistChats;
+    return store.therapistChats.filter(
       (chat) =>
         chat.name.toLowerCase().includes(query) ||
         (chat.patientId ?? "").toLowerCase().includes(query),
@@ -198,16 +202,16 @@ function TherapistMessagesContent() {
   return (
     <TherapistAppShell
       active="Messages"
-      title="Messages"
-      subtitle="Patient consultations and text sessions."
+      headerVariant="compact"
       actions={
-        <div className="relative w-full max-w-xs sm:w-64">
+        <div className="relative mr-auto hidden sm:block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
           <input
             type="search"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search patients..."
-            className="h-10 w-full rounded-full border border-munity-input-border bg-[#efeded] px-4 text-sm font-medium text-munity-text outline-none focus:border-munity-green"
+            className="h-9 w-64 rounded-full bg-munity-sidebar py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-munity-gray"
           />
         </div>
       }
@@ -266,8 +270,8 @@ function TherapistMessagesContent() {
           </div>
         </section>
 
-        <section className="hidden min-w-0 flex-1 flex-col md:flex">
-          <div className="flex h-16 shrink-0 items-center justify-between border-b border-munity-border px-6">
+        <section className="hidden min-w-0 flex-1 flex-col bg-[#fbf9f8] md:flex">
+          <div className="flex h-16 items-center justify-between border-b border-[rgba(197,200,184,0.3)] px-6">
             <div>
               <h3 className="text-sm font-semibold text-munity-text">
                 {activeChat.name}
@@ -278,7 +282,6 @@ function TherapistMessagesContent() {
                 </p>
               ) : null}
             </div>
-            {activeChat.online ? <LivePulse label="Active now" /> : null}
           </div>
 
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto bg-munity-bg px-6 py-5">
@@ -350,6 +353,7 @@ function TherapistMessagesContent() {
           <div className="shrink-0 border-t border-munity-border bg-white p-4">
             <div className="flex items-center gap-2 rounded-2xl border border-munity-input-border bg-munity-sidebar p-2">
               <input
+                type="text"
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -358,9 +362,17 @@ function TherapistMessagesContent() {
                     void sendMessage();
                   }
                 }}
-                placeholder="Type a message…"
-                className="min-w-0 flex-1 bg-transparent px-2 py-2 text-sm text-munity-text outline-none"
+                placeholder="Type a message..."
+                className="min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-munity-text outline-none placeholder:text-[rgba(69,72,60,0.5)]"
               />
+              {draft ? <span className="text-xs font-medium text-munity-muted">Typing…</span> : null}
+              <button
+                type="button"
+                className="rounded-xl p-2 text-munity-muted transition hover:bg-white"
+                aria-label="Voice message"
+              >
+                <Mic className="size-[18px]" />
+              </button>
               <button
                 type="button"
                 onClick={() => void sendMessage()}
@@ -373,6 +385,17 @@ function TherapistMessagesContent() {
           </div>
         </section>
       </div>
+
+      <CallOverlay
+        session={call}
+        participantName={activeChat.name}
+        participantAvatar={activeChat.avatar}
+        flash={flash}
+        onEnd={({ kind, duration }) => {
+          mockStore.sendTherapistMessage(activeChat.id, `${kind} ended · ${duration}`);
+          flash(`${kind} ended`);
+        }}
+      />
     </TherapistAppShell>
   );
 }

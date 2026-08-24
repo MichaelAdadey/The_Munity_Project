@@ -1,8 +1,13 @@
+import { Suspense } from "react";
 import { TherapistMessagesView } from "@/components/therapistmessages/TherapistMessagesView";
 import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
 
 export default async function TherapistMessagesPage() {
-  await requireRole(["therapist"], routes.therapistLogin);
-  return <TherapistMessagesView />;
+   await requireRole(["therapist"], routes.therapistLogin);
+  return (
+    <Suspense fallback={null}>
+      <TherapistMessagesView />
+    </Suspense>
+  );
 }

@@ -284,7 +284,7 @@ export function TherapyView({
                     Session Price
                   </p>
                   <p className="text-xs font-medium text-munity-green">
-                    ${PRICE_MIN} - ${maxPrice}
+                    ₵{PRICE_MIN} - ₵{maxPrice}
                   </p>
                 </div>
                 <input

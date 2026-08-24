@@ -3,6 +3,7 @@
 import { Bell, Lock, Moon, Shield, User } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { useLiveToast } from "@/components/live/LiveFeedback";
+import { useTheme } from "@/components/theme/ThemeProvider";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 
@@ -56,7 +57,10 @@ const sections = [
     title: "Appearance",
     description: "Display preferences for your workspace.",
     icon: Moon,
-    toggles: [{ label: "Reduce motion", defaultOn: false }],
+    toggles: [
+      { label: "Dark mode", themeToggle: true, defaultOn: false },
+      { label: "Reduce motion", defaultOn: false },
+    ],
   },
 ] as const;
 
@@ -178,6 +182,12 @@ export function MemberSettingsView() {
                             : toggle.defaultOn
                         }
                         onToggle={() => {
+                          if ("themeToggle" in toggle && toggle.themeToggle) {
+                            setDarkMode(!darkMode);
+                            flash(darkMode ? "Dark mode disabled" : "Dark mode enabled");
+                            return;
+                          }
+
                           const key = settingKeys[toggle.label];
                           if (key) {
                             mockStore.updateSettings({

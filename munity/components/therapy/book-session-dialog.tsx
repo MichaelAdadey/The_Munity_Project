@@ -55,7 +55,7 @@ export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
             <DialogHeader>
               <DialogTitle>Book a session with {therapist.full_name}</DialogTitle>
               <DialogDescription>
-                Next available: {therapist.next_available} · ${therapist.hourly_rate}/session
+                Next available: {therapist.next_available} · ₵{therapist.hourly_rate}/session
               </DialogDescription>
             </DialogHeader>
 

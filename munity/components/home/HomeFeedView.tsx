@@ -10,7 +10,6 @@ import {
   ImageIcon,
   Lightbulb,
   MessageCircle,
-  MoreHorizontal,
   Plus,
   Smile,
   Trash2,
@@ -21,8 +20,11 @@ import {
   X,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { EditPostDialog } from "@/components/home/EditPostDialog";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
+import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
 import { MunitySunIcon } from "@/components/icons/MunityIcons";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { startCalmAmbient } from "@/lib/calm-ambient";
 import { mockStore, useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
@@ -160,6 +162,7 @@ export function HomeFeedView() {
   const therapists = store.therapists.slice(0, 2);
 
   const visiblePosts = useMemo(() => {
+    const activePosts = store.posts.filter((post) => !post.archived);
     const query = search.trim().toLowerCase();
     if (!query) return posts;
     return posts.filter(
@@ -951,7 +954,7 @@ export function HomeFeedView() {
                           className="object-cover"
                         />
                       )}
-                    </div>
+                    </button>
                   ) : null}
 
                   <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
@@ -1293,6 +1296,23 @@ export function HomeFeedView() {
           </motion.div>
         ) : null}
       </AnimatePresence>
+
+      <ImageLightbox
+        open={lightboxPost !== null}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setLightboxPost(null);
+        }}
+        images={lightboxPost ? [lightboxPost.image] : []}
+        altText={lightboxPost ? `Photo from ${lightboxPost.author}'s post` : "Post image"}
+      />
+
+      <EditPostDialog
+        post={editingPost}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) setEditingPost(null);
+        }}
+        flash={flash}
+      />
     </MemberAppShell>
   );
 }

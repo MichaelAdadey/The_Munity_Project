@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-@theme inline {
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
   --color-munity-green: #3e5219;
   --color-munity-green-dark: #56642b;
   --color-munity-olive: #556b2f;
@@ -15,13 +17,337 @@
   --color-munity-input-border: #c5c8b8;
   --color-munity-gray: #75796b;
   --color-munity-divider: #e4e2e2;
+  --color-munity-card: #ffffff;
+  --color-munity-surface: #ffffff;
+}
+
+@theme inline {
   --font-sans: var(--font-plus-jakarta);
+}
+
+.dark {
+  /* A cool, green-charcoal palette: depth is created with surfaces and
+     borders, not black backgrounds or heavy shadows. */
+  /* `green` remains dark enough for existing white-label primary buttons.
+     Text uses the brighter accent override below. */
+  --color-munity-green: #607b40;
+  --color-munity-green-dark: #75954d;
+  --color-munity-olive: #9fba70;
+  --color-munity-lime: #34482b;
+  --color-munity-lime-light: #415c35;
+  --color-munity-olive-text: #d9ecac;
+  --color-munity-bg: #121713;
+  --color-munity-sidebar: #19201b;
+  --color-munity-text: #f1f5ee;
+  --color-munity-muted: #b2bcb1;
+  --color-munity-border: #354137;
+  --color-munity-input-border: #4a584c;
+  --color-munity-gray: #919d93;
+  --color-munity-divider: #28332b;
+  --color-munity-card: #202820;
+  --color-munity-surface: #29332a;
+  color-scheme: dark;
 }
 
 body {
   background: var(--color-munity-bg);
   color: var(--color-munity-text);
   font-family: var(--font-plus-jakarta), system-ui, sans-serif;
+}
+
+@layer utilities {
+  .dark ::selection {
+    background: color-mix(in srgb, var(--color-munity-green) 35%, transparent);
+    color: var(--color-munity-text);
+  }
+
+  .dark .bg-white {
+    background-color: var(--color-munity-card);
+  }
+
+  .dark .bg-white\/50 {
+    background-color: color-mix(in srgb, var(--color-munity-card) 52%, transparent);
+  }
+
+  .dark .bg-white\/70 {
+    background-color: color-mix(in srgb, var(--color-munity-card) 76%, transparent);
+  }
+
+  .dark .bg-white\/80 {
+    background-color: color-mix(in srgb, var(--color-munity-card) 86%, transparent);
+  }
+
+  .dark .focus\:bg-white:focus {
+    background-color: var(--color-munity-card);
+  }
+
+  .dark .hover\:bg-white:hover {
+    background-color: var(--color-munity-surface);
+  }
+
+  .dark .hover\:bg-white\/50:hover {
+    background-color: color-mix(in srgb, var(--color-munity-surface) 50%, transparent);
+  }
+
+  .dark .hover\:bg-white\/60:hover {
+    background-color: color-mix(in srgb, var(--color-munity-surface) 60%, transparent);
+  }
+
+  .dark .hover\:bg-white\/70:hover {
+    background-color: color-mix(in srgb, var(--color-munity-surface) 70%, transparent);
+  }
+
+  .dark .hover\:bg-white\/80:hover {
+    background-color: color-mix(in srgb, var(--color-munity-surface) 80%, transparent);
+  }
+
+  /* The component library uses one brand token for both fills and links.
+     Keep filled controls accessible with white labels while giving text and
+     icons the brighter, higher-contrast accent needed on charcoal surfaces. */
+  .dark .text-munity-green {
+    color: #c5de87;
+  }
+
+  .dark .text-munity-green-dark {
+    color: #d9ecac;
+  }
+
+  .dark .border-munity-green {
+    border-color: #78965a;
+  }
+
+  .dark .text-gray-500,
+  .dark .placeholder\:text-gray-500::placeholder {
+    color: var(--color-munity-muted);
+  }
+
+  .dark .text-gray-900 {
+    color: var(--color-munity-text);
+  }
+
+  .dark .text-gray-800,
+  .dark .text-gray-700 {
+    color: var(--color-munity-text);
+    opacity: 0.9;
+  }
+
+  .dark .bg-gray-50,
+  .dark .bg-gray-100 {
+    background-color: var(--color-munity-surface);
+  }
+
+  .dark .border-gray-200,
+  .dark .border-gray-100,
+  .dark .divide-gray-200,
+  .dark .divide-gray-100,
+  .dark .ring-gray-200,
+  .dark .ring-gray-100 {
+    border-color: var(--color-munity-border);
+  }
+
+  /* Dark-mode elevation is deliberately quiet: surfaces and borders do most of the work. */
+  .dark .shadow-sm {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 18%);
+  }
+
+  .dark .shadow-md {
+    box-shadow: 0 8px 18px -14px rgb(0 0 0 / 55%), 0 0 0 1px rgb(255 255 255 / 3%);
+  }
+
+  .dark .shadow-lg,
+  .dark .shadow-xl,
+  .dark .shadow-2xl {
+    box-shadow: 0 18px 36px -20px rgb(0 0 0 / 75%), 0 0 0 1px rgb(255 255 255 / 5%);
+  }
+
+  /* --- Arbitrary hex utilities used in place of theme tokens ---
+     These literal bracket-notation colors were authored to match the light
+     palette 1:1 but bypass the CSS variables, so they need explicit dark
+     overrides here rather than automatically inheriting the .dark tokens. */
+
+  /* Neutral surfaces / borders / text that duplicate existing tokens */
+  .dark .bg-\[\#fbf9f8\],
+  .dark .bg-\[\#fbfaf7\] {
+    background-color: var(--color-munity-bg);
+  }
+  .dark .border-\[\#fbf9f8\] {
+    border-color: var(--color-munity-bg);
+  }
+
+  .dark .bg-\[\#f5f3f3\],
+  .dark .bg-\[\#eceee6\],
+  .dark .bg-\[\#f7f6f2\],
+  .dark .bg-\[\#f4f7e8\],
+  .dark .bg-\[\#e8ebe0\],
+  .dark .bg-\[\#efeded\] {
+    background-color: var(--color-munity-sidebar);
+  }
+
+  .dark .bg-\[\#f3f4ee\] {
+    background-color: var(--color-munity-surface);
+  }
+
+  .dark .bg-\[\#e4e2e2\],
+  .dark .bg-\[\#eae8e7\],
+  .dark .bg-\[\#dbd9d9\] {
+    background-color: var(--color-munity-divider);
+  }
+
+  .dark .border-\[\#e4e2e2\],
+  .dark .border-\[\#eae8e7\] {
+    border-color: var(--color-munity-divider);
+  }
+
+  .dark .bg-\[\#e5e5e1\] {
+    background-color: var(--color-munity-border);
+  }
+
+  .dark .border-\[\#e5e5e1\],
+  .dark .border-\[\#e5e7eb\],
+  .dark .border-\[\#d8dbcf\] {
+    border-color: var(--color-munity-border);
+  }
+
+  .dark .bg-\[\#c5c8b8\] {
+    background-color: var(--color-munity-input-border);
+  }
+
+  .dark .border-\[\#c5c8b8\] {
+    border-color: var(--color-munity-input-border);
+  }
+
+  .dark .text-\[\#75796b\],
+  .dark .text-\[\#6b7280\],
+  .dark .text-\[\#9ca3af\] {
+    color: var(--color-munity-gray);
+  }
+
+  .dark .border-\[\#75796b\] {
+    border-color: var(--color-munity-gray);
+  }
+
+  .dark .bg-\[\#75796b\],
+  .dark .bg-\[\#9ca3af\] {
+    background-color: var(--color-munity-gray);
+  }
+
+  .dark .text-\[\#45483c\],
+  .dark .text-\[\#474836\] {
+    color: var(--color-munity-muted);
+  }
+
+  .dark .text-\[\#1b1c1c\] {
+    color: var(--color-munity-text);
+  }
+
+  .dark .bg-\[\#1b1d0e\] {
+    background-color: #26331f;
+  }
+
+  .dark .text-\[\#1b1d0e\],
+  .dark .text-\[\#1b1d0e\]\/90 {
+    color: var(--color-munity-text);
+  }
+
+  /* Brand green / olive / lime duplicated as literal hex */
+  .dark .bg-\[\#3e5219\],
+  .dark .bg-\[\#3E5219\] {
+    background-color: var(--color-munity-green);
+  }
+
+  .dark .text-\[\#3e5219\],
+  .dark .text-\[\#3E5219\] {
+    color: #c5de87;
+  }
+
+  .dark .bg-\[\#56642b\] {
+    background-color: var(--color-munity-green-dark);
+  }
+
+  .dark .text-\[\#56642b\] {
+    color: #d9ecac;
+  }
+
+  .dark .bg-\[\#556b2f\] {
+    background-color: var(--color-munity-olive);
+  }
+
+  .dark .text-\[\#5a682f\] {
+    color: var(--color-munity-olive-text);
+  }
+
+  .dark .bg-\[\#d6e7a1\] {
+    background-color: var(--color-munity-lime);
+  }
+
+  .dark .bg-\[\#d0eba1\] {
+    background-color: var(--color-munity-lime-light);
+  }
+
+  .dark .text-\[\#d0eba1\] {
+    color: #d9ecac;
+  }
+
+  .dark .bg-\[\#e4e4cc\],
+  .dark .bg-\[\#d9eaa3\],
+  .dark .bg-\[\#eef5d8\] {
+    background-color: var(--color-munity-lime-light);
+  }
+
+  .dark .text-\[\#e4e4cc\] {
+    color: #d9ecac;
+  }
+
+  .dark .bg-\[\#b6d088\] {
+    background-color: var(--color-munity-green);
+  }
+
+  .dark .text-\[\#b6d088\] {
+    color: #c5de87;
+  }
+
+  /* Danger / error pastel (Material-style error palette hardcoded as hex) */
+  .dark .bg-\[\#ffdad6\] {
+    background-color: color-mix(in srgb, #ba1a1a 25%, var(--color-munity-surface));
+  }
+  .dark .border-\[\#ffdad6\] {
+    border-color: color-mix(in srgb, #ba1a1a 45%, var(--color-munity-surface));
+  }
+  .dark .text-\[\#93000a\],
+  .dark .text-\[\#ba1a1a\] {
+    color: #ff8a80;
+  }
+  .dark .border-\[\#ba1a1a\] {
+    border-color: #ff8a80;
+  }
+
+  /* Warning / amber pastel */
+  .dark .bg-\[\#fff3cd\],
+  .dark .bg-\[\#ffe8cc\],
+  .dark .bg-\[\#fff8e8\],
+  .dark .bg-\[\#f8f0e6\] {
+    background-color: color-mix(in srgb, #d97706 22%, var(--color-munity-surface));
+  }
+  .dark .text-\[\#8a6d00\],
+  .dark .text-\[\#8a4b00\],
+  .dark .text-\[\#161f00\] {
+    color: #facc15;
+  }
+
+  /* Success pastel */
+  .dark .bg-\[\#e8f7e4\] {
+    background-color: color-mix(in srgb, var(--color-munity-green) 22%, var(--color-munity-surface));
+  }
+  .dark .text-\[\#1b5e20\],
+  .dark .text-\[\#2f6b3a\] {
+    color: var(--color-munity-green);
+  }
+
+  /* Misc pale info surfaces */
+  .dark .bg-\[\#eef2f7\],
+  .dark .bg-\[\#f3eef7\] {
+    background-color: var(--color-munity-surface);
+  }
 }
 
 @layer components {
