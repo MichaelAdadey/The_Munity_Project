@@ -1,49 +1,90 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import {
-  DEMO_THERAPIST_AVAILABILITY_ID,
-  defaultWeeklyAvailability,
-  getTherapistAvailability,
-  saveTherapistAvailability,
   timeSlots,
   weekDays,
   type WeekDay,
   type WeeklyAvailability,
 } from "@/lib/therapist-availability";
+import {
+  fetchMyAvailability,
+  saveMyAvailability,
+} from "@/lib/therapist/availability-actions";
+
+const EMPTY_AVAILABILITY: WeeklyAvailability = {
+  Mon: [],
+  Tue: [],
+  Wed: [],
+  Thu: [],
+  Fri: [],
+  Sat: [],
+  Sun: [],
+};
 
 export function TherapistAvailabilityView() {
-  const [availability, setAvailability] = useState<WeeklyAvailability>(
-    defaultWeeklyAvailability,
-  );
-  const [hydrated, setHydrated] = useState(false);
+  const [availability, setAvailability] =
+    useState<WeeklyAvailability>(EMPTY_AVAILABILITY);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const { flash } = useLiveToast();
 
+  const load = useCallback(() => {
+    void (async () => {
+      try {
+        const data = await fetchMyAvailability();
+        setAvailability(data);
+      } catch (error) {
+        flash(
+          error instanceof Error
+            ? error.message
+            : "Failed to load availability",
+        );
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [flash]);
+
   useEffect(() => {
-    setAvailability(getTherapistAvailability(DEMO_THERAPIST_AVAILABILITY_ID));
-    setHydrated(true);
-  }, []);
+    const timer = window.setTimeout(() => {
+      load();
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [load]);
 
   function toggleSlot(day: WeekDay, slot: string) {
+    const wasOpen = availability[day].includes(slot);
     setAvailability((current) => {
       const daySlots = current[day];
-      const nextSlots = daySlots.includes(slot)
+      const nextSlots = wasOpen
         ? daySlots.filter((item) => item !== slot)
         : [...daySlots, slot];
       return { ...current, [day]: nextSlots };
     });
-    flash(`${day} at ${slot} ${availability[day].includes(slot) ? "closed" : "opened"}`);
+    flash(
+      `${day} at ${slot} ${availability[day].includes(slot) ? "closed" : "opened"}`,
+    );
   }
 
-  function handleSave() {
-    saveTherapistAvailability(DEMO_THERAPIST_AVAILABILITY_ID, availability);
-    flash("Availability saved — members can book these slots");
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await saveMyAvailability(availability);
+      flash("Availability saved — patients can book these slots");
+    } catch (error) {
+      flash(
+        error instanceof Error ? error.message : "Couldn't save availability",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
-  if (!hydrated) {
+  if (loading) {
     return (
       <TherapistAppShell
         active="Availability"
@@ -65,24 +106,28 @@ export function TherapistAvailabilityView() {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-munity-text">Weekly schedule</h2>
+              <h2 className="text-lg font-semibold text-munity-text">
+                Weekly schedule
+              </h2>
               <LivePulse label="Updating" />
             </div>
             <p className="mt-1 text-sm text-munity-muted">
-              Tap a slot to open or close it. Saved hours appear when members book with you.
+              Tap a slot to open or close it. Saved hours appear when members
+              book with you.
             </p>
           </div>
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
+            disabled={saving}
             className="rounded-xl bg-munity-green px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
           >
-            Save availability
+            {saving ? "Saving…" : "Save availability"}
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <div className="min-w-[720px]">
+          <div className="min-w-180">
             <div className="mb-3 grid grid-cols-[100px_repeat(7,minmax(0,1fr))] gap-2">
               <div />
               {weekDays.map((day) => (

@@ -40,6 +40,11 @@ export function CredentialVerificationSidebar({
 }: CredentialVerificationSidebarProps) {
   const { isStepComplete, progressPercent, refresh } = useOnboardingProgress();
   const [reviewLive, setReviewLive] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     function sync() {
@@ -95,7 +100,7 @@ export function CredentialVerificationSidebar({
             );
           }
 
-          if (isStepComplete(step.id)) {
+          if (mounted && isStepComplete(step.id)) {
             const isActive = activeTab === step.id;
             return (
               <button

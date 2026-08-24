@@ -97,10 +97,33 @@ export default function BasicInfoPage() {
         const formData = new FormData(form);
         const nextEmail = String(formData.get("email") || "").trim();
 
-        const result = await createTherapistAccount(formData);
-        if (result?.error) {
-          setAccountError(result.error);
-          return false;
+        // If this browser already created an account for this email (e.g. the
+        // therapist signed up at /therapistsignup first), don't call signUp
+        // again — Supabase would reject the duplicate with "User already
+        // registered" and block the onboarding step.
+        let alreadyCreated = false;
+        try {
+          const stored = localStorage.getItem(CREDENTIALS_STORAGE_KEY);
+          if (stored) {
+            const parsed = JSON.parse(stored) as { email?: string };
+            alreadyCreated =
+              parsed?.email?.toLowerCase() === nextEmail.toLowerCase();
+          }
+        } catch {
+          // Ignore unreadable storage and fall through to account creation.
+        }
+
+        if (!alreadyCreated) {
+          const result = await createTherapistAccount(formData);
+          if (result?.error) {
+            // The account already exists in Supabase even though our local
+            // marker is missing — treat that as "created" rather than an error.
+            if (!/already registered/i.test(result.error)) {
+              setAccountError(result.error);
+              return false;
+            }
+            alreadyCreated = true;
+          }
         }
 
         try {

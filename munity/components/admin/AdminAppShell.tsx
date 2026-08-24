@@ -15,7 +15,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "@/lib/auth/actions";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { NotificationsMenu, ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { routes } from "@/lib/routes";
@@ -66,7 +66,7 @@ export function AdminAppShell({
   return (
     <LiveToastProvider>
     <div className="min-h-screen bg-munity-bg">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] px-4 py-4 lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-[rgba(197,200,184,0.3)] bg-munity-sidebar px-4 py-4 lg:flex">
         <Link href={routes.admin} className="mb-8 block px-4 pt-2">
           <p className="text-2xl font-bold leading-tight text-munity-green">Munity</p>
           <p className="text-xs font-medium text-munity-muted">Nurtured Stability</p>
@@ -85,7 +85,7 @@ export function AdminAppShell({
                     : "text-munity-muted hover:bg-white/70"
                 }`}
               >
-                <Icon className="size-[18px]" />
+                <Icon className="size-4.5" />
                 {label}
               </Link>
             );
@@ -106,7 +106,7 @@ export function AdminAppShell({
           <h1 className="shrink-0 text-xl font-bold text-munity-green md:text-2xl">{title}</h1>
           {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
           <div className="relative ml-auto hidden sm:block">
-            <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-gray-500" />
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-gray-500" />
             <input
               type="search"
               value={search}
@@ -116,7 +116,7 @@ export function AdminAppShell({
                 else setInternalSearch(next);
               }}
               placeholder={searchPlaceholder}
-              className="h-9 w-56 rounded-full bg-[#f5f3f3] py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-gray-500 md:w-72"
+              className="h-9 w-56 rounded-full bg-munity-sidebar py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-gray-500 md:w-72"
             />
           </div>
           <NotificationsMenu role="admin" />

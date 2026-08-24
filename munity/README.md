@@ -25,7 +25,7 @@ Mental wellness · peer support · licensed therapy
 **Munity** connects people with peer communities, curated wellness resources, and licensed therapists — with a calm olive/sage clinical UI.
 
 | 👤 Members | 🩺 Therapists | 🛡️ Admins |
-|:---:|:---:|:---:|
+| :---: | :---: | :---: |
 | Feed, communities, therapy, resources, messages | Onboarding, dashboard, patients, notes, sessions | Reviews, moderation, growth, platform overview |
 | `/login` → `/home` | `/therapistlogin` → `/therapistdashboard` | `/admin/login` → `/admin` |
 
@@ -40,7 +40,7 @@ Use these when Supabase is **not** configured. Login screens also show and pre-f
 ### 👤 Member
 
 | | |
-|---|---|
+| --- | --- |
 | **Name** | Alex Rivera |
 | **Email** | `alex.rivera@munity.app` |
 | **Password** | `User1234!` |
@@ -49,14 +49,14 @@ Use these when Supabase is **not** configured. Login screens also show and pre-f
 | **Access** | Member experience only |
 
 ```text
-Email:    alex.rivera@munity.app
-Password: User1234!
+Email:    example@gmail.com
+Password: 123456ab
 ```
 
 ### 🩺 Therapist
 
 | | |
-|---|---|
+| --- | --- |
 | **Name** | Dr. Elena Aris |
 | **Email** | `elena.aris@munity.app` |
 | **Password** | `Therapist1234!` |
@@ -65,14 +65,14 @@ Password: User1234!
 | **Access** | Therapist clinical app |
 
 ```text
-Email:    elena.aris@munity.app
-Password: Therapist1234!
+Email:    therapist1@gmail.com
+Password: therapist123
 ```
 
 ### 🛡️ Admin
 
 | | |
-|---|---|
+| --- | --- |
 | **Name** | Munity Admin |
 | **Email** | `admin@munity.app` |
 | **Password** | `Admin1234!` |
@@ -81,7 +81,7 @@ Password: Therapist1234!
 | **Access** | Admin console |
 
 ```text
-Email:    admin@munity.app
+Email:    admin2@gmail.com
 Password: Admin1234!
 ```
 
@@ -106,7 +106,7 @@ npm run dev
 Open **[http://localhost:3000](http://localhost:3000)** 🌿
 
 | Command | What it does |
-|---------|----------------|
+| --------- | ---------------- |
 | `npm run dev` | 🔥 Dev server (Turbopack) |
 | `npm run build` | 📦 Production build |
 | `npm start` | ▶️ Serve production build |
@@ -134,7 +134,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### Palette
 
 | Token | Hex | Swatch |
-|-------|-----|--------|
+| ------- | ----- | -------- |
 | `munity-green` | `#3E5219` | 🟢 Deep olive |
 | `munity-lime` | `#D6E7A1` | 🟡 Soft lime |
 | `munity-bg` | `#FBF9F8` | ⬜ Warm paper |
@@ -144,7 +144,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### Built with
 
 | Layer | Choice |
-|-------|--------|
+| ------- | -------- |
 | ⚛️ UI | Next.js 16 · React 19 · TypeScript |
 | 🎨 Style | Tailwind CSS 4 · Framer Motion · Lucide |
 | 🔐 Auth | Supabase (optional) · mock session cookie |
@@ -159,7 +159,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### 👤 Members
 
 | Path | Feature |
-|------|---------|
+| ------ | --------- |
 | `/` | 🏠 Marketing landing |
 | `/login` · `/signup` | 🔐 Auth (sets mock session in preview) |
 | `/home` | 📰 Feed with search, mood check-in, composer, bookmark/save (auth) |
@@ -184,7 +184,7 @@ Join → Onboarding (4 steps) → Review screen → Clinical app
 ```
 
 | Step | Path |
-|------|------|
+| ------ | ------ |
 | 1️⃣ Basic info | `/therapistonboarding/basic-info` |
 | 2️⃣ Credentials | `/therapistonboarding/credentials` |
 | 3️⃣ Specialties | `/therapistonboarding/specialties` |
@@ -207,7 +207,7 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 ### 🛡️ Admins
 
 | Path | Feature |
-|------|---------|
+| ------ | --------- |
 | `/admin/login` | Admin sign-in |
 | `/admin` | Platform overview |
 | `/admin/moderation` | Report queue with search (warn / remove / suspend / dismiss) |
@@ -218,7 +218,7 @@ Ghana-specific catalogs (licenses, regions, MoMo, banks): `lib/ghana-therapist.t
 ### 🔌 Preview data layer
 
 | File | Role |
-|------|------|
+| ------ | ------ |
 | `lib/mock-db.ts` | Seed posts, communities, therapists, chats, reports, bookings |
 | `lib/mock-store.ts` | Client mutations + `localStorage` (`munity-mock-store-v2`) |
 | `lib/mock-credentials.ts` · `lib/mock-session.ts` | Role-scoped demo auth cookie |
@@ -270,7 +270,7 @@ Therapist profile edits
 ### `mockStore` → API map
 
 | `mockStore` method | Domain | Suggested endpoint / table |
-|--------------------|--------|----------------------------|
+| -------------------- | -------- | ---------------------------- |
 | `createPost` / `toggleSupport` / `addComment` | Feed | `posts`, `post_supports`, `comments` |
 | `toggleSavedPost` / `toggleSavedResource` | Saved | `saved_posts`, `saved_resources` |
 | `setMood` / `saveDailyReflection` | Wellness | `mood_entries`, `daily_reflections` |
@@ -286,7 +286,7 @@ Types already live on the seed records in `lib/mock-db.ts` — treat those as th
 ### Auth migration
 
 | Today (preview) | Target |
-|-----------------|--------|
+| ----------------- | -------- |
 | `findMockAccount` / `setMockSession` in login actions | `supabase.auth.signInWithPassword` (already branched when env is set) |
 | `munity-mock-session` cookie | Supabase session cookies only |
 | `enforceMockAuth` in middleware | Role checks from `profiles.role` after `getUser()` |
@@ -314,7 +314,7 @@ Also clear the `munity-mock-session` cookie (Application → Cookies) or sign ou
 Delete only after the matching domain is served from the backend:
 
 | Remove | Replaced by |
-|--------|-------------|
+| -------- | ------------- |
 | `lib/mock-db.ts` | Database seed migrations / fixtures |
 | `lib/mock-store.ts` | API client + server actions |
 | `lib/mock-credentials.ts` | Real users + role column |
@@ -406,16 +406,16 @@ Prefer `routes` from `lib/routes.ts` over hard-coded paths.
 ## 🔗 Local URLs
 
 | 🔗 URL | 📌 Purpose |
-|--------|------------|
-| http://localhost:3000 | Landing |
-| http://localhost:3000/login | 👤 Member login |
-| http://localhost:3000/therapistlogin | 🩺 Therapist login |
-| http://localhost:3000/admin/login | 🛡️ Admin login |
-| http://localhost:3000/resources | 📚 Resource Hub |
-| http://localhost:3000/emergency | 🆘 Crisis support |
-| http://localhost:3000/therapistdashboard | 🏥 Therapist dashboard |
-| http://localhost:3000/therapistmessages | 💬 Therapist messages |
-| http://localhost:3000/dev | 🗂️ All-screen index |
+| -------- | ------------ |
+| <http://localhost:3000> | Landing |
+| <http://localhost:3000/login> | 👤 Member login |
+| <http://localhost:3000/therapistlogin> | 🩺 Therapist login |
+| <http://localhost:3000/admin/login> | 🛡️ Admin login |
+| <http://localhost:3000/resources> | 📚 Resource Hub |
+| <http://localhost:3000/emergency> | 🆘 Crisis support |
+| <http://localhost:3000/therapistdashboard> | 🏥 Therapist dashboard |
+| <http://localhost:3000/therapistmessages> | 💬 Therapist messages |
+| <http://localhost:3000/dev> | 🗂️ All-screen index |
 
 ---
 

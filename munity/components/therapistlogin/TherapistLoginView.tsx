@@ -16,6 +16,9 @@ import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
 import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
+import { AuthActionState, signInTherapist } from "@/lib/auth/actions";
+
+const initialState: AuthActionState = {}
 
 function GoogleIcon() {
   return (
@@ -114,10 +117,11 @@ function AuthField({
 
 export function TherapistLoginView() {
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState<TherapistLoginState, FormData>(
-    signInAsTherapist,
-    undefined,
-  );
+  // const [state, formAction] = useActionState<TherapistLoginState, FormData>(
+  //   signInAsTherapist,
+  //   undefined,
+  // );
+  const [state, formAction] = useActionState(signInTherapist, initialState)
   const demoTherapist = getMockAccountByRole("therapist");
 
   return (

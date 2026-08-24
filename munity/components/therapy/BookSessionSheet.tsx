@@ -4,12 +4,10 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Calendar, Check, Clock3, X } from "lucide-react";
 import {
-  AVAILABILITY_UPDATED_EVENT,
   bookingScheduledAt,
   formatBookingWhen,
-  getUpcomingBookableDays,
-  type BookableDay,
 } from "@/lib/therapist-availability";
+import { useBookableDays } from "@/lib/therapy/availability-queries";
 
 type BookSessionSheetProps = {
   open: boolean;
@@ -19,7 +17,11 @@ type BookSessionSheetProps = {
   rate: number;
   alreadyBooked: boolean;
   latestBookingWhen?: string | null;
-  onConfirm: (booking: { when: string; scheduledAt: string }) => void;
+  submitting: boolean;
+  onConfirm: (booking: {
+    when: string;
+    scheduledAt: string;
+  }) => void | Promise<void>;
 };
 
 export function BookSessionSheet({
@@ -30,35 +32,25 @@ export function BookSessionSheet({
   rate,
   alreadyBooked,
   latestBookingWhen,
+  submitting = false,
   onConfirm,
 }: BookSessionSheetProps) {
-  const [bookableDays, setBookableDays] = useState<BookableDay[]>([]);
-  const [selectedDayKey, setSelectedDayKey] = useState<string | null>(null);
+  const {
+    bookableDays,
+    selectedDayKey,
+    setSelectedDayKey,
+    loading,
+    loadError,
+    refreshDays,
+  } = useBookableDays(therapistId, open);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
-
-  function refreshDays() {
-    const days = getUpcomingBookableDays(therapistId);
-    setBookableDays(days);
-    setSelectedDayKey((current) => {
-      if (current && days.some((day) => day.label === current)) return current;
-      return days[0]?.label ?? null;
-    });
-  }
 
   useEffect(() => {
     if (!open) return;
-    refreshDays();
-    setSelectedTime(null);
-
-    function handleUpdate(event: Event) {
-      const detail = (event as CustomEvent<{ therapistId?: string }>).detail;
-      if (detail?.therapistId && detail.therapistId !== therapistId) return;
-      refreshDays();
-    }
-
-    window.addEventListener(AVAILABILITY_UPDATED_EVENT, handleUpdate);
-    return () => window.removeEventListener(AVAILABILITY_UPDATED_EVENT, handleUpdate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const timer = window.setTimeout(() => {
+      setSelectedTime(null);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [open, therapistId]);
 
   useEffect(() => {
@@ -71,21 +63,22 @@ export function BookSessionSheet({
   }, [open, onClose]);
 
   const selectedDay =
-    bookableDays.find((day) => day.label === selectedDayKey) ?? bookableDays[0] ?? null;
+    bookableDays.find((day) => day.label === selectedDayKey) ??
+    bookableDays[0] ??
+    null;
 
-  function handleConfirm() {
-    if (!selectedDay || !selectedTime) return;
-    onConfirm({
+  async function handleConfirm() {
+    if (!selectedDay || !selectedTime || submitting) return;
+    await onConfirm({
       when: formatBookingWhen(selectedDay.label, selectedTime),
       scheduledAt: bookingScheduledAt(selectedDay.date, selectedTime),
     });
-    onClose();
   }
 
   return (
     <AnimatePresence>
       {open ? (
-        <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center">
+        <div className="fixed inset-0 z-70 flex items-end justify-center sm:items-center">
           <motion.button
             type="button"
             aria-label="Close booking sheet"
@@ -117,7 +110,9 @@ export function BookSessionSheet({
                 >
                   {therapistName}
                 </h2>
-                <p className="mt-1 text-sm text-munity-muted">₵{rate}/hr · pick an open slot</p>
+                <p className="mt-1 text-sm text-munity-muted">
+                  ${rate}/hr · pick an open slot
+                </p>
               </div>
               <button
                 type="button"
@@ -132,27 +127,53 @@ export function BookSessionSheet({
             <div className="overflow-y-auto px-5 py-5">
               {alreadyBooked && latestBookingWhen ? (
                 <div className="mb-5 flex items-start gap-3 rounded-2xl border border-munity-green/20 bg-munity-lime/40 px-4 py-3">
-                  <Check className="mt-0.5 size-4 shrink-0 text-munity-green" strokeWidth={3} />
+                  <Check
+                    className="mt-0.5 size-4 shrink-0 text-munity-green"
+                    strokeWidth={3}
+                  />
                   <div>
                     <p className="text-sm font-semibold text-munity-olive-text">
                       You already have a session booked
                     </p>
-                    <p className="mt-0.5 text-xs text-munity-muted">{latestBookingWhen}</p>
+                    <p className="mt-0.5 text-xs text-munity-muted">
+                      {latestBookingWhen}
+                    </p>
                     <p className="mt-1 text-xs text-munity-muted">
-                      You can book another open slot below if you need a follow-up.
+                      You can book another open slot below if you need a
+                      follow-up.
                     </p>
                   </div>
                 </div>
               ) : null}
 
-              {bookableDays.length === 0 ? (
+              {loading ? (
+                <div className="rounded-2xl border border-munity-border bg-munity-sidebar px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-munity-text">
+                    Loading availability…
+                  </p>
+                </div>
+              ) : loadError ? (
+                <div className="rounded-2xl border border-[#ba1a1a]/30 bg-[#fff5f5] px-4 py-8 text-center">
+                  <p className="text-sm font-semibold text-[#93000a]">
+                    {loadError}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => void refreshDays()}
+                    className="mt-2 text-xs font-semibold text-munity-green hover:underline"
+                  >
+                    Try again
+                  </button>
+                </div>
+              ) : bookableDays.length === 0 ? (
                 <div className="rounded-2xl border border-munity-border bg-munity-sidebar px-4 py-8 text-center">
                   <Calendar className="mx-auto size-8 text-munity-muted" />
                   <p className="mt-3 text-sm font-semibold text-munity-text">
                     No open hours right now
                   </p>
                   <p className="mt-1 text-xs text-munity-muted">
-                    This therapist hasn’t published availability for the coming days.
+                    This therapist hasn&apos;t published availability for the
+                    coming days.
                   </p>
                 </div>
               ) : (
@@ -160,7 +181,9 @@ export function BookSessionSheet({
                   <div>
                     <div className="mb-3 flex items-center gap-2">
                       <Calendar className="size-4 text-munity-green" />
-                      <p className="text-sm font-semibold text-munity-text">Choose a day</p>
+                      <p className="text-sm font-semibold text-munity-text">
+                        Choose a day
+                      </p>
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-1">
                       {bookableDays.map((day) => {
@@ -181,7 +204,8 @@ export function BookSessionSheet({
                           >
                             <p className="text-sm font-semibold">{day.label}</p>
                             <p className="mt-0.5 text-[11px]">
-                              {day.slots.length} slot{day.slots.length === 1 ? "" : "s"}
+                              {day.slots.length} slot
+                              {day.slots.length === 1 ? "" : "s"}
                             </p>
                           </button>
                         );
@@ -225,14 +249,16 @@ export function BookSessionSheet({
             <div className="border-t border-munity-border/70 px-5 py-4">
               <button
                 type="button"
-                disabled={!selectedDay || !selectedTime}
-                onClick={handleConfirm}
+                disabled={!selectedDay || !selectedTime || submitting}
+                onClick={() => void handleConfirm()}
                 className="flex w-full items-center justify-center gap-2 rounded-xl bg-munity-green px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <Calendar className="size-4" />
-                {selectedDay && selectedTime
-                  ? `Confirm ${selectedDay.label}, ${selectedTime}`
-                  : "Select a day and time"}
+                {submitting
+                  ? "Booking..."
+                  : selectedDay && selectedTime
+                    ? `Confirm ${selectedDay.label}, ${selectedTime}`
+                    : "Select a day and time"}
               </button>
             </div>
           </motion.div>

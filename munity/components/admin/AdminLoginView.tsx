@@ -4,12 +4,14 @@ import { useActionState, useState } from "react";
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { signInAsAdmin, type AdminLoginState } from "@/app/admin/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
 import { routes } from "@/lib/routes";
+import { signInAdmin, type AuthActionState } from "@/lib/auth/actions";
+
+const initialState: AuthActionState = {};
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -27,10 +29,7 @@ function LoginButton() {
 
 export function AdminLoginView() {
   const [showPassword, setShowPassword] = useState(false);
-  const [state, formAction] = useActionState<AdminLoginState, FormData>(
-    signInAsAdmin,
-    undefined,
-  );
+  const [state, formAction] = useActionState(signInAdmin, initialState);
 
   return (
     <AuthShell
@@ -53,7 +52,7 @@ export function AdminLoginView() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-6">
+      <div className="flex w-full max-w-120 flex-col gap-6">
         <AuthBrandHeader
           title="Admin Console"
           subtitle="Sign in to manage the Munity platform"
@@ -71,7 +70,10 @@ export function AdminLoginView() {
 
           <form action={formAction} className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
-              <label htmlFor="email" className="px-1 text-sm font-semibold tracking-wide text-munity-text">
+              <label
+                htmlFor="email"
+                className="px-1 text-sm font-semibold tracking-wide text-munity-text"
+              >
                 Email Address
               </label>
               <div className="relative">
@@ -90,7 +92,10 @@ export function AdminLoginView() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <label htmlFor="password" className="px-1 text-sm font-semibold tracking-wide text-munity-text">
+              <label
+                htmlFor="password"
+                className="px-1 text-sm font-semibold tracking-wide text-munity-text"
+              >
                 Password
               </label>
               <div className="relative">
@@ -111,11 +116,15 @@ export function AdminLoginView() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-munity-gray transition-colors hover:text-munity-green"
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
             </div>
-
+{state.error ? <p>{state.error}</p> : null}
             <LoginButton />
           </form>
         </div>

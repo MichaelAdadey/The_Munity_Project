@@ -24,112 +24,93 @@ import {
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { assets } from "@/lib/assets";
-import { patientRoutes, routes } from "@/lib/routes";
+import { routes } from "@/lib/routes";
 
-const stats = [
-  {
-    label: "Upcoming Sessions",
-    value: "08",
-    meta: "+2 from yesterday",
-    metaClass: "text-munity-muted",
-    icon: Calendar,
-    iconWrap: "bg-munity-lime/40 text-munity-green",
-  },
-  {
-    label: "Pending Requests",
-    value: "03",
-    meta: "Requires Action",
-    metaClass: "text-[#56642b]",
-    icon: ClipboardList,
-    iconWrap: "bg-[#e4e4cc] text-[#474836]",
-  },
-  {
-    label: "Completed This Week",
-    value: "24",
-    meta: "88% Completion",
-    metaClass: "text-munity-muted",
-    icon: CheckCircle2,
-    iconWrap: "bg-munity-green/10 text-munity-green",
-  },
-  {
-    label: "Average Rating",
-    value: "4.92",
-    meta: "Top Rated",
-    metaClass: "text-munity-green",
-    icon: Star,
-    iconWrap: "bg-munity-lime/50 text-munity-olive-text",
-  },
-] as const;
+export type DashboardStats = {
+  upcomingSessions: number;
+  pendingRequests: number;
+  completedThisWeek: number;
+  averageRating: number | null;
+};
 
-const todaysSchedule = [
-  {
-    name: "Marcus Thorne",
-    patientId: "#MT-82",
-    type: "Video Session",
-    typeIcon: Video,
-    time: "02:00 PM – 02:50 PM",
-    action: "Join Session",
-    kind: "video" as const,
-    avatar: assets.avatars.alex,
-  },
-  {
-    name: "Sarah Jenkins",
-    patientId: "#SJ-41",
-    type: "Text Consultation",
-    typeIcon: MessageSquare,
-    time: "04:30 PM – 05:00 PM",
-    action: "Open Chat",
-    kind: "chat" as const,
-    avatar: assets.avatars.elena,
-  },
-] as const;
+export type ScheduleItem = {
+  bookingId: string;
+  name: string;
+  patientId: string;
+  type: "video" | "chat";
+  time: string;
+};
 
-const recentPatients = [
-  {
-    name: "Leo Richards",
-    detail: "Last active: 2h ago",
-    status: "online" as const,
-    avatar: assets.avatars.leo,
-    href: patientRoutes("leo-richards").overview,
-  },
-  {
-    name: "Chloe Bennett",
-    detail: "Active journal entry",
-    status: "away" as const,
-    avatar: assets.avatars.elena,
-    href: patientRoutes("elena-rodriguez").overview,
-  },
-  {
-    name: "Julian Vance",
-    detail: "Last session: 3 days ago",
-    status: "offline" as const,
-    avatar: assets.avatars.alex,
-    href: patientRoutes("alex-mercer").overview,
-  },
-];
+export type RecentPatientItem = {
+  patientId: string;
+  name: string;
+  lastSession: string;
+};
 
-const statusDotClass = {
-  online: "bg-[#22c55e]",
-  away: "bg-[#fbbf24]",
-  offline: "bg-[#9ca3af]",
-} as const;
+interface TherapistDashboardViewProps {
+  therapistName: string;
+  stats: DashboardStats;
+  todaysSchedule: ScheduleItem[];
+  recentPatients: RecentPatientItem[];
+}
 
-export function TherapistDashboardView() {
+export function TherapistDashboardView({
+  therapistName,
+  stats,
+  todaysSchedule,
+  recentPatients,
+}: TherapistDashboardViewProps) {
   const { flash } = useLiveToast();
   const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
   const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
 
-  function startSession(session: (typeof todaysSchedule)[number]) {
+  const statCards = [
+    {
+      label: "Upcoming Sessions",
+      value: String(stats.upcomingSessions).padStart(2, "0"),
+      meta: "Scheduled",
+      metaClass: "text-munity-muted",
+      icon: Calendar,
+      iconWrap: "bg-munity-lime/40 text-munity-green",
+    },
+    {
+      label: "Pending Requests",
+      value: String(stats.pendingRequests).padStart(2, "0"),
+      meta: stats.pendingRequests > 0 ? "Requires Action" : "All caught up",
+      metaClass: "text-[#56642b]",
+      icon: ClipboardList,
+      iconWrap: "bg-[#e4e4cc] text-[#474836]",
+    },
+    {
+      label: "Completed This Week",
+      value: String(stats.completedThisWeek).padStart(2, "0"),
+      meta: "Last 7 days",
+      metaClass: "text-munity-muted",
+      icon: CheckCircle2,
+      iconWrap: "bg-munity-green/10 text-munity-green",
+    },
+    {
+      label: "Average Rating",
+      value: stats.averageRating != null ? stats.averageRating.toFixed(2) : "—",
+      meta: stats.averageRating != null ? "Patient reviews" : "No reviews yet",
+      metaClass: "text-munity-green",
+      icon: Star,
+      iconWrap: "bg-munity-lime/50 text-munity-olive-text",
+    },
+  ] as const;
+
+  function startSession(session: ScheduleItem) {
     setActivePatient({
+      patientUuid: session.patientId,
       name: session.name,
-      patientId: session.patientId,
-      avatar: session.avatar,
+      patientId: `#${session.patientId.slice(0, 6).toUpperCase()}`,
+      avatar: assets.avatars.alex,
       time: session.time,
-      type: session.type,
+      type: session.type === "video" ? "Video Session" : "Text Consultation",
     });
-    setActiveKind(session.kind);
+    setActiveKind(session.type);
     flash(
-      session.kind === "video"
+      session.type === "video"
         ? `Joining video session with ${session.name}`
         : `Opening chat with ${session.name}`,
     );
@@ -138,9 +119,11 @@ export function TherapistDashboardView() {
   return (
     <TherapistAppShell
       active="Dashboard"
-      title="Welcome back, Dr. Aris"
+      title={`Welcome back, ${therapistName}`}
       subtitle="Here's an overview of your schedule today."
     >
+      {/* NOTE: this crisis-alert banner is still placeholder content — wiring it to
+          real patient check-ins/distress flags is a separate feature not yet built. */}
       <section className="flex flex-col gap-3 rounded-2xl border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.4)] p-4 sm:flex-row sm:items-start sm:gap-4">
         <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#93000a]" />
         <div className="min-w-0 flex-1">
@@ -148,28 +131,20 @@ export function TherapistDashboardView() {
             Urgent: Patient Crisis Flag
           </h2>
           <p className="mt-1 text-xs font-medium leading-relaxed text-munity-muted">
-            Marcus Thorne has flagged high distress in their morning check-in. Review their recent
-            logs before your 2:00 PM session.
+            This alert is a placeholder — real check-in/distress flagging isn&apos;t built yet.
           </p>
         </div>
-        <Link
-          href={patientRoutes("alex-mercer").progress}
-          className="shrink-0 text-sm font-semibold tracking-wide text-munity-green hover:underline"
-        >
-          View Log
-        </Link>
       </section>
 
       <LiveTicker
         items={[
-          "Marcus completed a morning check-in · distress flag needs review.",
-          "A weekly summary is ready for your clinical review.",
-          "Leo Richards opened today’s workplace stress worksheet.",
+          `${stats.pendingRequests} pending booking request${stats.pendingRequests === 1 ? "" : "s"} awaiting your response.`,
+          `${stats.upcomingSessions} upcoming session${stats.upcomingSessions === 1 ? "" : "s"} on your calendar.`,
         ]}
       />
 
       <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat, index) => {
+        {statCards.map((stat, index) => {
           const Icon = stat.icon;
           return (
             <motion.article
@@ -199,7 +174,7 @@ export function TherapistDashboardView() {
           <div className="flex items-center justify-between border-b border-munity-input-border px-6 py-6">
             <div className="flex items-center gap-3">
               <h2 className="text-2xl font-semibold text-munity-text">Today&apos;s Schedule</h2>
-              <LivePulse label="2 today" />
+              <LivePulse label={`${todaysSchedule.length} today`} />
             </div>
             <Link
               href={routes.therapistAppointments}
@@ -210,60 +185,66 @@ export function TherapistDashboardView() {
           </div>
 
           <div>
-            {todaysSchedule.map((session, index) => {
-              const TypeIcon = session.typeIcon;
-              return (
-                <motion.div
-                  key={session.patientId}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.1 + index * 0.05 }}
-                  className={`flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:gap-6 ${
-                    index > 0 ? "border-t border-munity-input-border" : ""
-                  }`}
-                >
-                  <div className="flex min-w-[200px] items-center gap-4">
-                    <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
-                      <Image
-                        src={session.avatar}
-                        alt={session.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold tracking-wide text-munity-text">
-                        {session.name}
-                      </p>
-                      <p className="text-xs font-medium text-munity-muted">
-                        Patient ID: {session.patientId}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-1 flex-wrap items-center gap-6 sm:gap-8">
-                    <div className="flex items-center gap-2 text-munity-muted">
-                      <TypeIcon className="size-3.5 shrink-0" />
-                      <span className="text-xs font-medium leading-snug">{session.type}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="size-3.5 shrink-0 text-munity-muted" />
-                      <span className="text-sm font-semibold tracking-wide text-munity-text">
-                        {session.time}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => startSession(session)}
-                    className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+            {todaysSchedule.length === 0 ? (
+              <p className="p-6 text-sm text-munity-muted">No sessions scheduled for today.</p>
+            ) : (
+              todaysSchedule.map((session, index) => {
+                const TypeIcon = session.type === "video" ? Video : MessageSquare;
+                return (
+                  <motion.div
+                    key={session.bookingId}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 + index * 0.05 }}
+                    className={`flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:gap-6 ${
+                      index > 0 ? "border-t border-munity-input-border" : ""
+                    }`}
                   >
-                    {session.action}
-                  </button>
-                </motion.div>
-              );
-            })}
+                    <div className="flex min-w-50 items-center gap-4">
+                      <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
+                        <Image
+                          src={assets.avatars.alex}
+                          alt={session.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold tracking-wide text-munity-text">
+                          {session.name}
+                        </p>
+                        <p className="text-xs font-medium text-munity-muted">
+                          Patient ID: #{session.patientId.slice(0, 6).toUpperCase()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-1 flex-wrap items-center gap-6 sm:gap-8">
+                      <div className="flex items-center gap-2 text-munity-muted">
+                        <TypeIcon className="size-3.5 shrink-0" />
+                        <span className="text-xs font-medium leading-snug">
+                          {session.type === "video" ? "Video Session" : "Text Consultation"}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Clock className="size-3.5 shrink-0 text-munity-muted" />
+                        <span className="text-sm font-semibold tracking-wide text-munity-text">
+                          {session.time}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => startSession(session)}
+                      className="inline-flex shrink-0 items-center justify-center rounded-xl bg-munity-green px-6 py-2.5 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+                    >
+                      {session.type === "video" ? "Join Session" : "Open Chat"}
+                    </button>
+                  </motion.div>
+                );
+              })
+            )}
           </div>
         </section>
 
@@ -273,40 +254,45 @@ export function TherapistDashboardView() {
               Recent Patients
             </h2>
             <div className="mt-6 flex flex-col gap-6">
-              {recentPatients.map((patient) => (
-                <div key={patient.name} className="flex items-center justify-between gap-3">
-                  <Link href={patient.href} className="flex min-w-0 items-center gap-3">
-                    <div className="relative shrink-0">
-                      <div className="relative size-10 overflow-hidden rounded-full">
-                        <Image
-                          src={patient.avatar}
-                          alt={patient.name}
-                          fill
-                          className="object-cover"
-                        />
+              {recentPatients.length === 0 ? (
+                <p className="text-sm text-munity-muted">No patients yet.</p>
+              ) : (
+                recentPatients.map((patient) => (
+                  <div key={patient.patientId} className="flex items-center justify-between gap-3">
+                    <Link
+                      href={routes.therapistPatients}
+                      className="flex min-w-0 items-center gap-3"
+                    >
+                      <div className="relative shrink-0">
+                        <div className="relative size-10 overflow-hidden rounded-full">
+                          <Image
+                            src={assets.avatars.alex}
+                            alt={patient.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <span className="absolute bottom-0 right-0 size-3 rounded-full border-2 border-munity-bg bg-[#9ca3af]" />
                       </div>
-                      <span
-                        className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-munity-bg ${statusDotClass[patient.status]}`}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold tracking-wide text-munity-text">
-                        {patient.name}
-                      </p>
-                      <p className="truncate text-xs font-medium text-munity-muted">
-                        {patient.detail}
-                      </p>
-                    </div>
-                  </Link>
-                  <button
-                    type="button"
-                    className="rounded-lg p-1 text-munity-muted transition hover:bg-munity-bg hover:text-munity-green"
-                    aria-label={`More options for ${patient.name}`}
-                  >
-                    <MoreVertical className="size-4" />
-                  </button>
-                </div>
-              ))}
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold tracking-wide text-munity-text">
+                          {patient.name}
+                        </p>
+                        <p className="truncate text-xs font-medium text-munity-muted">
+                          Last session: {patient.lastSession}
+                        </p>
+                      </div>
+                    </Link>
+                    <button
+                      type="button"
+                      className="rounded-lg p-1 text-munity-muted transition hover:bg-munity-bg hover:text-munity-green"
+                      aria-label={`More options for ${patient.name}`}
+                    >
+                      <MoreVertical className="size-4" />
+                    </button>
+                  </div>
+                ))
+              )}
             </div>
             <Link
               href={routes.therapistPatients}
@@ -316,11 +302,11 @@ export function TherapistDashboardView() {
             </Link>
           </section>
 
+          {/* NOTE: still placeholder — AI-generated weekly summaries aren't built yet. */}
           <section className="rounded-[20px] bg-munity-lime/35 p-6">
             <h2 className="text-base font-semibold text-munity-text">Weekly Summary Report</h2>
             <p className="mt-2 text-sm leading-relaxed text-munity-muted">
-              Your AI-assisted progress summaries for all 12 patients this week are ready for final
-              review.
+              AI-assisted progress summaries are a planned feature — not connected yet.
             </p>
             <Link
               href={routes.therapistAnalytics}

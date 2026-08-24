@@ -5,9 +5,10 @@ import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { setMockSession } from "@/lib/mock-session";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { createClient } from "@/lib/supabase/server";
+import { authErrorMessage } from "@/lib/auth/error-messages";
 import { routes } from "@/lib/routes";
 
-export type TherapistSignupState = { error?: string } | undefined;
+export type TherapistSignupState = { error?: string; success?: string } | undefined;
 
 const therapistOnboardingPath = routes.therapistOnboarding.basicInfo;
 
@@ -37,16 +38,33 @@ export async function createTherapistAccount(
 
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       data: { role: "therapist" },
-      emailRedirectTo: `${siteUrl}${therapistOnboardingPath}`,
+      emailRedirectTo: `${siteUrl}/auth/callback?next=${encodeURIComponent(therapistOnboardingPath)}`,
     },
   });
 
-  if (error) return { error: error.message };
+  if (error) {
+    return {
+      error: authErrorMessage(
+        error,
+        "Signup failed. Supabase could not save the new user — check your Supabase Auth/Postgres logs (this is usually the on_auth_user_created trigger on auth.users or a constraint on public.profiles).",
+      ),
+    };
+  }
+
+  // If email confirmation is ON, there's no session yet — the therapist
+  // must check their inbox and click the link before onboarding can start.
+  if (!data.session) {
+    return {
+      success:
+        "Account created. Check your email to confirm your address, then log back in to continue onboarding.",
+    };
+  }
+
   return undefined;
 }
 
@@ -56,6 +74,7 @@ export async function signUpAsTherapist(
 ): Promise<TherapistSignupState> {
   const result = await createTherapistAccount(formData);
   if (result?.error) return result;
+  if (result?.success) return result;
   redirect(therapistOnboardingPath);
 }
 
