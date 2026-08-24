@@ -162,7 +162,7 @@ export function TherapistLoginView() {
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10 py-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
-            <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800">
+            <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <span>{state.error}</span>
             </div>

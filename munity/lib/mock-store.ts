@@ -15,6 +15,8 @@ import {
   seedSessionNotes,
   seedSettings,
   seedSupportedPostIds,
+  seedTherapistChats,
+  seedTherapistMessages,
   seedTherapists,
   type Booking,
   type BookingPriority,
@@ -26,6 +28,8 @@ import {
   type MemberSettingsState,
   type ModerationReport,
   type SessionNoteRecord,
+  type TherapistChatMessage,
+  type TherapistChatThread,
   type TherapistRecord,
 } from "@/lib/mock-db";
 
@@ -100,6 +104,8 @@ export type MockStoreState = {
   bookings: Booking[];
   chats: ChatThread[];
   messages: Record<string, ChatMessage[]>;
+  therapistChats: TherapistChatThread[];
+  therapistMessages: Record<string, TherapistChatMessage[]>;
   reports: ModerationReport[];
   sessionNotes: SessionNoteRecord[];
   savedPostIds: string[];
@@ -121,6 +127,8 @@ function createSeedState(): MockStoreState {
     bookings: structuredClone(seedBookings),
     chats: structuredClone(seedChats),
     messages: structuredClone(seedMessages),
+    therapistChats: structuredClone(seedTherapistChats),
+    therapistMessages: structuredClone(seedTherapistMessages),
     reports: structuredClone(seedReports),
     sessionNotes: structuredClone(seedSessionNotes),
     savedPostIds: [...seedSavedPostIds],
@@ -315,6 +323,84 @@ export const mockStore = {
           : post,
       ),
     }));
+  },
+  updatePost(postId: string, patch: { content?: string; image?: string | null }) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              ...(patch.content !== undefined ? { content: patch.content.trim() } : {}),
+              ...(patch.image !== undefined ? { image: patch.image } : {}),
+              edited: true,
+            }
+          : post,
+      ),
+    }));
+  },
+  deletePost(postId: string) {
+    setState((prev) => {
+      const commentsByPost = { ...prev.commentsByPost };
+      delete commentsByPost[postId];
+      return {
+        ...prev,
+        posts: prev.posts.filter((post) => post.id !== postId),
+        savedPostIds: prev.savedPostIds.filter((id) => id !== postId),
+        supportedPostIds: prev.supportedPostIds.filter((id) => id !== postId),
+        commentsByPost,
+      };
+    });
+  },
+  archivePost(postId: string) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId ? { ...post, archived: true } : post,
+      ),
+      // Archived posts move into Saved Posts rather than disappearing entirely.
+      savedPostIds: prev.savedPostIds.includes(postId)
+        ? prev.savedPostIds
+        : [...prev.savedPostIds, postId],
+    }));
+  },
+  unarchivePost(postId: string) {
+    setState((prev) => ({
+      ...prev,
+      posts: prev.posts.map((post) =>
+        post.id === postId ? { ...post, archived: false } : post,
+      ),
+      // Intentionally leaves savedPostIds untouched: if the post was also
+      // explicitly saved, it should stay saved after returning to the feed.
+    }));
+  },
+  reportPost(postId: string, reason: string) {
+    const post = state.posts.find((item) => item.id === postId);
+    if (!post) return null;
+    const report: ModerationReport = {
+      id: `r-${Date.now()}`,
+      reporter: state.profile.fullName,
+      reporterInitials: state.profile.fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase(),
+      target: post.anonymous ? "Anonymous Member" : post.author,
+      targetSnippet: post.content.slice(0, 140),
+      reason,
+      reasonTone: "neutral",
+      status: "Pending",
+      severity: "LOW",
+      caseContent: post.content,
+      postedIn: post.communityName ?? "Home feed",
+      postedAgo: post.time,
+      sentiment: "Under review",
+      prevFlags: 0,
+      reporterTrust: 90,
+      createdAt: new Date().toISOString(),
+    };
+    setState((prev) => ({ ...prev, reports: [report, ...prev.reports] }));
+    return report;
   },
   toggleSavedPost(postId: string) {
     setState((prev) => ({
@@ -555,6 +641,35 @@ export const mockStore = {
       ),
     }));
   },
+  sendTherapistMessage(chatId: string, content: string) {
+    const trimmed = content.trim();
+    if (!trimmed) return;
+    const message: TherapistChatMessage = {
+      id: `m-${Date.now()}`,
+      kind: "text",
+      from: "me",
+      content: trimmed,
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+    };
+    setState((prev) => {
+      const thread = prev.therapistMessages[chatId] ?? [];
+      return {
+        ...prev,
+        therapistMessages: { ...prev.therapistMessages, [chatId]: [...thread, message] },
+        therapistChats: prev.therapistChats.map((chat) =>
+          chat.id === chatId ? { ...chat, preview: trimmed, time: "now", unread: false } : chat,
+        ),
+      };
+    });
+  },
+  markTherapistChatRead(chatId: string) {
+    setState((prev) => ({
+      ...prev,
+      therapistChats: prev.therapistChats.map((chat) =>
+        chat.id === chatId ? { ...chat, unread: false } : chat,
+      ),
+    }));
+  },
   resolveReport(
     reportId: string,
     resolution: string,
@@ -611,6 +726,14 @@ export const mockStore = {
       sessionNotes: [record, ...prev.sessionNotes],
     }));
     return record;
+  },
+  updateSessionNote(id: string | number, patch: Partial<Omit<SessionNoteRecord, "id" | "createdAt">>) {
+    setState((prev) => ({
+      ...prev,
+      sessionNotes: prev.sessionNotes.map((note) =>
+        note.id === id ? { ...note, ...patch } : note
+      ),
+    }));
   },
   updateSettings(patch: Partial<MemberSettingsState>) {
     setState((prev) => ({

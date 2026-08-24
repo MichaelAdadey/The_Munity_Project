@@ -55,7 +55,7 @@ export function TherapistCard({ therapist }: { therapist: Therapist }) {
 
       <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
         <div>
-          <span className="font-semibold">${therapist.hourly_rate}</span>
+          <span className="font-semibold">₵{therapist.hourly_rate}</span>
           <span className="text-sm text-muted-foreground">/session</span>
         </div>
         <Button asChild size="sm" className="rounded-full">

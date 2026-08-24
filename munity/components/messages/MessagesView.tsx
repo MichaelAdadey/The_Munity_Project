@@ -12,18 +12,14 @@ import {
   Calendar,
   ImageIcon,
   Mic,
-  MicOff,
-  Minimize2,
-  Maximize2,
   Phone,
-  PhoneOff,
   Plus,
   SquarePen,
   Send,
   Video,
-  VideoOff,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { mockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
@@ -35,16 +31,6 @@ import {
 } from "@/lib/messages/client-queries";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
-type CallMode = "voice" | "video";
-type CallPhase = "connecting" | "connected";
-
-function formatCallDuration(seconds: number) {
-  const mins = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const secs = (seconds % 60).toString().padStart(2, "0");
-  return `${mins}:${secs}`;
-}
 
 export function MessagesView() {
   // const store = useMockStore();
@@ -63,12 +49,7 @@ export function MessagesView() {
   const [filter, setFilter] = useState<ChatFilter>("All");
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
-  const [callMode, setCallMode] = useState<CallMode | null>(null);
-  const [callPhase, setCallPhase] = useState<CallPhase>("connecting");
-  const [callSeconds, setCallSeconds] = useState(0);
-  const [muted, setMuted] = useState(false);
-  const [cameraOff, setCameraOff] = useState(false);
-  const [callMinimized, setCallMinimized] = useState(false);
+  const call = useCallSession();
 
   useEffect(() => {
     const therapistId = searchParams.get("therapist");
@@ -182,7 +163,7 @@ export function MessagesView() {
   }
 
   function startCall(mode: CallMode) {
-    setCallMode(mode);
+    call.start(mode);
     flash(
       mode === "video"
         ? `Starting video call with ${activeChat.name}`

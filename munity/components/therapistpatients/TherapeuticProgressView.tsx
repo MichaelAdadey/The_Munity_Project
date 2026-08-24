@@ -82,8 +82,83 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
   const { withLoading } = useLoading();
   const { flash } = useLiveToast();
   const [dateRange, setDateRange] = useState("Last 6 Months");
+  const [exportOpen, setExportOpen] = useState(false);
   const avatar = assets.avatars[patient.avatarKey];
   const maxThemeCount = themes[0]?.count ?? 1;
+
+  function buildProgressHTML() {
+    return `
+      <div style="font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial;padding:20px;color:#21311b;">
+        <h1 style="color:#3e5219;">Progress Report for ${patient.name}</h1>
+        <p><strong>Period:</strong> ${dateRange}</p>
+        <h2>Summary Stats</h2>
+        <ul>
+          ${summaryStats.map((s) => `<li><strong>${s.label}:</strong> ${s.value} (${s.detail})</li>`).join("")}
+        </ul>
+        <h2>Key Themes</h2>
+        <ul>
+          ${themes.map((t) => `<li>${t.label}: ${t.count} mentions</li>`).join("")}
+        </ul>
+        <h2>Key Shifts</h2>
+        <ul>
+          ${keyShifts.map((k) => `<li>${k.positive ? "✓" : "○"} ${k.text}</li>`).join("")}
+        </ul>
+      </div>
+    `;
+  }
+
+  function buildProgressPlainText() {
+    return [
+      `Progress Report for ${patient.name}`,
+      `Period: ${dateRange}`,
+      "",
+      "Summary Stats:",
+      ...summaryStats.map((s) => `- ${s.label}: ${s.value} (${s.detail})`),
+      "",
+      "Key Themes:",
+      ...themes.map((t) => `- ${t.label}: ${t.count} mentions`),
+      "",
+      "Key Shifts:",
+      ...keyShifts.map((k) => `${k.positive ? "✓" : "○"} ${k.text}`),
+    ].join("\n");
+  }
+
+  function exportReportAsPDF() {
+    if (typeof window === "undefined") return;
+    const content = buildProgressHTML();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Progress Report</title><style>body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#21311b;}h1{color:#3e5219;}h2{margin-top:16px;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url);
+    if (w) {
+      setTimeout(() => {
+        w.print();
+      }, 250);
+    }
+  }
+
+  function exportReportAsWord() {
+    if (typeof window === "undefined") return;
+    const content = buildProgressHTML();
+    const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/><title>Progress Report</title><style>body{font-family:Calibri,sans-serif;line-height:1.5;}h1{color:#3e5219;margin-bottom:10px;}h2{margin-top:16px;margin-bottom:8px;}p{margin:6px 0;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-word" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patient.name.replace(/\\s+/g, "_")}_progress_report.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function emailReport() {
+    if (typeof window === "undefined") return;
+    const text = buildProgressPlainText();
+    const subject = `Progress Report for ${patient.name}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
+  }
 
   const linePoints = chartPoints
     .map((point, index) => {
@@ -126,17 +201,52 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <DropdownMenu value={dateRange} options={dateRanges} onChange={setDateRange} />
-                  <Button
-                    onClick={() =>
-                      withLoading(async () => {
-                        await new Promise((resolve) => setTimeout(resolve, 1000));
-                        flash("Progress report is ready to download");
-                      }, "Generating report...")
-                    }
-                  >
-                    <Download className="size-3.5" />
-                    Export report
-                  </Button>
+                  <div className="relative">
+                    <Button onClick={() => setExportOpen((s) => !s)}>
+                      <Download className="size-3.5" />
+                      Export report
+                    </Button>
+                    {exportOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-munity-border bg-white p-2 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            withLoading(async () => {
+                              exportReportAsPDF();
+                              await new Promise((resolve) => setTimeout(resolve, 500));
+                            }, "Exporting as PDF...");
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            withLoading(async () => {
+                              exportReportAsWord();
+                              await new Promise((resolve) => setTimeout(resolve, 300));
+                            }, "Exporting as Word...");
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as Word
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            emailReport();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Email report
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </header>
 

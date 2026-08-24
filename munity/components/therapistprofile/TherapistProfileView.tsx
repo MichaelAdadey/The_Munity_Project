@@ -144,7 +144,7 @@ function VerificationBadge({ status }: { status: TherapistProfile["verificationS
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
       <Shield className="size-3.5" />
       {status === "in-review" ? "Verification in review" : status === "rejected" ? "Verification rejected" : "Verification pending"}
     </span>

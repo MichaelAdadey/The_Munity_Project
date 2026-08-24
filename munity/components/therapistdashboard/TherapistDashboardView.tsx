@@ -101,6 +101,7 @@ export function TherapistDashboardView({
 
   function startSession(session: ScheduleItem) {
     setActivePatient({
+      patientUuid: session.patientId,
       name: session.name,
       patientId: `#${session.patientId.slice(0, 6).toUpperCase()}`,
       avatar: assets.avatars.alex,
@@ -199,7 +200,7 @@ export function TherapistDashboardView({
                       index > 0 ? "border-t border-munity-input-border" : ""
                     }`}
                   >
-                    <div className="flex min-w-[200px] items-center gap-4">
+                    <div className="flex min-w-50 items-center gap-4">
                       <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
                         <Image
                           src={assets.avatars.alex}

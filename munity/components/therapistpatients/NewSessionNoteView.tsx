@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Plus, Save, X } from "lucide-react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
@@ -63,15 +63,101 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   const [observations, setObservations] = useState("");
   const [homework, setHomework] = useState<string[]>([""]);
   const [sessionDate, setSessionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [exportOpen, setExportOpen] = useState(false);
+
+  function buildPlainText() {
+    return [
+      `Session note for ${patient.name}`,
+      `Date: ${sessionDate}`,
+      title ? `Title: ${title}` : null,
+      "",
+      "Summary:",
+      summary.trim(),
+      "",
+      "Clinical observations:",
+      observations.trim(),
+      "",
+      homework.filter(Boolean).length ? `Next steps:\n- ${homework.filter(Boolean).join("\n- ")}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+  }
+
+  function buildHTML() {
+    const items = homework.filter(Boolean).map((h) => `<li>${h}</li>`).join("");
+    return `
+      <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding:20px; color:#21311b;">
+        <h1 style="color:#3e5219;">Session note for ${patient.name}</h1>
+        <p><strong>Date:</strong> ${sessionDate}</p>
+        ${title ? `<p><strong>Title:</strong> ${title}</p>` : ""}
+        <h2>Summary</h2>
+        <p>${summary.replace(/\n/g, '<br/>')}</p>
+        <h2>Clinical observations</h2>
+        <p>${observations.replace(/\n/g, '<br/>')}</p>
+        ${items ? `<h2>Next steps</h2><ul>${items}</ul>` : ""}
+      </div>
+    `;
+  }
+
+  function exportAsPDF() {
+    if (typeof window === "undefined") return;
+    const content = buildHTML();
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Session Note</title><style>body{font-family:system-ui,-apple-system,sans-serif;padding:20px;color:#21311b;}h1{color:#3e5219;}h2{margin-top:16px;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const w = window.open(url);
+    if (w) {
+      setTimeout(() => {
+        w.print();
+      }, 250);
+    }
+  }
+
+  function exportAsWord() {
+    if (typeof window === "undefined") return;
+    const content = buildHTML();
+    const html = `<html xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"/><title>Session Note</title><style>body{font-family:Calibri,sans-serif;line-height:1.5;}h1{color:#3e5219;margin-bottom:10px;}h2{margin-top:16px;margin-bottom:8px;}p{margin:6px 0;}</style></head><body>${content}</body></html>`;
+    const blob = new Blob([html], { type: "application/vnd.ms-word" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${patient.name.replace(/\\s+/g, "_")}_session_note.doc`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function emailNote() {
+    if (typeof window === "undefined") return;
+    const text = buildPlainText();
+    const subject = `Session note for ${patient.name}`;
+    const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
+    window.location.href = mailto;
+  }
+
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
+  const focusNextRef = useRef(false);
 
   function updateHomework(index: number, value: string) {
     setHomework((prev) => prev.map((item, i) => (i === index ? value : item)));
   }
 
   function addHomework() {
+    focusNextRef.current = true;
     setHomework((prev) => [...prev, ""]);
     flash("Homework task added");
   }
+
+  useEffect(() => {
+    if (!focusNextRef.current) return;
+    focusNextRef.current = false;
+    // focus the last input after render
+    requestAnimationFrame(() => {
+      const el = inputsRef.current[inputsRef.current.length - 1];
+      el?.focus();
+    });
+  }, [homework.length]);
 
   function removeHomework(index: number) {
     setHomework((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== index)));
@@ -141,6 +227,46 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <div className="mt-3"><LivePulse label="Draft autosaved" /></div>
                 </div>
                 <div className="flex flex-wrap gap-3">
+                  <div className="relative">
+                    <Button variant="outline" onClick={() => setExportOpen((s) => !s)}>
+                      Export
+                    </Button>
+                    {exportOpen && (
+                      <div className="absolute right-0 z-10 mt-2 w-48 rounded-xl border border-munity-border bg-white p-2 shadow-lg">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportAsPDF();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as PDF
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            exportAsWord();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Export as Word
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            emailNote();
+                            setExportOpen(false);
+                          }}
+                          className="w-full text-left rounded-md px-3 py-2 text-sm hover:bg-munity-sidebar"
+                        >
+                          Email note
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                   <Button variant="outline" onClick={() => router.push(notesHref)}>
                     Cancel
                   </Button>
@@ -256,7 +382,11 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                     </div>
                     <button
                       type="button"
-                      onClick={addHomework}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        addHomework();
+                      }}
                       className="inline-flex items-center gap-1.5 text-sm font-semibold text-munity-green hover:underline"
                     >
                       <Plus className="size-4" />
@@ -267,13 +397,14 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <div className="mt-5 flex flex-col gap-3">
                     {homework.map((task, index) => (
                       <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={task}
-                          onChange={(event) => updateHomework(index, event.target.value)}
-                          placeholder={`Homework task ${index + 1}`}
-                          className={fieldClassName}
-                        />
+                            <input
+                              ref={(el) => (inputsRef.current[index] = el)}
+                              type="text"
+                              value={task}
+                              onChange={(event) => updateHomework(index, event.target.value)}
+                              placeholder={`Homework task ${index + 1}`}
+                              className={fieldClassName}
+                            />
                         <button
                           type="button"
                           onClick={() => removeHomework(index)}

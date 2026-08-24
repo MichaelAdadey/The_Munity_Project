@@ -10,15 +10,22 @@ import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 
-const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
+// const THERAPIST_DISPLAY_NAME = "Dr. Elena Aris";
 
 interface TherapistAppShellProps {
   active: TherapistNavItem;
-  title: string;
+  title?: string;
   subtitle?: string;
   /** Optional controls shown before notifications (e.g. search). */
   actions?: ReactNode;
   children: ReactNode;
+  /**
+   * "default" (every existing page) keeps the big title/subtitle header.
+   * "compact" swaps in a slim, flush bar matching the member app's fixed
+   * header (height, background, border, search placement) — opt-in only,
+   * so it never changes any other therapist page.
+   */
+  headerVariant?: "default" | "compact";
 }
 
 export function TherapistAppShell({
@@ -27,6 +34,7 @@ export function TherapistAppShell({
   subtitle,
   actions,
   children,
+  headerVariant = "default",
 }: TherapistAppShellProps) {
   const { profile } = useCurrentProfile();
   return (
@@ -37,15 +45,13 @@ export function TherapistAppShell({
           sidebar={<TherapistSidebar active={active} />}
           mainClassName="px-6 py-8 lg:px-10 lg:py-10"
         >
-          <AnimatedPage className="mx-auto flex w-full max-w-6xl flex-col gap-8">
-            <header className="flex flex-wrap items-center justify-between gap-4">
-              <div className="min-w-0">
-                <h1 className="text-[32px] font-bold leading-tight text-munity-text">{title}</h1>
-                {subtitle ? (
-                  <p className="mt-1 text-base leading-relaxed text-munity-muted">{subtitle}</p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+          <AnimatedPage
+            className={`mx-auto flex w-full max-w-6xl flex-col ${
+              headerVariant === "compact" ? "gap-0" : "gap-8"
+            }`}
+          >
+            {headerVariant === "compact" ? (
+              <header className="-mx-6 -mt-8 flex h-16 shrink-0 items-center gap-4 border-b border-munity-border/20 bg-munity-bg/80 px-6 backdrop-blur-md lg:-mx-10 lg:-mt-10 lg:px-10">
                 {actions}
                 <NotificationsMenu role="therapist" />
                 <div className="flex items-center gap-3 rounded-full bg-[#efeded] py-1 pl-1 pr-4">
@@ -54,8 +60,27 @@ export function TherapistAppShell({
                     {profile?.fullName}
                   </span>
                 </div>
-              </div>
-            </header>
+              </header>
+            ) : (
+              <header className="flex flex-wrap items-center justify-between gap-4">
+                <div className="min-w-0">
+                  <h1 className="text-[32px] font-bold leading-tight text-munity-text">{title}</h1>
+                  {subtitle ? (
+                    <p className="mt-1 text-base leading-relaxed text-munity-muted">{subtitle}</p>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+                  {actions}
+                  <NotificationsMenu role="therapist" />
+                  <div className="flex items-center gap-3 rounded-full bg-munity-divider py-1 pl-1 pr-4">
+                    <ProfileAvatarMenu />
+                    <span className="text-sm font-semibold tracking-wide text-munity-text">
+                      {THERAPIST_DISPLAY_NAME}
+                    </span>
+                  </div>
+                </div>
+              </header>
+            )}
 
             {children}
           </AnimatedPage>
