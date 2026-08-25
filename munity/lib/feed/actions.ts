@@ -23,12 +23,14 @@ export const createPost = async (input: {
   mood: string;
   isAnonymous?: boolean;
   imageUrl?: string | null;
+  communityId?: string | null;
 }): Promise<FeedActionState> => {
   const parsed = createPostSchema.safeParse({
     content: input.content,
     mood: input.mood,
     isAnonymous: input.isAnonymous ?? false,
     imageUrl: input.imageUrl ?? null,
+    communityId: input.communityId ?? null,
   });
 
   if (!parsed.success) {
@@ -50,11 +52,15 @@ export const createPost = async (input: {
     mood: parsed.data.mood,
     is_anonymous: parsed.data.isAnonymous,
     image_url: parsed.data.imageUrl,
+    community_id: parsed.data.communityId,
   });
 
   if (error) return { error: error.message };
 
   revalidatePath("/home");
+  if (parsed.data.communityId) {
+    revalidatePath("/Communities/[slug]", "page")
+  }
   return { success: "Posted" };
 };
 

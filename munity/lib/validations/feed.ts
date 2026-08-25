@@ -19,9 +19,10 @@ export const createPostSchema = z
     isAnonymous: z.boolean().default(false),
     // Public URL after upload to storage (optional)
     imageUrl: z.url().nullable().optional(),
+    communityId: z.uuid().nullable().optional()
   })
   .refine((data) => data.content.length > 0 || Boolean(data.imageUrl), {
-    error: "Add tect or a photo before posting",
+    error: "Add text or a photo before posting",
     path: ["content"],
   });
 

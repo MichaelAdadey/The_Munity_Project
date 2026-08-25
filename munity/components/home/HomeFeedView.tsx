@@ -40,6 +40,7 @@ import {
   toggleSupport,
 } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB } from "@/types/feed";
+import { useCommunityOptions } from "@/lib/communities/client-queries";
 
 const demoPhotoLibrary = [
   {
@@ -126,6 +127,10 @@ export function HomeFeedView() {
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
   const [composerText, setComposerText] = useState("");
   const [anonymous, setAnonymous] = useState(false);
+  const [selectedCommunityId, setSelectedCommunityId] = useState<string | null>(
+    null,
+  );
+  const communityOptions = useCommunityOptions(flash);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   /** Device file waiting to upload on Post (not a data: URL in the DB) */
   const [pendingFile, setPendingFile] = useState<File | null>(null);
@@ -371,6 +376,7 @@ export function HomeFeedView() {
         mood: MOOD_LABEL_TO_DB[selectedMood],
         isAnonymous: anonymous,
         imageUrl,
+        communityId: selectedCommunityId,
       });
 
       if (result.error) {
@@ -379,6 +385,7 @@ export function HomeFeedView() {
       }
 
       setComposerText("");
+      setSelectedCommunityId(null)
       clearPhoto();
       setShowPhotoPicker(false);
       flash(
@@ -698,6 +705,19 @@ export function HomeFeedView() {
               >
                 {posting ? "Posting..." : "Post"}
               </motion.button>
+
+              <select
+                value={selectedCommunityId ?? ""}
+                onChange={(e) => setSelectedCommunityId(e.target.value || null)}
+                className="rounded-full bg-munity-sidebar px-3.5 py-2 text-xs font-semibold text-munity-muted outline-none transition hover:bg-munity-lime/40"
+              >
+                <option value="">Post to: My Feed</option>
+                {communityOptions.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    Post to: {c.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <AnimatePresence>
@@ -956,7 +976,6 @@ export function HomeFeedView() {
                         />
                       )}
                     </div>
-                    
                   ) : null}
 
                   <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
@@ -1298,7 +1317,6 @@ export function HomeFeedView() {
           </motion.div>
         ) : null}
       </AnimatePresence>
-
       {/* <ImageLightbox
         open={lightboxPost !== null}
         onOpenChange={(nextOpen) => {
