@@ -30,10 +30,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
-    const stored = getStoredTheme() ?? "light";
-    setTheme(stored);
-    applyTheme(stored);
-    setHydrated(true);
+    const timer = window.setTimeout(() => {
+      const stored = getStoredTheme() ?? "light";
+      setTheme(stored);
+      applyTheme(stored);
+      setHydrated(true);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -60,7 +63,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     [theme, setDarkMode, toggleDarkMode],
   );
 
-  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
+  return (
+    <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {
