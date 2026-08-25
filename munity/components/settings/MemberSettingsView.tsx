@@ -97,6 +97,7 @@ function Toggle({
 
 export function MemberSettingsView() {
   const store = useMockStore();
+  const { darkMode, toggleDarkMode } = useTheme();
   const { flash } = useLiveToast();
   const settingKeys: Record<
     string,
@@ -177,14 +178,20 @@ export function MemberSettingsView() {
                         key={toggle.label}
                         label={toggle.label}
                         on={
-                          settingKeys[toggle.label]
-                            ? store.settings[settingKeys[toggle.label]]
-                            : toggle.defaultOn
+                          "themeToggle" in toggle && toggle.themeToggle
+                            ? darkMode
+                            : settingKeys[toggle.label]
+                              ? store.settings[settingKeys[toggle.label]]
+                              : toggle.defaultOn
                         }
                         onToggle={() => {
                           if ("themeToggle" in toggle && toggle.themeToggle) {
-                            setDarkMode(!darkMode);
-                            flash(darkMode ? "Dark mode disabled" : "Dark mode enabled");
+                            toggleDarkMode();
+                            flash(
+                              darkMode
+                                ? "Dark mode disabled"
+                                : "Dark mode enabled",
+                            );
                             return;
                           }
 

@@ -12,16 +12,14 @@ import {
   Calendar,
   ImageIcon,
   Mic,
-  Phone,
   Plus,
   SquarePen,
   Send,
-  Video,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
-import { CallOverlay } from "@/components/messages/CallOverlay";
+// import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
-import { mockStore } from "@/lib/mock-store";
+// import { mockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
 import {
   ensureTherapistThread,
@@ -29,6 +27,7 @@ import {
   useChatMessages,
   useChats,
 } from "@/lib/messages/client-queries";
+// import { useCallSession } from "@/hooks/useCallSession";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
 
@@ -49,7 +48,7 @@ export function MessagesView() {
   const [filter, setFilter] = useState<ChatFilter>("All");
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
-  const call = useCallSession();
+  // const call = useCallSession();
 
   useEffect(() => {
     const therapistId = searchParams.get("therapist");
@@ -93,13 +92,13 @@ export function MessagesView() {
   //   return () => window.clearTimeout(connectTimer);
   // }, [callMode, activeChatId]);
 
-  useEffect(() => {
-    if (!callMode || callPhase !== "connected") return;
-    const tick = window.setInterval(() => {
-      setCallSeconds((prev) => prev + 1);
-    }, 1000);
-    return () => window.clearInterval(tick);
-  }, [callMode, callPhase]);
+  // useEffect(() => {
+  //   if (!callMode || callPhase !== "connected") return;
+  //   const tick = window.setInterval(() => {
+  //     setCallSeconds((prev) => prev + 1);
+  //   }, 1000);
+  //   return () => window.clearInterval(tick);
+  // }, [callMode, callPhase]);
 
   const filteredChats = chats.filter((chat) => {
     const matchesFilter = filter === "All" || chat.filter === filter;
@@ -162,29 +161,29 @@ export function MessagesView() {
     }
   }
 
-  function startCall(mode: CallMode) {
-    call.start(mode);
-    flash(
-      mode === "video"
-        ? `Starting video call with ${activeChat.name}`
-        : `Calling ${activeChat.name}…`,
-    );
-  }
+  // function startCall(mode: CallMode) {
+  //   call.start(mode);
+  //   flash(
+  //     mode === "video"
+  //       ? `Starting video call with ${activeChat.name}`
+  //       : `Calling ${activeChat.name}…`,
+  //   );
+  // }
 
-  function endCall() {
-    if (!callMode) return;
-    const kind = callMode === "video" ? "Video call" : "Voice call";
-    const duration =
-      callPhase === "connected" ? formatCallDuration(callSeconds) : "0:00";
-    mockStore.sendMessage(activeChat.id, `${kind} ended · ${duration}`);
-    flash(`${kind} ended`);
-    setCallMode(null);
-    setCallPhase("connecting");
-    setCallSeconds(0);
-    setMuted(false);
-    setCameraOff(false);
-    setCallMinimized(false);
-  }
+  // function endCall() {
+  //   if (!callMode) return;
+  //   const kind = callMode === "video" ? "Video call" : "Voice call";
+  //   const duration =
+  //     callPhase === "connected" ? formatCallDuration(callSeconds) : "0:00";
+  //   mockStore.sendMessage(activeChat.id, `${kind} ended · ${duration}`);
+  //   flash(`${kind} ended`);
+  //   setCallMode(null);
+  //   setCallPhase("connecting");
+  //   setCallSeconds(0);
+  //   setMuted(false);
+  //   setCameraOff(false);
+  //   setCallMinimized(false);
+  // }
 
   return (
     <MemberAppShell
@@ -300,7 +299,7 @@ export function MessagesView() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            {/* <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => startCall("voice")}
@@ -317,7 +316,7 @@ export function MessagesView() {
               >
                 <Video className="size-5" />
               </button>
-            </div>
+            </div> */}
           </div>
 
           <AnimatePresence mode="wait">
@@ -574,7 +573,7 @@ export function MessagesView() {
         ) : null}
       </div>
 
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {callMode && !callMinimized ? (
           <motion.div
             key="call-overlay"
@@ -796,7 +795,7 @@ export function MessagesView() {
             </div>
           </motion.div>
         ) : null}
-      </AnimatePresence>
+      </AnimatePresence> */}
     </MemberAppShell>
   );
 }

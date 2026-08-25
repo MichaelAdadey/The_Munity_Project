@@ -1,7 +1,8 @@
 import { ActivityFeedView } from "@/components/activity/ActivityFeedView";
-import { requireMockRole } from "@/lib/require-session";
+import { requireRole } from "@/lib/require-role";
+import { routes } from "@/lib/routes";
 
 export default async function NotificationsPage() {
-  await requireMockRole("user");
+  await requireRole(["patient"], routes.login);
   return <ActivityFeedView role="member" />;
 }
