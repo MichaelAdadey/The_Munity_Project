@@ -27,7 +27,7 @@ import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
 import { MunitySunIcon } from "@/components/icons/MunityIcons";
 // import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { startCalmAmbient } from "@/lib/calm-ambient";
-import { mockStore, useMockStore } from "@/lib/mock-store";
+import { useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import { formatRelativeTime, useFeed } from "@/hooks/use-feed";
@@ -40,7 +40,12 @@ import {
   toggleSupport,
 } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB } from "@/types/feed";
-import { useCommunityOptions } from "@/lib/communities/client-queries";
+import {
+  useCommunityOptions,
+  useMyCommunities,
+} from "@/lib/communities/client-queries";
+import { useVerifiedTherapists } from "@/lib/therapy/client-queries";
+import { joinCommunity } from "@/lib/communities/membership-actions";
 
 const demoPhotoLibrary = [
   {
@@ -159,13 +164,14 @@ export function HomeFeedView() {
   const firstName = profile?.firstName ?? "there";
   const fullName = profile?.fullName ?? "Member";
 
-  const joinedCommunities = store.communities.filter((community) =>
-    store.memberships.includes(community.id),
-  );
-  const suggestedGroups = store.communities
-    .filter((community) => !store.memberships.includes(community.id))
-    .slice(0, 2);
-  const therapists = store.therapists.slice(0, 2);
+  const {
+    joined: joinedCommunities,
+    suggested: allSuggested,
+    refresh: refreshCommunities,
+  } = useMyCommunities(flash);
+  const suggestedGroups = allSuggested.slice(0, 2);
+  const { therapists: allTherapists } = useVerifiedTherapists(flash);
+  const therapists = allTherapists.slice(0, 2);
 
   const visiblePosts = useMemo(() => {
     // const activePosts = store.posts.filter((post) => !post.archived);
@@ -385,7 +391,7 @@ export function HomeFeedView() {
       }
 
       setComposerText("");
-      setSelectedCommunityId(null)
+      setSelectedCommunityId(null);
       clearPhoto();
       setShowPhotoPicker(false);
       flash(
@@ -483,7 +489,7 @@ export function HomeFeedView() {
                 </div>
                 <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
                   <p className="text-base font-bold text-munity-green">
-                    {store.profile.groupCount}
+                    {joinedCommunities.length}
                   </p>
                   <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
                     Groups
@@ -1167,9 +1173,18 @@ export function HomeFeedView() {
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.94 }}
-                    onClick={() => {
-                      mockStore.toggleMembership(group.id);
-                      flash(`Joined ${group.name}`);
+                    onClick={async () => {
+                      try {
+                        await joinCommunity(group.id);
+                        flash(`Joined ${group.name}`);
+                        refreshCommunities();
+                      } catch (error) {
+                        flash(
+                          error instanceof Error
+                            ? error.message
+                            : "Couldn't join community",
+                        );
+                      }
                     }}
                     className="shrink-0 rounded-full border border-munity-green/70 px-3 py-1.5 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/40"
                   >
@@ -1201,7 +1216,7 @@ export function HomeFeedView() {
                 >
                   <div className="relative size-10 shrink-0 overflow-hidden rounded-full">
                     <Image
-                      src={therapist.image}
+                      src="/images/avatar-placeholder.png"
                       alt={therapist.name}
                       fill
                       className="object-cover"
@@ -1212,7 +1227,7 @@ export function HomeFeedView() {
                       {therapist.name}
                     </p>
                     <p className="text-[11px] text-munity-muted">
-                      {therapist.specializations[0]}
+                      {therapist.specialties[0] ?? therapist.credentials}
                     </p>
                   </div>
                   <span
