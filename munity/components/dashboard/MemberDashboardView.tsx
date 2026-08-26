@@ -28,6 +28,7 @@ import { useMockStore } from "@/lib/mock-store";
 import { routes } from "@/lib/routes";
 import { DashboardBookingData } from "@/lib/dashboard/queries";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
+import { useMyCommunities } from "@/lib/communities/client-queries";
 
 const weekMood = [
   { day: "Mon", score: 6 },
@@ -89,6 +90,9 @@ export function MemberDashboardView({
   const [completedGoals, setCompletedGoals] = useState(
     () => new Set(goals.filter((goal) => goal.done).map((goal) => goal.title)),
   );
+
+  const { joined: joinedCommunities } = useMyCommunities(flash);
+
   const stats = [
     {
       label: "Day streak",
@@ -112,8 +116,8 @@ export function MemberDashboardView({
     },
     {
       label: "Communities",
-      value: String(store.memberships.length),
-      detail: "Your spaces are active",
+      value: String(joinedCommunities.length),
+      detail: `Your space${joinedCommunities.length === 1 ? " is" : "s are"}  active`,
       icon: Users,
     },
   ];
