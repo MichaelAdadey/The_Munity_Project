@@ -19,7 +19,11 @@ export type CurrentMemberProfile = {
   fullName: string;
   username: string;
   email: string;
+  avatarUrl: string | null;
 };
+
+/** Dispatch after writing profiles.avatar_url so every mounted useCurrentProfile() re-fetches. */
+export const PROFILE_UPDATED_EVENT = "munity:profile-updated";
 
 type State = {
   profile: CurrentMemberProfile | null;
@@ -35,6 +39,7 @@ const mapProfile = (row: Profile): CurrentMemberProfile => {
     fullName: toFullName(row.first_name, row.last_name),
     username: toUsername(row.first_name, row.last_name),
     email: row.email,
+    avatarUrl: row.avatar_url,
   };
 };
 
@@ -99,9 +104,13 @@ export const useCurrentProfile = () => {
       void load();
     });
 
+    const onProfileUpdated = () => void load();
+    window.addEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
+
     return () => {
       cancelled = true;
       subscription.unsubscribe();
+      window.removeEventListener(PROFILE_UPDATED_EVENT, onProfileUpdated);
     };
   }, []);
 

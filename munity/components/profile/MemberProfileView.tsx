@@ -27,6 +27,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { mockStore, useMockStore } from "@/lib/mock-store";
+import { createClient } from "@/lib/supabase/client";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
+import { PROFILE_UPDATED_EVENT } from "@/hooks/use-current-profile";
 
 type ProfileTab = "My Posts" | "Communities" | "Saved Resources";
 type PhotoTarget = "avatar" | "cover";
@@ -186,10 +189,22 @@ export function MemberProfileView() {
   const [username, setUsername] = useState(store.profile.username);
   const [title, setTitle] = useState(store.profile.title);
   const [bio, setBio] = useState(store.profile.bio);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarViewerOpen, setAvatarViewerOpen] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const coverSrc = store.profile.cover || "/images/profile/cover.png";
   const photoLibrary = photoTarget === "cover" ? coverLibrary : avatarLibrary;
+
+  async function persistAvatarUrl(url: string) {
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("profiles").update({ avatar_url: url }).eq("id", user.id);
+    window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
+  }
 
   function openEdit() {
     setFullName(store.profile.fullName);
@@ -218,6 +233,7 @@ export function MemberProfileView() {
     if (photoTarget === "avatar") {
       mockStore.updateProfile({ avatar: src });
       flash("Profile photo updated");
+      void persistAvatarUrl(src);
     } else {
       mockStore.updateProfile({ cover: src });
       flash("Cover photo updated");
@@ -225,7 +241,7 @@ export function MemberProfileView() {
     setPhotoTarget(null);
   }
 
-  function onPhotoFile(event: ChangeEvent<HTMLInputElement>) {
+  async function onPhotoFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
     if (!file || !photoTarget) return;
@@ -233,6 +249,39 @@ export function MemberProfileView() {
       flash("Please choose an image file");
       return;
     }
+    if (file.size > 5 * 1024 * 1024) {
+      flash("Image must be under 5MB.");
+      return;
+    }
+
+    if (photoTarget === "avatar") {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setIsUploadingAvatar(true);
+        const ext = file.name.split(".").pop() || "jpg";
+        const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("avatars")
+          .upload(path, file, { cacheControl: "3600", upsert: false, contentType: file.type });
+
+        if (uploadError) {
+          setIsUploadingAvatar(false);
+          flash(`Upload failed: ${uploadError.message}`);
+          return;
+        }
+
+        const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+        setIsUploadingAvatar(false);
+        applyPhoto(publicUrlData.publicUrl);
+        return;
+      }
+    }
+
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === "string") applyPhoto(reader.result);
@@ -299,24 +348,27 @@ export function MemberProfileView() {
           <div className="relative px-6 pb-6 pt-20">
             <div className="absolute left-6 top-0 -translate-y-1/2">
               <div className="group/avatar relative size-28 md:size-32">
-                <div className="relative size-full overflow-hidden rounded-full border-4 border-[#fbf9f8] bg-white shadow-xl">
+                <button
+                  type="button"
+                  onClick={() => setAvatarViewerOpen(true)}
+                  aria-label="View profile photo"
+                  className="relative size-full cursor-zoom-in overflow-hidden rounded-full border-4 border-[#fbf9f8] bg-white shadow-xl"
+                >
                   <ProfileMedia
                     src={store.profile.avatar}
                     alt={store.profile.fullName}
                     className="object-cover"
                     sizes="128px"
                   />
-                </div>
+                  <div className="absolute inset-0 bg-black/0 transition group-hover/avatar:bg-black/10" />
+                </button>
                 <button
                   type="button"
                   onClick={() => setPhotoTarget("avatar")}
-                  className="absolute inset-0 flex items-center justify-center rounded-full bg-black/45 text-white opacity-100 transition hover:bg-black/55 md:opacity-0 md:group-hover/avatar:opacity-100"
                   aria-label="Change profile photo"
+                  className="absolute -bottom-1 -right-1 flex size-9 items-center justify-center rounded-full border-2 border-[#fbf9f8] bg-munity-green text-white shadow-md transition hover:bg-munity-green-dark"
                 >
-                  <span className="inline-flex flex-col items-center gap-1 text-[10px] font-semibold tracking-wide">
-                    <Camera className="size-5" />
-                    Edit
-                  </span>
+                  <Camera className="size-4" />
                 </button>
               </div>
             </div>
@@ -587,6 +639,13 @@ export function MemberProfileView() {
         </footer>
       </motion.div>
 
+      <ImageLightbox
+        images={[store.profile.avatar]}
+        altText={`${store.profile.fullName}'s profile photo`}
+        open={avatarViewerOpen}
+        onOpenChange={setAvatarViewerOpen}
+      />
+
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent
           className="border border-[#d8dbcf] bg-white shadow-2xl ring-1 ring-black/5 sm:max-w-md"
@@ -706,10 +765,11 @@ export function MemberProfileView() {
           <button
             type="button"
             onClick={() => photoInputRef.current?.click()}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold text-white transition hover:bg-munity-green-dark"
+            disabled={isUploadingAvatar}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-munity-green px-4 py-3 text-sm font-semibold text-white transition hover:bg-munity-green-dark disabled:opacity-50"
           >
             <Upload className="size-4" />
-            Upload from device
+            {isUploadingAvatar ? "Uploading…" : "Upload from device"}
           </button>
           <div className="grid grid-cols-3 gap-3">
             {photoLibrary.map((item) => {

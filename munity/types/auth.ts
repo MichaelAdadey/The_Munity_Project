@@ -20,6 +20,7 @@ export type Profile = {
   last_name: string;
   email: string;
   role: UserRole;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 };

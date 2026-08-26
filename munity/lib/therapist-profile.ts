@@ -22,6 +22,7 @@ export type TherapistProfile = {
   bankName?: string;
   bankAccountLast4?: string;
   memberSince: string;
+  avatarUrl?: string;
 };
 
 const STORAGE_KEY = "munity-therapist-profile-v1";

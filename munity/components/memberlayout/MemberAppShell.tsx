@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import {
   Bookmark,
   BookOpen,
@@ -23,6 +23,8 @@ import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
 import { SidebarProvider, useSidebar } from "@/components/therapistlayout/SidebarContext";
 import { routes } from "@/lib/routes";
+import { mockStore } from "@/lib/mock-store";
+import { createClient } from "@/lib/supabase/client";
 
 export type MemberNavItem =
   | "Home"
@@ -126,6 +128,29 @@ function LoggedInShell({
     throw new Error("LoggedInShell must be used within SidebarProvider");
   }
   const { open, toggle } = sidebar;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function hydrateAvatar() {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user || cancelled) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (!cancelled && data?.avatar_url) {
+        mockStore.updateProfile({ avatar: data.avatar_url });
+      }
+    }
+    void hydrateAvatar();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <LiveToastProvider>

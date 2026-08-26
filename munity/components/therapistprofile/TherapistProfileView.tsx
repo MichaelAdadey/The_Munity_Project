@@ -27,6 +27,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import {
   getTherapistDisplayName,
   type TherapistProfile,
@@ -35,6 +36,7 @@ import { updateTherapistProfile } from "@/app/therapistprofile/actions";
 import { createClient } from "@/lib/supabase/client";
 import { assets } from "@/lib/assets";
 import { routes } from "@/lib/routes";
+import { PROFILE_UPDATED_EVENT } from "@/hooks/use-current-profile";
 
 type EditSection = "profile" | "personal" | "credentials" | "specialties" | "payout";
 
@@ -164,6 +166,7 @@ export function TherapistProfileView({
   const [draft, setDraft] = useState<TherapistProfile>(initialProfile);
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarViewerOpen, setAvatarViewerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -210,6 +213,7 @@ export function TherapistProfileView({
     }
 
     setProfile((prev) => ({ ...prev, avatarUrl: newAvatarUrl }));
+    window.dispatchEvent(new Event(PROFILE_UPDATED_EVENT));
     flash("Profile picture updated");
   }
 
@@ -286,7 +290,12 @@ export function TherapistProfileView({
         <div className="bg-gradient-to-r from-munity-lime/40 via-munity-green/5 to-transparent px-8 py-8">
           <div className="flex flex-wrap items-center gap-6">
             <div className="relative size-24 shrink-0">
-              <div className="relative size-24 overflow-hidden rounded-2xl border-4 border-white shadow-md">
+              <button
+                type="button"
+                onClick={() => setAvatarViewerOpen(true)}
+                aria-label="View profile photo"
+                className="relative size-24 cursor-zoom-in overflow-hidden rounded-2xl border-4 border-white shadow-md"
+              >
                 <Image
                   src={profile.avatarUrl || assets.avatars.clinician}
                   alt={displayName}
@@ -298,7 +307,7 @@ export function TherapistProfileView({
                     <span className="text-xs font-semibold text-white">Uploading…</span>
                   </div>
                 ) : null}
-              </div>
+              </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -465,6 +474,13 @@ export function TherapistProfileView({
           </a>
         </div>
       </motion.div>
+
+      <ImageLightbox
+        images={[profile.avatarUrl || assets.avatars.clinician]}
+        altText={`${displayName}'s profile photo`}
+        open={avatarViewerOpen}
+        onOpenChange={setAvatarViewerOpen}
+      />
 
       <Dialog
         open={editSection !== null}

@@ -41,6 +41,7 @@ export default async function TherapistProfilePage() {
     mobileMoneyNumber: details?.mobile_money_number ?? "",
     bankName: details?.bank_name ?? "",
     bankAccountLast4: details?.bank_account_last4 ?? "",
+    avatarUrl: profile.avatar_url ?? "",
     memberSince: profile.created_at
       ? new Date(profile.created_at).toLocaleDateString("en-US", {
           month: "long",
@@ -49,5 +50,5 @@ export default async function TherapistProfilePage() {
       : "",
   };
 
-  return <TherapistProfileView initialProfile={initialProfile} />;
+  return <TherapistProfileView initialProfile={initialProfile} userId={user.id} />;
 }
