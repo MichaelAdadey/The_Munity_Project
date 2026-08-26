@@ -122,8 +122,8 @@ export const useMyCommunities = (flash: (message: string) => void) => {
     void (async () => {
       try {
         const [communities, ids] = await Promise.all([
-          fetchCommunitiesWithCounts(),
-          fetchMyMembershipIds(),
+          await fetchCommunitiesWithCounts(),
+          await fetchMyMembershipIds(),
         ]);
         setCommunities(communities);
         setMembershipIds(ids);

@@ -492,7 +492,8 @@ export function HomeFeedView() {
                     {joinedCommunities.length}
                   </p>
                   <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
-                    Groups
+                    Group
+                    {joinedCommunities.length === 1 ? "" : "s"}
                   </p>
                 </div>
               </div>
