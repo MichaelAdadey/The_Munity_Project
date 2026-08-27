@@ -1,5 +1,6 @@
 import { TherapistDetailView } from "@/components/therapy/TherapistDetailView";
 import { getMemberLoggedIn } from "@/lib/member-auth";
+import { getTherapistById } from "@/lib/therapy/queries";
 
 export default async function TherapistDetailPage({
   params,
@@ -8,5 +9,7 @@ export default async function TherapistDetailPage({
 }) {
   const { id } = await params;
   const isLoggedIn = await getMemberLoggedIn();
-  return <TherapistDetailView id={id} isLoggedIn={isLoggedIn} />;
+  const therapist = await getTherapistById(id)
+
+  return <TherapistDetailView therapist={therapist} isLoggedIn={isLoggedIn} />;
 }
