@@ -22,6 +22,12 @@ export type Profile = {
   role: UserRole;
   created_at: string;
   updated_at: string;
+  username?: string | null;
+  title?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  cover_url?: string | null;
+  daily_reflection?: string | null;
 };
 
 /** Fields the patient signup form collects (before we call Supabase). */
