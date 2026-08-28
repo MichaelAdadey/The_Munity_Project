@@ -43,6 +43,8 @@ import { useMyPosts } from "@/lib/profile/posts-queries";
 import { useMyCommunities } from "@/lib/communities/client-queries";
 import { createPost } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB } from "@/types/feed";
+import { useSavedResourceIds } from "@/lib/resources/actions";
+import { findCatalogResource } from "@/lib/resource-categories";
 
 type ProfileTab = "My Posts" | "Communities" | "Saved Resources";
 type PhotoTarget = "avatar" | "cover";
@@ -129,12 +131,6 @@ const moodWeek = [
   { day: "Fri", label: "Pensive", value: 48 },
   { day: "Sat", label: "Balanced", value: 70 },
   { day: "Sun", label: "Grateful", value: 82 },
-];
-
-const savedResources = [
-  { id: "r1", title: "Morning Routine for Mental Clarity", type: "Guide" },
-  { id: "r2", title: "5-4-3-2-1 Grounding Technique", type: "Exercise" },
-  { id: "r3", title: "Journaling prompts for anxiety", type: "Worksheet" },
 ];
 
 const supportAvatars = [
@@ -251,6 +247,16 @@ export function MemberProfileView() {
   const { posts: myPosts, loading: postsLoading } = useMyPosts(flash);
   const { joined: joinedCommunities, loading: communitiesLoading } =
     useMyCommunities(flash);
+
+  const { ids: savedResourceIds, loading: savedResourcesLoading } =
+    useSavedResourceIds(flash);
+
+  const mySavedResources = savedResourceIds
+    .map((id) => findCatalogResource(id))
+    .filter(
+      (item): item is NonNullable<ReturnType<typeof findCatalogResource>> =>
+        Boolean(item),
+    );
 
   if (profileLoading || !profile) {
     return (
@@ -616,25 +622,32 @@ export function MemberProfileView() {
                   )
                 ) : null}
 
-                {tab === "Saved Resources"
-                  ? savedResources
-                      .filter((resource) =>
-                        store.savedResourceIds.includes(resource.id),
-                      )
-                      .map((resource) => (
-                        <div
-                          key={resource.title}
-                          className="flex items-center justify-between rounded-2xl border border-[rgba(197,200,184,0.2)] bg-munity-sidebar px-5 py-4"
-                        >
-                          <p className="text-sm font-semibold text-munity-green">
-                            {resource.title}
-                          </p>
-                          <span className="rounded-full bg-munity-lime px-3 py-1 text-xs font-medium text-munity-olive-text">
-                            {resource.type}
-                          </span>
-                        </div>
-                      ))
-                  : null}
+                {tab === "Saved Resources" ? (
+                  savedResourcesLoading ? (
+                    <p className="text-sm text-munity-muted">
+                      Loading saved resources...
+                    </p>
+                  ) : mySavedResources.length === 0 ? (
+                    <p className="text-sm text-munity-muted">
+                      Nothing saved yet. Bookmark a resource from the Resource
+                      Hub to see it here.
+                    </p>
+                  ) : (
+                    mySavedResources.map((resource) => (
+                      <div
+                        key={resource.id}
+                        className="flex items-center justify-between rounded-2xl border border-[rgba(197,200,184,0.2)] bg-munity-sidebar px-5 py-4"
+                      >
+                        <p className="text-sm font-semibold text-munity-green">
+                          {resource.title}
+                        </p>
+                        <span className="rounded-full bg-munity-lime px-3 py-1 text-xs font-medium text-munity-olive-text">
+                          {resource.type}
+                        </span>
+                      </div>
+                    ))
+                  )
+                ) : null}
               </div>
             </section>
           </div>
