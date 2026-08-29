@@ -18,7 +18,11 @@ import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const profileMenuItems = [
   { label: "My Profile", href: routes.therapistProfile, icon: User },
-  { label: "My Appointments", href: routes.therapistAppointments, icon: Calendar },
+  {
+    label: "My Appointments",
+    href: routes.therapistAppointments,
+    icon: Calendar,
+  },
   { label: "Appearance", href: routes.therapistSettings, icon: Palette },
 ] as const;
 
@@ -33,8 +37,8 @@ export function ProfileAvatarMenu() {
         aria-label="Open profile menu"
       >
         <ProfileAvatar
-          src={assets.avatars.clinician}
-          alt="Dr. Elena Aris"
+          src={profile?.avatarUrl ?? assets.avatars.clinician}
+          alt={profile?.fullName ?? "Therapist"}
           size={36}
         />
       </DropdownMenuTrigger>
@@ -45,12 +49,14 @@ export function ProfileAvatarMenu() {
       >
         <div className="flex items-center gap-3 px-3 py-2">
           <ProfileAvatar
-            src={assets.avatars.clinician}
-            alt="Dr. Elena Aris"
+            src={profile?.avatarUrl ?? assets.avatars.clinician}
+            alt={profile?.fullName ?? "Therapist"}
             size={40}
           />
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-munity-text">{profile?.fullName}</p>
+            <p className="truncate text-sm font-semibold text-munity-text">
+              {profile?.fullName}
+            </p>
             <p className="truncate text-xs text-munity-muted">Therapist</p>
           </div>
         </div>

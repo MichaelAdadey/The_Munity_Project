@@ -31,7 +31,7 @@ type PostRow = {
   mood: PostMood;
   is_anonymous: boolean;
   created_at: string;
-  profiles: { first_name: string; last_name: string } | null;
+  profiles: { first_name: string; last_name: string; avatar_url: string | null } | null;
   post_supports: { user_id: string }[] | null;
   post_comments:
     | {
@@ -69,7 +69,7 @@ const fetchFeed = async (): Promise<FeedPayload> => {
         mood,
         is_anonymous,
         created_at,
-        profiles!posts_author_id_fkey ( first_name, last_name ),
+        profiles!posts_author_id_fkey ( first_name, last_name, avatar_url ),
         post_supports ( user_id ),
         post_comments (
           id,
@@ -127,7 +127,7 @@ const fetchFeed = async (): Promise<FeedPayload> => {
         isAnonymous: row.is_anonymous,
         createdAt: row.created_at,
         author: row.is_anonymous ? "Anonymous Member" : fullName,
-        avatarUrl: null, // wire later when avatars live in profiles
+        avatarUrl: row.profiles?.avatar_url ?? null,
         supportCount: supports.length,
         commentCount: comments.length,
         supportedByMe: me ? supports.some((s) => s.user_id === me) : false,
