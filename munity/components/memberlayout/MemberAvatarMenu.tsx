@@ -34,7 +34,7 @@ export function MemberAvatarMenu() {
         className="rounded-full border-2 border-munity-lime outline-none transition hover:ring-2 hover:ring-munity-green/20 focus-visible:ring-2 focus-visible:ring-munity-green/30"
         aria-label="Open profile menu"
       >
-        <ProfileAvatar src={mockProfile.avatar} alt={fullName} size={36} />
+        <ProfileAvatar src={profile?.avatarUrl ?? mockProfile.avatar} alt={fullName} size={36} />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
@@ -42,7 +42,7 @@ export function MemberAvatarMenu() {
         className="min-w-52 border border-munity-border bg-white p-1.5 text-munity-text shadow-[0_16px_40px_rgba(62,82,25,0.12)]"
       >
         <div className="flex items-center gap-3 px-3 py-2">
-          <ProfileAvatar src={mockProfile.avatar} alt={fullName} size={40} />
+          <ProfileAvatar src={profile?.avatarUrl ?? mockProfile.avatar} alt={fullName} size={40} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-munity-text">
               {loading ? "..." : fullName}

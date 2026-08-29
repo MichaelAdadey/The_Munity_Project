@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 function avatarForRole(role: MockRole) {
   switch (role) {
@@ -43,6 +44,9 @@ export function LandingHeader({
   session?: Pick<MockAccount, "name" | "role" | "redirectTo"> | null;
 }) {
   const router = useRouter();
+  const { profile } = useCurrentProfile();
+  const avatarSrc = profile?.avatarUrl ?? (session ? avatarForRole(session.role) : "/images/profile/avatar.jpg");
+  const displayName = profile?.fullName ?? session?.name ?? "";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-input-border/20 bg-munity-bg/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
@@ -53,11 +57,11 @@ export function LandingHeader({
 
         {session ? (
           <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex h-[52px] items-center gap-3 rounded-full border border-munity-border bg-white py-1.5 pl-1.5 pr-4 outline-none transition hover:bg-munity-sidebar focus-visible:ring-2 focus-visible:ring-munity-green/30">
+            <DropdownMenuTrigger className="inline-flex h-13 items-center gap-3 rounded-full border border-munity-border bg-white py-1.5 pl-1.5 pr-4 outline-none transition hover:bg-munity-sidebar focus-visible:ring-2 focus-visible:ring-munity-green/30">
               <span className="relative size-10 overflow-hidden rounded-full border-2 border-munity-lime">
                 <Image
-                  src={avatarForRole(session.role)}
-                  alt={session.name}
+                  src={avatarSrc}
+                  alt={displayName}
                   fill
                   className="object-cover"
                   sizes="40px"
@@ -65,7 +69,7 @@ export function LandingHeader({
               </span>
               <span className="hidden text-left sm:block">
                 <span className="block text-sm font-semibold text-munity-text">
-                  {session.name}
+                  {displayName}
                 </span>
                 <span className="block text-xs font-medium text-munity-muted">
                   {roleLabel(session.role)}
@@ -109,13 +113,13 @@ export function LandingHeader({
           <div className="flex items-center gap-3">
             <Link
               href={routes.therapistOnboarding.basicInfo}
-              className="flex h-[52px] items-center rounded-xl bg-munity-lime px-5 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:bg-munity-lime-light"
+              className="flex h-13 items-center rounded-xl bg-munity-lime px-5 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:bg-munity-lime-light"
             >
               Join as a therapist
             </Link>
             <Link
               href={routes.login}
-              className="flex h-[52px] items-center rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:bg-munity-green-dark"
+              className="flex h-13 items-center rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white shadow-[0_1px_1px_rgba(0,0,0,0.05)] transition hover:bg-munity-green-dark"
             >
               Login
             </Link>

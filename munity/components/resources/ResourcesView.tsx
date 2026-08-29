@@ -34,7 +34,6 @@ import {
   liveStagger,
   useLiveToast,
 } from "@/components/live/LiveFeedback";
-import { mockStore, useMockStore } from "@/lib/mock-store";
 import {
   captionsToPlainText,
   captionsToVtt,
@@ -54,6 +53,12 @@ import {
   type CatalogResource,
   type ResourceCategory,
 } from "@/lib/resource-categories";
+import {
+  toggleResourceCompletion,
+  toggleSavedResource,
+  useCompletedResourceIds,
+  useSavedResourceIds,
+} from "@/lib/resources/actions";
 
 const categories: { label: ResourceCategory; icon: typeof Wind }[] = [
   { label: "Anxiety", icon: Wind },
@@ -64,27 +69,39 @@ const categories: { label: ResourceCategory; icon: typeof Wind }[] = [
   { label: "Addiction", icon: LifeBuoy },
 ];
 
-export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
+export function ResourcesView({
+  isLoggedIn = false,
+}: {
+  isLoggedIn?: boolean;
+}) {
   const router = useRouter();
-  const store = useMockStore();
   const { flash } = useLiveToast();
-  const [activeCategory, setActiveCategory] = useState<ResourceCategory>("Anxiety");
+  const [activeCategory, setActiveCategory] =
+    useState<ResourceCategory>("Anxiety");
   const [query, setQuery] = useState("");
   const [showAllLatest, setShowAllLatest] = useState(false);
   const [showAllSaved, setShowAllSaved] = useState(false);
-  const [activeResource, setActiveResource] = useState<CatalogResource | null>(null);
+  const [activeResource, setActiveResource] = useState<CatalogResource | null>(
+    null,
+  );
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [listenMode, setListenMode] = useState(false);
   const [showCaptions, setShowCaptions] = useState(false);
-  const [completedIds, setCompletedIds] = useState<string[]>([]);
   const finishedToastFor = useRef<string | null>(null);
-  const audioRef = useRef<ReturnType<typeof startResourceSessionAudio> | null>(null);
+  const audioRef = useRef<ReturnType<typeof startResourceSessionAudio> | null>(
+    null,
+  );
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
   const catalog = useMemo(() => getResourceCatalog(), []);
   const categoryContent = resourceCategoriesById[activeCategory];
   const search = query.trim().toLowerCase();
+
+  const { ids: savedResourceIds, refresh: refreshSaved } =
+    useSavedResourceIds(flash);
+  const { ids: completedIds, refresh: refreshCompleted } =
+    useCompletedResourceIds(flash);
 
   const latestPool = useMemo(() => {
     if (showAllLatest) {
@@ -132,11 +149,13 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
       badge: categoryContent.featured.badge,
     } satisfies CatalogResource);
 
-  const savedResources = store.savedResourceIds
+  const savedResources = savedResourceIds
     .map((id) => findCatalogResource(id))
     .filter((item): item is CatalogResource => Boolean(item));
 
-  const visibleSaved = showAllSaved ? savedResources : savedResources.slice(0, 3);
+  const visibleSaved = showAllSaved
+    ? savedResources
+    : savedResources.slice(0, 3);
 
   const experience = activeResource
     ? getResourceExperience(activeResource.type)
@@ -145,11 +164,11 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
   const captionCues = activeResource ? getVideoCaptions(activeResource) : [];
   const activeCaption =
     experience === "video"
-      ? captionCues.find((cue) => {
+      ? (captionCues.find((cue) => {
           const startPct = (cue.start / 48) * 100;
           const endPct = (cue.end / 48) * 100;
           return progress >= startPct && progress < endPct;
-        }) ?? captionCues[0]
+        }) ?? captionCues[0])
       : null;
 
   useEffect(() => {
@@ -207,15 +226,26 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
 
   useEffect(() => {
     if (progress < 100 || !activeResource) return;
-    setPlaying(false);
-    setCompletedIds((prev) =>
-      prev.includes(activeResource.id) ? prev : [...prev, activeResource.id],
-    );
-    if (finishedToastFor.current !== activeResource.id) {
-      finishedToastFor.current = activeResource.id;
-      flash(`Finished · ${activeResource.title}`);
-    }
-  }, [progress, activeResource, flash]);
+
+    const timer = window.setTimeout(() => {
+      setPlaying(false);
+      if (!completedIds.includes(activeResource.id)) {
+        void toggleResourceCompletion(activeResource.id, false)
+          .then(() => refreshCompleted())
+          .catch((err) =>
+            flash(
+              err instanceof Error ? err.message : "Couldn't save progress",
+            ),
+          );
+      }
+      if (finishedToastFor.current !== activeResource.id) {
+        finishedToastFor.current = activeResource.id;
+        flash(`Finished · ${activeResource.title}`);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, [progress, activeResource, flash, completedIds, refreshCompleted]);
 
   function requireLogin() {
     if (isLoggedIn) return true;
@@ -249,22 +279,24 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
     }
   }
 
-  function toggleComplete(resource: CatalogResource) {
+  async function toggleComplete(resource: CatalogResource) {
     const isComplete = completedIds.includes(resource.id);
-    if (isComplete) {
-      setCompletedIds((prev) => prev.filter((id) => id !== resource.id));
-      setProgress(0);
-      finishedToastFor.current = null;
-      flash("Marked incomplete");
-      return;
+    try {
+      await toggleResourceCompletion(resource.id, isComplete);
+      if (isComplete) {
+        setProgress(0);
+        finishedToastFor.current = null;
+        flash("Marked incomplete");
+      } else {
+        finishedToastFor.current = resource.id;
+        setProgress(100);
+        setPlaying(false);
+        flash("Marked complete");
+      }
+      refreshCompleted();
+    } catch (err) {
+      flash(err instanceof Error ? err.message : "Couldn't update progress");
     }
-    finishedToastFor.current = resource.id;
-    setProgress(100);
-    setPlaying(false);
-    setCompletedIds((prev) =>
-      prev.includes(resource.id) ? prev : [...prev, resource.id],
-    );
-    flash("Marked complete");
   }
 
   function downloadCaptions(format: "vtt" | "txt") {
@@ -291,11 +323,18 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
     flash("Caption transcript downloaded (.txt)");
   }
 
-  function toggleSave(resource: CatalogResource) {
+  async function toggleSave(resource: CatalogResource) {
     if (!requireLogin()) return;
-    const saved = store.savedResourceIds.includes(resource.id);
-    mockStore.toggleSavedResource(resource.id);
-    flash(saved ? "Removed from saved resources" : "Saved for later");
+    const saved = savedResourceIds.includes(resource.id);
+    try {
+      await toggleSavedResource(resource.id, saved);
+      flash(saved ? "Removed from saved resources" : "Saved for later");
+      refreshSaved();
+    } catch (err) {
+      flash(
+        err instanceof Error ? err.message : "Couldn't update saved resources",
+      );
+    }
   }
 
   function openTrending(title: string) {
@@ -319,7 +358,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
 
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-12">
+      <div className="mx-auto flex max-w-7xl flex-col gap-12">
         <section className="flex flex-col gap-8">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-xl">
@@ -331,13 +370,13 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
               </p>
             </div>
             <div className="relative w-full max-w-sm">
-              <Search className="pointer-events-none absolute left-4 top-1/2 size-[18px] -translate-y-1/2 text-gray-500" />
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-4.5 -translate-y-1/2 text-gray-500" />
               <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={`Search ${activeCategory.toLowerCase()} resources...`}
-                className="h-[56px] w-full rounded-2xl border border-munity-input-border bg-white py-4 pl-12 pr-4 text-base text-munity-text shadow-sm outline-none placeholder:text-gray-500 focus:border-munity-green focus:ring-2 focus:ring-munity-green/15"
+                className="h-14 w-full rounded-2xl border border-munity-input-border bg-white py-4 pl-12 pr-4 text-base text-munity-text shadow-sm outline-none placeholder:text-gray-500 focus:border-munity-green focus:ring-2 focus:ring-munity-green/15"
               />
             </div>
           </div>
@@ -355,14 +394,16 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                     setShowAllLatest(false);
                     flash(`Browsing ${label} resources`);
                   }}
-                  className={`flex min-w-[120px] flex-col items-center gap-2.5 rounded-2xl border px-6 py-4 transition ${
+                  className={`flex min-w-30 flex-col items-center gap-2.5 rounded-2xl border px-6 py-4 transition ${
                     active
                       ? "border-munity-green bg-munity-lime/40 text-munity-olive-text"
                       : "border-munity-input-border bg-white text-munity-text hover:border-munity-green/40"
                   }`}
                 >
                   <Icon className="size-6" />
-                  <span className="text-sm font-semibold tracking-wide">{label}</span>
+                  <span className="text-sm font-semibold tracking-wide">
+                    {label}
+                  </span>
                 </button>
               );
             })}
@@ -382,7 +423,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                 <button
                   type="button"
                   onClick={() => openResource(featuredResource)}
-                  className="relative h-64 w-full md:min-h-[360px] md:w-1/2"
+                  className="relative h-64 w-full md:min-h-90 md:w-1/2"
                 >
                   <Image
                     src={categoryContent.featured.image}
@@ -427,7 +468,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       >
                         <Bookmark
                           className={`size-5 ${
-                            store.savedResourceIds.includes(featuredResource.id)
+                            savedResourceIds.includes(featuredResource.id)
                               ? "fill-current text-munity-green"
                               : ""
                           }`}
@@ -472,7 +513,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                   className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
                 >
                   {filteredLatest.map((item) => {
-                    const saved = store.savedResourceIds.includes(item.id);
+                    const saved = savedResourceIds.includes(item.id);
                     const done = completedIds.includes(item.id);
                     return (
                       <motion.article
@@ -537,7 +578,9 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                                 type="button"
                                 onClick={() => toggleSave(item)}
                                 className="rounded-full p-1.5 text-munity-muted hover:bg-munity-bg hover:text-munity-green"
-                                aria-label={saved ? "Unsave resource" : "Save resource"}
+                                aria-label={
+                                  saved ? "Unsave resource" : "Save resource"
+                                }
                               >
                                 <Bookmark
                                   className={`size-4 ${saved ? "fill-current text-munity-green" : ""}`}
@@ -650,7 +693,9 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       <p className="text-sm font-semibold leading-snug text-munity-text">
                         {item.title}
                       </p>
-                      <p className="mt-1 text-xs text-munity-muted">{item.reads}</p>
+                      <p className="mt-1 text-xs text-munity-muted">
+                        {item.reads}
+                      </p>
                     </div>
                   </button>
                 ))}
@@ -661,9 +706,12 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
               <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white/10">
                 <Headphones className="size-5" />
               </div>
-              <h3 className="text-xl font-bold leading-tight">Need Immediate Help?</h3>
+              <h3 className="text-xl font-bold leading-tight">
+                Need Immediate Help?
+              </h3>
               <p className="mt-2 text-sm leading-relaxed opacity-90">
-                Connect with a certified peer counselor or therapist within 15 minutes.
+                Connect with a certified peer counselor or therapist within 15
+                minutes.
               </p>
               <div className="mt-5 flex flex-col gap-2">
                 <Link
@@ -693,7 +741,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+            className="fixed inset-0 z-80 flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
             onClick={closeResource}
           >
             <motion.div
@@ -701,7 +749,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.97 }}
               onClick={(event) => event.stopPropagation()}
-              className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] border border-[#d8dbcf] bg-white shadow-2xl"
+              className="relative flex max-h-[90dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[#d8dbcf] bg-white shadow-2xl"
             >
               <div className="relative shrink-0">
                 {experience === "video" ? (
@@ -741,7 +789,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/55 to-transparent" />
+                    <div className="absolute inset-0 bg-linear-to-t from-black/55 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-14 text-white">
                       <p className="text-xs font-semibold uppercase tracking-wide text-munity-lime">
                         {activeResource.type} · {activeResource.category}
@@ -797,7 +845,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
 
                 {experience === "video" ? (
                   <div className="space-y-4">
-                    <div className="h-2 overflow-hidden rounded-full bg-[#e5e5e1]">
+                    <div className="h-2 overflow-hidden rounded-full bg-munity-border">
                       <div
                         className="h-full rounded-full bg-munity-green transition-[width] duration-150"
                         style={{ width: `${Math.min(100, progress)}%` }}
@@ -831,7 +879,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                         className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
                           showCaptions
                             ? "border-munity-green bg-munity-lime/40 text-munity-olive-text"
-                            : "border-[#c5c8b8] bg-white text-munity-text hover:bg-[#f3f4ee]"
+                            : "border-munity-input-border bg-white text-munity-text hover:bg-[#f3f4ee]"
                         }`}
                       >
                         <Subtitles className="size-4" />
@@ -840,7 +888,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       <button
                         type="button"
                         onClick={() => downloadCaptions("txt")}
-                        className="inline-flex items-center gap-2 rounded-xl border border-[#c5c8b8] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
+                        className="inline-flex items-center gap-2 rounded-xl border border-munity-input-border bg-white px-4 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
                       >
                         <Download className="size-4" />
                         Download captions
@@ -848,7 +896,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       <button
                         type="button"
                         onClick={() => downloadCaptions("vtt")}
-                        className="inline-flex items-center gap-2 rounded-xl border border-[#c5c8b8] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
+                        className="inline-flex items-center gap-2 rounded-xl border border-munity-input-border bg-white px-4 py-2.5 text-sm font-semibold text-munity-text transition hover:bg-[#f3f4ee]"
                       >
                         <Download className="size-4" />
                         Download .vtt
@@ -874,8 +922,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                                 {Math.floor(cue.start / 60)
                                   .toString()
                                   .padStart(2, "0")}
-                                :
-                                {(cue.start % 60).toString().padStart(2, "0")}
+                                :{(cue.start % 60).toString().padStart(2, "0")}
                               </span>
                               {cue.text}
                             </p>
@@ -900,7 +947,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                           className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
                             !listenMode
                               ? "border-munity-green bg-munity-lime/40 text-munity-olive-text"
-                              : "border-[#c5c8b8] bg-white text-munity-text hover:bg-[#f3f4ee]"
+                              : "border-munity-input-border bg-white text-munity-text hover:bg-[#f3f4ee]"
                           }`}
                         >
                           Read article
@@ -915,7 +962,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                           className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
                             listenMode
                               ? "border-munity-green bg-munity-lime/40 text-munity-olive-text"
-                              : "border-[#c5c8b8] bg-white text-munity-text hover:bg-[#f3f4ee]"
+                              : "border-munity-input-border bg-white text-munity-text hover:bg-[#f3f4ee]"
                           }`}
                         >
                           {listenMode && playing ? (
@@ -989,7 +1036,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                       </button>
                     ) : null}
 
-                    <div className="h-2 overflow-hidden rounded-full bg-[#e5e5e1]">
+                    <div className="h-2 overflow-hidden rounded-full bg-munity-border">
                       <div
                         className="h-full rounded-full bg-munity-green transition-[width] duration-150"
                         style={{ width: `${Math.min(100, progress)}%` }}
@@ -1005,7 +1052,7 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                     className={`inline-flex items-center gap-2 rounded-xl border-2 px-4 py-2.5 text-sm font-semibold transition ${
                       completedIds.includes(activeResource.id)
                         ? "border-munity-green bg-munity-lime/40 text-munity-olive-text hover:bg-munity-lime/60"
-                        : "border-[#75796b] bg-white text-munity-text hover:bg-[#eceee6]"
+                        : "border-munity-gray bg-white text-munity-text hover:bg-[#eceee6]"
                     }`}
                   >
                     {completedIds.includes(activeResource.id) ? (
@@ -1028,12 +1075,12 @@ export function ResourcesView({ isLoggedIn = false }: { isLoggedIn?: boolean }) 
                     >
                       <Bookmark
                         className={`size-4 ${
-                          store.savedResourceIds.includes(activeResource.id)
+                          savedResourceIds.includes(activeResource.id)
                             ? "fill-current"
                             : ""
                         }`}
                       />
-                      {store.savedResourceIds.includes(activeResource.id)
+                      {savedResourceIds.includes(activeResource.id)
                         ? "Saved"
                         : "Save"}
                     </button>

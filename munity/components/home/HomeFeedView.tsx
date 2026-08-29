@@ -454,7 +454,7 @@ export function HomeFeedView() {
               >
                 <div className="relative size-16 overflow-hidden rounded-full">
                   <Image
-                    src={store.profile.avatar}
+                    src={profile?.avatarUrl ?? "/images/profile/avatar.jpg"}
                     alt={firstName}
                     fill
                     className="object-cover"
@@ -608,8 +608,8 @@ export function HomeFeedView() {
             <div className="flex gap-3 sm:gap-4">
               <div className="relative size-11 shrink-0 overflow-hidden rounded-full sm:size-12">
                 <Image
-                  src={store.profile.avatar}
-                  alt={store.profile.fullName}
+                  src={profile?.avatarUrl ?? "/images/profile/avatar.jpg"}
+                  alt={fullName}
                   fill
                   className="object-cover"
                 />
