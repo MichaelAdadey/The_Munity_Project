@@ -18,12 +18,13 @@ import { Button } from "@/components/ui/AppButton";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { assets } from "@/lib/assets";
-import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 const dateRanges = ["Last 30 Days", "Last 3 Months", "Last 6 Months", "Last 12 Months"];
 
+// NOTE: everything below (GAD-7 scores, chart, attendance, themes) is illustrative sample
+// data — clinical assessments and session-theme analysis aren't backed by real tables yet.
 const summaryStats = [
   { label: "GAD-7 score", value: "8", detail: "Down from 14 at baseline", tone: "good" as const },
   { label: "Symptom change", value: "−42%", detail: "Since onboarding", tone: "good" as const },
@@ -75,7 +76,7 @@ function scoreToY(score: number, max = 21) {
 }
 
 interface TherapeuticProgressViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProps) {
@@ -83,7 +84,7 @@ export function TherapeuticProgressView({ patient }: TherapeuticProgressViewProp
   const { flash } = useLiveToast();
   const [dateRange, setDateRange] = useState("Last 6 Months");
   const [exportOpen, setExportOpen] = useState(false);
-  const avatar = assets.avatars[patient.avatarKey];
+  const avatar = patient.avatar;
   const maxThemeCount = themes[0]?.count ?? 1;
 
   function buildProgressHTML() {

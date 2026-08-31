@@ -1,5 +1,3 @@
-import type { assets } from "@/lib/assets";
-
 export const routes = {
   home: "/",
   memberHome: "/home",
@@ -116,52 +114,20 @@ export const onboardingSteps: {
   },
 ];
 
-export type PatientSlug = "leo-richards" | "elena-rodriguez" | "alex-mercer";
+/** A real patient's `profiles.id` (UUID). Named `slug` since it's what fills the `[slug]` route segment. */
+export type PatientSlug = string;
 
-export type PatientAvatarKey = keyof (typeof assets)["avatars"];
-
+/**
+ * Minimal identity shape the patient-detail views/sidebar need to render.
+ * `lib/therapist/patients-queries.ts`'s `TherapistPatient` is a superset of this,
+ * so real patient data drops straight in.
+ */
 export type PatientRecord = {
   slug: PatientSlug;
   name: string;
   clientId: string;
-  avatarKey: PatientAvatarKey;
+  avatar: string;
 };
-
-export const defaultPatientSlug: PatientSlug = "leo-richards";
-
-export const patientsBySlug: Record<PatientSlug, PatientRecord> = {
-  "leo-richards": {
-    slug: "leo-richards",
-    name: "Leo Richards",
-    clientId: "#LR-2847",
-    avatarKey: "leo",
-  },
-  "elena-rodriguez": {
-    slug: "elena-rodriguez",
-    name: "Elena Rodriguez",
-    clientId: "#ER-4421",
-    avatarKey: "elena",
-  },
-  "alex-mercer": {
-    slug: "alex-mercer",
-    name: "Alex Mercer",
-    clientId: "#8201",
-    avatarKey: "alex",
-  },
-};
-
-export const patientSlugs = Object.keys(patientsBySlug) as PatientSlug[];
-
-export function isPatientSlug(slug: string): slug is PatientSlug {
-  return slug in patientsBySlug;
-}
-
-export function getPatient(slug: string): PatientRecord | null {
-  if (!isPatientSlug(slug)) {
-    return null;
-  }
-  return patientsBySlug[slug];
-}
 
 export function patientRoutes(slug: PatientSlug) {
   return {
@@ -196,10 +162,3 @@ export function patientNavHref(slug: PatientSlug, section: PatientNavSection): s
       return paths.carePlan;
   }
 }
-
-/** @deprecated Use patientRoutes(slug) for slug-aware navigation */
-export const patients = {
-  leo: patientsBySlug["leo-richards"],
-  elena: patientsBySlug["elena-rodriguez"],
-  alex: patientsBySlug["alex-mercer"],
-} as const;

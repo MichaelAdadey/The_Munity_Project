@@ -9,8 +9,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import type { PatientRecord, PatientSlug } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 type PatientFile = {
   name: string;
@@ -20,7 +19,9 @@ type PatientFile = {
   category: string;
 };
 
-const filesByPatient: Record<PatientSlug, PatientFile[]> = {
+// NOTE: sample files for the 3 original demo patients only — a real per-patient file store
+// isn't built yet, so every actual patient falls through to the empty state below.
+const filesByPatient: Record<string, PatientFile[]> = {
   "leo-richards": [
     {
       name: "Intake Assessment.pdf",
@@ -86,13 +87,13 @@ const filesByPatient: Record<PatientSlug, PatientFile[]> = {
 };
 
 interface PatientFilesViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function PatientFilesView({ patient }: PatientFilesViewProps) {
   const { flash } = useLiveToast();
-  const avatar = assets.avatars[patient.avatarKey];
-  const files = filesByPatient[patient.slug];
+  const avatar = patient.avatar;
+  const files = filesByPatient[patient.slug] ?? [];
   const [uploading, setUploading] = useState(false);
 
   return (
@@ -137,6 +138,11 @@ export function PatientFilesView({ patient }: PatientFilesViewProps) {
               </header>
 
               <div className="mb-5 flex items-center justify-between gap-3"><LiveTicker items={[`${files.length} files are available for ${patient.name}.`, "Clinical documents are encrypted and access-controlled."]} /><LivePulse label="Synced" /></div>
+              {files.length === 0 ? (
+                <div className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+                  No files uploaded for {patient.name} yet.
+                </div>
+              ) : (
               <div className="flex flex-col gap-3">
                 {files.map((file, index) => (
                   <motion.div
@@ -169,6 +175,7 @@ export function PatientFilesView({ patient }: PatientFilesViewProps) {
                   </motion.div>
                 ))}
               </div>
+              )}
             </AnimatedPage>
           </CollapsibleSidebarLayout>
         </div>

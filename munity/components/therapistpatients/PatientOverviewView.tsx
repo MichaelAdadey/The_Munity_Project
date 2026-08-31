@@ -15,9 +15,8 @@ import { Button } from "@/components/ui/AppButton";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { assets } from "@/lib/assets";
-import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 const moodPeriods = ["Last 7 Days", "Last 30 Days", "Last 90 Days"];
 
@@ -74,7 +73,7 @@ const activities = [
 ];
 
 interface PatientOverviewViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
@@ -85,7 +84,7 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
   const [notes, setNotes] = useState("");
   const [booked, setBooked] = useState(false);
 
-  const avatar = assets.avatars[patient.avatarKey];
+  const avatar = patient.avatar;
   const clinicalNotesHref = patientNavHref(patient.slug, "Clinical Notes");
   const moodBars = useMemo(() => moodData[moodPeriod], [moodPeriod]);
 
@@ -119,14 +118,22 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                 <div>
                   <h1 className="text-base font-normal text-munity-text">{patient.name}</h1>
                   <div className="mt-1 flex gap-2">
-                    <span className="rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
-                      Weekly Therapy
+                    <span
+                      className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                        patient.status === "Active"
+                          ? "bg-munity-lime/50 text-munity-olive-text"
+                          : "bg-[#e4e4cc] text-[#474836]"
+                      }`}
+                    >
+                      {patient.status} Patient
                     </span>
                     <span className="rounded-full bg-[#e4e4cc] px-3 py-1 text-xs font-semibold text-[#474836]">
-                      Active Patient
+                      {patient.sessionCount} session{patient.sessionCount === 1 ? "" : "s"}
                     </span>
                   </div>
                 </div>
+                {/* NOTE: this button doesn't create a real booking yet — therapist-initiated
+                    scheduling isn't built (booking creation is currently patient-initiated only). */}
                 <div className="flex gap-2">
                   <Button
                     className="px-5 py-4"
@@ -148,10 +155,10 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
               </div>
               <div className="grid grid-cols-4 gap-4 border-t border-munity-border pt-6">
                 {[
-                  { label: "AGE", value: "28" },
-                  { label: "GENDER", value: "Male" },
-                  { label: "LOCATION", value: "Seattle, WA" },
-                  { label: "MEMBERSHIP", value: "Oct 2023" },
+                  { label: "EMAIL", value: patient.email },
+                  { label: "CLIENT ID", value: patient.clientId },
+                  { label: "LAST SESSION", value: patient.lastSessionLabel },
+                  { label: "MEMBER SINCE", value: patient.memberSince },
                 ].map((item) => (
                   <div key={item.label}>
                     <p className="text-base uppercase tracking-wider text-munity-muted">{item.label}</p>
@@ -170,6 +177,9 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
             ]}
           />
 
+          {/* NOTE: Mood Trends, Recent Activity, and Private Clinician Notes below are still
+              placeholder content — patient-facing mood check-ins and journaling aren't wired to
+              real per-patient data yet. Patient identity above this point is real. */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)] lg:col-span-2">
               <div className="flex items-start justify-between">
@@ -209,22 +219,36 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
             <section className="relative flex flex-col justify-between overflow-hidden rounded-[20px] bg-munity-green p-8 shadow-lg">
               <div>
                 <p className="text-base uppercase tracking-[0.16em] text-munity-lime-light">
-                  <span className="flex items-center gap-2">Upcoming Session <LivePulse label="confirmed" /></span>
+                  <span className="flex items-center gap-2">
+                    Upcoming Session
+                    {patient.nextSessionAt ? <LivePulse label="confirmed" /> : null}
+                  </span>
                 </p>
-                <h3 className="mt-4 text-base text-white">Tomorrow</h3>
-                <p className="text-base text-white">10:30 AM — 11:30 AM</p>
+                {patient.nextSessionAt ? (
+                  <>
+                    <h3 className="mt-4 text-base text-white">{patient.nextSessionLabel}</h3>
+                    <p className="text-base text-white">
+                      {new Date(patient.nextSessionAt).toLocaleTimeString([], {
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-4 text-base text-white/80">
+                    No upcoming session scheduled with {patient.name}.
+                  </p>
+                )}
               </div>
               <div className="mt-8 space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-full bg-white/20">
-                    <Video className="size-4 text-white" />
+                {patient.nextSessionAt ? (
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-10 items-center justify-center rounded-full bg-white/20">
+                      <Video className="size-4 text-white" />
+                    </div>
+                    <p className="text-base text-white">Session details available on your calendar</p>
                   </div>
-                  <p className="text-base text-white">
-                    Virtual Meeting ID: 882-
-                    <br />
-                    019-331
-                  </p>
-                </div>
+                ) : null}
                 <Button
                   variant="lime"
                   className="w-full"

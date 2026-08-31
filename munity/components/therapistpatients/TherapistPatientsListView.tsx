@@ -7,51 +7,49 @@ import { useMemo, useState } from "react";
 import { ChevronRight, Search } from "lucide-react";
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
-import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
+import { patientRoutes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
-const patientMeta: Record<
-  (typeof patientSlugs)[number],
-  { status: string; plan: string; lastActive: string; mood: string }
-> = {
-  "leo-richards": {
-    status: "Active",
-    plan: "Weekly Therapy",
-    lastActive: "2h ago",
-    mood: "8/10",
-  },
-  "elena-rodriguez": {
-    status: "Active",
-    plan: "Bi-weekly",
-    lastActive: "Yesterday",
-    mood: "6/10",
-  },
-  "alex-mercer": {
-    status: "Follow-up",
-    plan: "Monthly Check-in",
-    lastActive: "3 days ago",
-    mood: "7/10",
-  },
-};
+interface TherapistPatientsListViewProps {
+  patients: TherapistPatient[];
+}
 
-const patients = patientSlugs.map((slug) => ({
-  ...patientsBySlug[slug],
-  avatar: assets.avatars[patientsBySlug[slug].avatarKey],
-  ...patientMeta[slug],
-}));
-
-export function TherapistPatientsListView() {
+export function TherapistPatientsListView({ patients }: TherapistPatientsListViewProps) {
   const [query, setQuery] = useState("");
   const visiblePatients = useMemo(
     () => patients.filter((patient) => patient.name.toLowerCase().includes(query.toLowerCase())),
-    [query],
+    [patients, query],
   );
+  const activeCount = useMemo(
+    () => patients.filter((patient) => patient.status === "Active").length,
+    [patients],
+  );
+  const nextUpcoming = useMemo(
+    () =>
+      patients
+        .filter((patient): patient is TherapistPatient & { nextSessionAt: string } =>
+          Boolean(patient.nextSessionAt),
+        )
+        .sort((a, b) => new Date(a.nextSessionAt).getTime() - new Date(b.nextSessionAt).getTime())[0] ??
+      null,
+    [patients],
+  );
+
+  const tickerItems =
+    patients.length === 0
+      ? ["Booked sessions with patients will show up here."]
+      : [
+          `${activeCount} active patient${activeCount === 1 ? "" : "s"} in your caseload.`,
+          nextUpcoming
+            ? `${nextUpcoming.name} has a session on ${nextUpcoming.nextSessionLabel}.`
+            : "No upcoming sessions scheduled.",
+        ];
 
   return (
     <TherapistAppShell
       active="Patients"
       title="Patients"
-      subtitle={`${patients.length} active clients in your practice`}
+      subtitle={`${patients.length} patient${patients.length === 1 ? "" : "s"} in your practice`}
       actions={
         <div className="relative w-full max-w-xs sm:w-64">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-munity-muted" />
@@ -65,15 +63,9 @@ export function TherapistPatientsListView() {
         </div>
       }
     >
-      <LiveTicker
-        items={[
-          "Leo Richards completed a mood check-in · 8/10.",
-          "Elena Rodriguez has a session tomorrow at 1:00 PM.",
-          "Alex Mercer’s care-plan review is due this week.",
-        ]}
-      />
+      <LiveTicker items={tickerItems} />
       <div className="flex items-center gap-2 text-sm text-munity-muted">
-        <LivePulse label="Active caseload" count={visiblePatients.length} />
+        <LivePulse label="Active caseload" count={activeCount} />
         <span>{visiblePatients.length} matching patients</span>
       </div>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -109,23 +101,35 @@ export function TherapistPatientsListView() {
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                <span className="rounded-full bg-munity-lime/50 px-3 py-1 text-xs font-semibold text-munity-olive-text">
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    patient.status === "Active"
+                      ? "bg-munity-lime/50 text-munity-olive-text"
+                      : "bg-munity-sidebar text-munity-muted"
+                  }`}
+                >
                   {patient.status}
                 </span>
                 <span className="rounded-full bg-munity-sidebar px-3 py-1 text-xs font-semibold text-munity-muted">
-                  {patient.plan}
+                  {patient.sessionCount} session{patient.sessionCount === 1 ? "" : "s"}
                 </span>
               </div>
 
               <div className="mt-5 flex items-center justify-between border-t border-munity-border pt-4 text-sm">
-                <span className="text-munity-muted">Last active: {patient.lastActive}</span>
-                <span className="font-semibold text-munity-green">Mood {patient.mood}</span>
+                <span className="text-munity-muted">Last session: {patient.lastSessionLabel}</span>
+                <span className="font-semibold text-munity-green">
+                  {patient.nextSessionLabel ? `Next: ${patient.nextSessionLabel}` : "No upcoming session"}
+                </span>
               </div>
             </Link>
           </motion.div>
         ))}
       </div>
-      {visiblePatients.length === 0 ? (
+      {patients.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+          You don&apos;t have any patients yet. Once someone books a session with you, they&apos;ll show up here.
+        </motion.div>
+      ) : visiblePatients.length === 0 ? (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
           No patients match “{query}”. Try another name or clear your search.
         </motion.div>

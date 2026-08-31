@@ -16,7 +16,7 @@ export async function requireRole(allowedRoles: string[], loginPath: string) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, first_name, last_name, avatar_url")
+    .select("role, first_name, last_name, avatar_url, created_at")
     .eq("id", user.id)
     .single();
 

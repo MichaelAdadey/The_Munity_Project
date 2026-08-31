@@ -6,72 +6,24 @@ import Link from "next/link";
 import { ChevronRight, FileText, Search } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
+import { useMockStore } from "@/lib/mock-store";
+import { patientRoutes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
-type NotePreview = {
-  id: number;
-  date: string;
-  title: string;
-  excerpt: string;
-  tags?: string[];
-};
+interface TherapistClinicalNotesListViewProps {
+  patients: TherapistPatient[];
+}
 
-const notesByPatient: Record<(typeof patientSlugs)[number], NotePreview[]> = {
-  "leo-richards": [
-    {
-      id: 12,
-      date: "Today",
-      title: "Addressing Anxiety Triggers",
-      excerpt: "Patient reported increased stress during workplace transition.",
-      tags: ["CBT", "MOOD: FAIR"],
-    },
-    {
-      id: 11,
-      date: "Oct 17, 2023",
-      title: "Boundary Setting at Home",
-      excerpt: "Explored family dynamics and the concept of healthy detachment.",
-    },
-  ],
-  "elena-rodriguez": [
-    {
-      id: 8,
-      date: "Mar 12",
-      title: "Sleep Hygiene Review",
-      excerpt: "Reviewed evening routine changes and progress on wind-down habits.",
-      tags: ["CBT"],
-    },
-    {
-      id: 7,
-      date: "Feb 28",
-      title: "Work-Life Balance Check-in",
-      excerpt: "Discussed boundaries with manager and coping strategies for deadlines.",
-    },
-  ],
-  "alex-mercer": [
-    {
-      id: 5,
-      date: "Mar 10",
-      title: "Monthly Progress Review",
-      excerpt: "Month 3 review. Patient showing marked improvement in sleep patterns.",
-      tags: ["MOOD: GOOD"],
-    },
-    {
-      id: 4,
-      date: "Feb 10",
-      title: "Grief and Loss Processing",
-      excerpt: "First session focusing on recent loss. Narrative therapy techniques used.",
-    },
-  ],
-};
+export function TherapistClinicalNotesListView({ patients }: TherapistClinicalNotesListViewProps) {
+  const { sessionNotes } = useMockStore();
 
-const patients = patientSlugs.map((slug) => ({
-  ...patientsBySlug[slug],
-  avatar: assets.avatars[patientsBySlug[slug].avatarKey],
-  notes: notesByPatient[slug],
-}));
+  const patientsWithNotes = patients.map((patient) => ({
+    ...patient,
+    notes: sessionNotes
+      .filter((note) => note.patientSlug === patient.slug)
+      .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()),
+  }));
 
-export function TherapistClinicalNotesListView() {
   return (
     <TherapistAppShell
       active="Sessions"
@@ -88,9 +40,14 @@ export function TherapistClinicalNotesListView() {
         </div>
       }
     >
-      <LiveTicker items={["A new session note was saved today.", "Two notes need a final review before the next session."]} />
+      <LiveTicker
+        items={[
+          `${patientsWithNotes.reduce((sum, p) => sum + p.notes.length, 0)} saved session note(s) across your caseload.`,
+          `${patients.length} patient${patients.length === 1 ? "" : "s"} in your caseload.`,
+        ]}
+      />
       <div className="flex flex-col gap-6">
-        {patients.map((patient, index) => (
+        {patientsWithNotes.map((patient, index) => (
           <motion.section
             key={patient.slug}
             initial={{ opacity: 0, y: 12 }}
@@ -112,7 +69,7 @@ export function TherapistClinicalNotesListView() {
                     {patient.clientId}
                   </p>
                 </div>
-                {index === 0 ? <LivePulse label="New note" /> : null}
+                {index === 0 && patient.notes.length > 0 ? <LivePulse label="Has notes" /> : null}
               </Link>
               <Link
                 href={patientRoutes(patient.slug).clinicalNotes}
@@ -124,43 +81,41 @@ export function TherapistClinicalNotesListView() {
               </Link>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
-              {patient.notes.map((note) => (
-                <Link
-                  key={note.id}
-                  href={patientRoutes(patient.slug).clinicalNotes}
-                  className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4 transition hover:border-munity-green/30 hover:bg-munity-lime/10"
-                >
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="font-semibold text-munity-green">Session #{note.id}</span>
-                    <span className="text-xs font-medium text-munity-muted">{note.date}</span>
-                  </div>
-                  <h3 className="mt-2 text-base font-semibold text-munity-text">{note.title}</h3>
-                  <p className="mt-1 line-clamp-2 text-sm leading-5 text-munity-muted">
-                    {note.excerpt}
-                  </p>
-                  {note.tags ? (
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {note.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                            tag === "CBT"
-                              ? "bg-munity-lime text-munity-olive-text"
-                              : "bg-munity-divider text-munity-muted"
-                          }`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+            {patient.notes.length === 0 ? (
+              <p className="mt-4 text-sm text-munity-muted">No session notes saved for {patient.name} yet.</p>
+            ) : (
+              <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {patient.notes.slice(0, 4).map((note) => (
+                  <Link
+                    key={note.id}
+                    href={patientRoutes(patient.slug).clinicalNotes}
+                    className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4 transition hover:border-munity-green/30 hover:bg-munity-lime/10"
+                  >
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-xs font-medium text-munity-muted">
+                        {new Date(`${note.sessionDate}T12:00:00`).toLocaleDateString(undefined, {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
                     </div>
-                  ) : null}
-                </Link>
-              ))}
-            </div>
+                    <h3 className="mt-2 text-base font-semibold text-munity-text">{note.title}</h3>
+                    <p className="mt-1 line-clamp-2 text-sm leading-5 text-munity-muted">
+                      {note.body}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            )}
           </motion.section>
         ))}
       </div>
+      {patients.length === 0 ? (
+        <div className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+          You don&apos;t have any patients yet.
+        </div>
+      ) : null}
     </TherapistAppShell>
   );
 }

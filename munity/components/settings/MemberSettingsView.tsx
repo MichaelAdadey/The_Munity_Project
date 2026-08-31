@@ -98,6 +98,7 @@ function Toggle({
 export function MemberSettingsView() {
   const store = useMockStore();
   const { flash } = useLiveToast();
+  const { darkMode, setDarkMode } = useTheme();
   const settingKeys: Record<
     string,
     Exclude<keyof typeof store.settings, "displayName">

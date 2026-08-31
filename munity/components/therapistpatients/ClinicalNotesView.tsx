@@ -20,10 +20,9 @@ import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { assets } from "@/lib/assets";
 import { useMockStore } from "@/lib/mock-store";
-import type { PatientRecord } from "@/lib/routes";
 import { patientNavHref, patientRoutes, routes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 type NoteSession = {
   id: string | number;
@@ -36,6 +35,8 @@ type NoteSession = {
   body?: string;
 };
 
+// NOTE: sample notes shown alongside any real notes saved via mockStore.addSessionNote —
+// clinical note history isn't backed by a real table yet, so these are illustrative filler.
 const sessions: NoteSession[] = [
   {
     id: 12,
@@ -70,7 +71,7 @@ const sessions: NoteSession[] = [
 ];
 
 interface ClinicalNotesViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
@@ -93,7 +94,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const [observationsState, setObservationsState] = useState("");
   const [moodState, setMoodState] = useState("Fair (5-6)");
   const [riskState, setRiskState] = useState("Low risk");
-  const avatar = assets.avatars[patient.avatarKey];
+  const avatar = patient.avatar;
   const firstName = patient.name.split(" ")[0];
   const persistedSessions: NoteSession[] = sessionNotes
     .filter((note) => note.patientSlug === patient.slug)
@@ -240,7 +241,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
               <div>
                 <h2 className="text-2xl font-semibold text-munity-text">{patient.name}</h2>
                 <p className="text-xs font-medium text-munity-muted">
-                  Patient ID: {patient.clientId} • Last Session: Oct 24, 2023
+                  Patient ID: {patient.clientId} • Last Session: {patient.lastSessionLabel}
                 </p>
               </div>
             </div>

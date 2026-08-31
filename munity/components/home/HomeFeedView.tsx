@@ -10,6 +10,7 @@ import {
   ImageIcon,
   Lightbulb,
   MessageCircle,
+  MoreHorizontal,
   Plus,
   Smile,
   Trash2,
@@ -38,7 +39,8 @@ import {
   toggleSavePost,
   toggleSupport,
 } from "@/lib/feed/actions";
-import { MOOD_LABEL_TO_DB } from "@/types/feed";
+import { MOOD_LABEL_TO_DB, type FeedPost } from "@/types/feed";
+import type { FeedPost as MockFeedPost } from "@/lib/mock-db";
 
 const demoPhotoLibrary = [
   {
@@ -147,6 +149,11 @@ export function HomeFeedView() {
   const [justSupported, setJustSupported] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [openPostMenu, setOpenPostMenu] = useState<string | null>(null);
+  const [lightboxPost, setLightboxPost] = useState<FeedPost | null>(null);
+  // NOTE: no trigger sets this yet (no "Edit" option in the post menu below), and
+  // EditPostDialog still targets the old mock-store post shape rather than the real
+  // Supabase-backed feed from useFeed() — editing isn't wired up end-to-end.
+  const [editingPost, setEditingPost] = useState<MockFeedPost | null>(null);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -937,7 +944,16 @@ export function HomeFeedView() {
                   ) : null}
 
                   {imageSrc ? (
-                    <div className="relative mt-4 h-56 w-full overflow-hidden rounded-2xl sm:h-64">
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setLightboxPost(post)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") setLightboxPost(post);
+                      }}
+                      aria-label="View post photo"
+                      className="relative mt-4 h-56 w-full cursor-zoom-in overflow-hidden rounded-2xl sm:h-64"
+                    >
                       {imageSrc.startsWith("http") ||
                       imageSrc.startsWith("blob:") ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -954,7 +970,7 @@ export function HomeFeedView() {
                           className="object-cover"
                         />
                       )}
-                    </button>
+                    </div>
                   ) : null}
 
                   <div className="mt-4 flex items-center gap-1 border-t border-munity-border/60 pt-3">
@@ -1302,7 +1318,7 @@ export function HomeFeedView() {
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setLightboxPost(null);
         }}
-        images={lightboxPost ? [lightboxPost.image] : []}
+        images={lightboxPost?.imageUrl ? [lightboxPost.imageUrl] : []}
         altText={lightboxPost ? `Photo from ${lightboxPost.author}'s post` : "Post image"}
       />
 

@@ -1,12 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import {
-  patientRoutes,
-  patientSlugs,
-  patientsBySlug,
-  routes,
-} from "@/lib/routes";
+import { routes } from "@/lib/routes";
 
 const screens = [
   { title: "Landing Page", subtitle: "Public homepage", href: routes.home },
@@ -95,42 +90,10 @@ const screens = [
     subtitle: "Treatment goals across your caseload",
     href: routes.therapistCarePlan,
   },
-  ...patientSlugs.flatMap((slug) => {
-    const patient = patientsBySlug[slug];
-    const paths = patientRoutes(slug);
-    return [
-      {
-        title: `${patient.name} — Overview`,
-        subtitle: "Patient clinical dashboard",
-        href: paths.overview,
-      },
-      {
-        title: `${patient.name} — Clinical Notes`,
-        subtitle: "Session notes editor",
-        href: paths.clinicalNotes,
-      },
-      {
-        title: `${patient.name} — New Session Note`,
-        subtitle: "Create a new clinical session note",
-        href: paths.newSessionNote,
-      },
-      {
-        title: `${patient.name} — Progress`,
-        subtitle: "Therapeutic progress tracking",
-        href: paths.progress,
-      },
-      {
-        title: `${patient.name} — Files`,
-        subtitle: "Patient documents and worksheets",
-        href: paths.files,
-      },
-      {
-        title: `${patient.name} — Care Plan`,
-        subtitle: "Treatment goals and review schedule",
-        href: paths.carePlan,
-      },
-    ];
-  }),
+  // NOTE: per-patient screens (/therapistpatients/[slug]/...) used to be listed here via
+  // 3 hardcoded demo patients. Patient detail routes now require a real booking relationship
+  // with the signed-in therapist, so there's no fixed slug to link to from this static index —
+  // reach them via the "Patients" screen above once signed in as a therapist with real patients.
 ];
 
 export default function DevIndexPage() {

@@ -3,83 +3,35 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Search, TrendingDown, TrendingUp, Users } from "lucide-react";
+import { ChevronRight, Search, TrendingUp, Users } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
+import { patientRoutes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
-const analyticsByPatient: Record<
-  (typeof patientSlugs)[number],
-  {
-    moodScore: string;
-    moodTrend: "up" | "down" | "stable";
-    improvement: string;
-    attendance: string;
-    sessionsCompleted: number;
-    focusArea: string;
-  }
-> = {
-  "leo-richards": {
-    moodScore: "8/10",
-    moodTrend: "up",
-    improvement: "-42%",
-    attendance: "88%",
-    sessionsCompleted: 16,
-    focusArea: "Anxiety",
-  },
-  "elena-rodriguez": {
-    moodScore: "6/10",
-    moodTrend: "stable",
-    improvement: "-18%",
-    attendance: "76%",
-    sessionsCompleted: 11,
-    focusArea: "Sleep & burnout",
-  },
-  "alex-mercer": {
-    moodScore: "7/10",
-    moodTrend: "up",
-    improvement: "-31%",
-    attendance: "82%",
-    sessionsCompleted: 8,
-    focusArea: "Grief processing",
-  },
-};
+interface TherapistAnalyticsListViewProps {
+  patients: TherapistPatient[];
+}
 
-const patients = patientSlugs.map((slug) => ({
-  ...patientsBySlug[slug],
-  avatar: assets.avatars[patientsBySlug[slug].avatarKey],
-  ...analyticsByPatient[slug],
-}));
+export function TherapistAnalyticsListView({ patients }: TherapistAnalyticsListViewProps) {
+  const activeCount = patients.filter((p) => p.status === "Active").length;
+  const totalSessions = patients.reduce((sum, p) => sum + p.sessionCount, 0);
 
-const overviewStats = [
-  {
-    label: "Active Patients",
-    value: String(patients.length),
-    detail: "In current caseload",
-    icon: Users,
-  },
-  {
-    label: "Avg. Mood Score",
-    value: "7.0",
-    detail: "+0.4 vs last month",
-    icon: TrendingUp,
-  },
-  {
-    label: "Avg. Attendance",
-    value: "82%",
-    detail: "Across all sessions",
-    icon: TrendingUp,
-  },
-  {
-    label: "Symptom Reduction",
-    value: "30%",
-    detail: "Mean improvement",
-    icon: TrendingDown,
-  },
-];
+  const overviewStats = [
+    {
+      label: "Active Patients",
+      value: String(activeCount),
+      detail: `${patients.length} total in caseload`,
+      icon: Users,
+    },
+    {
+      label: "Total Sessions",
+      value: String(totalSessions),
+      detail: "Across all patients",
+      icon: TrendingUp,
+    },
+  ];
 
-export function TherapistAnalyticsListView() {
   return (
     <TherapistAppShell
       active="Analysis"
@@ -96,7 +48,12 @@ export function TherapistAnalyticsListView() {
         </div>
       }
     >
-      <LiveTicker items={["Caseload mood average improved by 0.4 this month.", "One patient care-plan review is due this week."]} />
+      <LiveTicker
+        items={[
+          `${activeCount} active patient${activeCount === 1 ? "" : "s"} in your caseload.`,
+          `${totalSessions} session${totalSessions === 1 ? "" : "s"} recorded across your caseload.`,
+        ]}
+      />
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {overviewStats.map((stat, index) => {
           const Icon = stat.icon;
@@ -143,7 +100,7 @@ export function TherapistAnalyticsListView() {
                 <div>
                   <p className="font-semibold text-munity-text">{patient.name}</p>
                   <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                    {patient.clientId} · Focus: {patient.focusArea}
+                    {patient.clientId} · {patient.status}
                   </p>
                 </div>
               </Link>
@@ -156,50 +113,39 @@ export function TherapistAnalyticsListView() {
               </Link>
             </div>
 
-            <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
-              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                  Mood score
-                </p>
-                <p className="mt-2 text-2xl font-bold text-munity-text">{patient.moodScore}</p>
-                <p className="mt-1 text-xs text-munity-green">
-                  {patient.moodTrend === "up"
-                    ? "Trending up"
-                    : patient.moodTrend === "down"
-                      ? "Needs attention"
-                      : "Stable"}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                  Symptom change
-                </p>
-                <p className="mt-2 text-2xl font-bold text-munity-green">{patient.improvement}</p>
-                <p className="mt-1 text-xs text-munity-muted">vs baseline</p>
-              </div>
-              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
-                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                  Attendance
-                </p>
-                <p className="mt-2 text-2xl font-bold text-munity-text">{patient.attendance}</p>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-munity-divider">
-                  <div
-                    className="h-full rounded-full bg-munity-green"
-                    style={{ width: patient.attendance }}
-                  />
-                </div>
-              </div>
+            {/* NOTE: mood score, symptom change, and attendance aren't backed by real
+                assessment data yet — showing real session counts and dates instead. */}
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                   Sessions
                 </p>
-                <p className="mt-2 text-2xl font-bold text-munity-text">{patient.sessionsCompleted}</p>
+                <p className="mt-2 text-2xl font-bold text-munity-text">{patient.sessionCount}</p>
                 <p className="mt-1 text-xs text-munity-muted">Completed to date</p>
+              </div>
+              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                  Last session
+                </p>
+                <p className="mt-2 text-lg font-bold text-munity-text">{patient.lastSessionLabel}</p>
+              </div>
+              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                  Next session
+                </p>
+                <p className="mt-2 text-lg font-bold text-munity-text">
+                  {patient.nextSessionLabel ?? "None scheduled"}
+                </p>
               </div>
             </div>
           </motion.section>
         ))}
       </div>
+      {patients.length === 0 ? (
+        <div className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+          You don&apos;t have any patients yet.
+        </div>
+      ) : null}
     </TherapistAppShell>
   );
 }

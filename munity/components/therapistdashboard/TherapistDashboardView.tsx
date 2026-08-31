@@ -23,8 +23,7 @@ import {
 } from "@/components/therapist/TherapistSessionOverlays";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import { routes } from "@/lib/routes";
+import { patientRoutes, routes } from "@/lib/routes";
 
 export type DashboardStats = {
   upcomingSessions: number;
@@ -37,6 +36,7 @@ export type ScheduleItem = {
   bookingId: string;
   name: string;
   patientId: string;
+  avatar: string;
   type: "video" | "chat";
   time: string;
 };
@@ -44,6 +44,7 @@ export type ScheduleItem = {
 export type RecentPatientItem = {
   patientId: string;
   name: string;
+  avatar: string;
   lastSession: string;
 };
 
@@ -104,7 +105,7 @@ export function TherapistDashboardView({
       patientUuid: session.patientId,
       name: session.name,
       patientId: `#${session.patientId.slice(0, 6).toUpperCase()}`,
-      avatar: assets.avatars.alex,
+      avatar: session.avatar,
       time: session.time,
       type: session.type === "video" ? "Video Session" : "Text Consultation",
     });
@@ -203,7 +204,7 @@ export function TherapistDashboardView({
                     <div className="flex min-w-50 items-center gap-4">
                       <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
                         <Image
-                          src={assets.avatars.alex}
+                          src={session.avatar}
                           alt={session.name}
                           fill
                           className="object-cover"
@@ -260,13 +261,13 @@ export function TherapistDashboardView({
                 recentPatients.map((patient) => (
                   <div key={patient.patientId} className="flex items-center justify-between gap-3">
                     <Link
-                      href={routes.therapistPatients}
+                      href={patientRoutes(patient.patientId).overview}
                       className="flex min-w-0 items-center gap-3"
                     >
                       <div className="relative shrink-0">
                         <div className="relative size-10 overflow-hidden rounded-full">
                           <Image
-                            src={assets.avatars.alex}
+                            src={patient.avatar}
                             alt={patient.name}
                             fill
                             className="object-cover"

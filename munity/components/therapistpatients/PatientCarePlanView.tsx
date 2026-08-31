@@ -9,8 +9,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import type { PatientRecord, PatientSlug } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 type CareGoal = {
   title: string;
@@ -19,17 +18,27 @@ type CareGoal = {
   notes: string;
 };
 
-const plansByPatient: Record<
-  PatientSlug,
-  {
-    modality: string;
-    frequency: string;
-    startDate: string;
-    nextReview: string;
-    summary: string;
-    goals: CareGoal[];
-  }
-> = {
+type CarePlan = {
+  modality: string;
+  frequency: string;
+  startDate: string;
+  nextReview: string;
+  summary: string;
+  goals: CareGoal[];
+};
+
+const defaultPlan: CarePlan = {
+  modality: "Not set",
+  frequency: "Not set",
+  startDate: "—",
+  nextReview: "—",
+  summary: "No care plan has been created for this patient yet.",
+  goals: [],
+};
+
+// NOTE: sample plans for the 3 original demo patients only — a real per-patient care-plan
+// store isn't built yet, so every actual patient falls back to `defaultPlan` above.
+const plansByPatient: Record<string, CarePlan> = {
   "leo-richards": {
     modality: "CBT + Mindfulness",
     frequency: "Weekly video sessions",
@@ -111,13 +120,13 @@ const statusStyles = {
 } as const;
 
 interface PatientCarePlanViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function PatientCarePlanView({ patient }: PatientCarePlanViewProps) {
   const { flash } = useLiveToast();
-  const avatar = assets.avatars[patient.avatarKey];
-  const plan = plansByPatient[patient.slug];
+  const avatar = patient.avatar;
+  const plan = plansByPatient[patient.slug] ?? defaultPlan;
   const [completedGoals, setCompletedGoals] = useState(() =>
     plan.goals.filter((goal) => goal.status === "completed").map((goal) => goal.title),
   );

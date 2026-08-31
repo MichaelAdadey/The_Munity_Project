@@ -12,12 +12,16 @@ import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFee
 import { routes } from "@/lib/routes";
 import { useSavedPosts } from "@/hooks/saved-posts";
 import { toggleSavePost } from "@/lib/feed/actions";
+import type { FeedPost as MockFeedPost } from "@/lib/mock-db";
 
 export function SavedPostsView() {
   const {posts, commentsByPost, loading, error, refresh} = useSavedPosts();
   const { flash } = useLiveToast();
   const [search, setSearch] = useState("");
   const [removingId, setRemovingId] = useState<string | null>(null)
+  // NOTE: no trigger sets this yet, and EditPostDialog still targets the old mock-store
+  // post shape rather than the real Supabase-backed feed — editing isn't wired up here.
+  const [editingPost, setEditingPost] = useState<MockFeedPost | null>(null);
 
   const savedPosts = useMemo(() => {
     const query = search.trim().toLowerCase();

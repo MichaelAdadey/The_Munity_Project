@@ -67,17 +67,23 @@ export default async function DashboardPage() {
 
   const { data: patientProfiles } =
     patientIds.length > 0
-      ? await supabase.from("profiles").select("id, first_name, last_name").in("id", patientIds)
-      : { data: [] as { id: string; first_name: string; last_name: string }[] };
+      ? await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, avatar_url")
+          .in("id", patientIds)
+      : { data: [] as { id: string; first_name: string; last_name: string; avatar_url: string | null }[] };
 
   const nameById = new Map(
     (patientProfiles ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`.trim()]),
   );
+  const avatarById = new Map((patientProfiles ?? []).map((p) => [p.id, p.avatar_url]));
+  const FALLBACK_AVATAR = "/images/profile/avatar.jpg";
 
   const todaysSchedule = (todaysBookingsRaw ?? []).map((booking) => ({
     bookingId: booking.id as string,
     name: nameById.get(booking.patient_id as string) ?? "Unknown Patient",
     patientId: booking.patient_id as string,
+    avatar: avatarById.get(booking.patient_id as string) || FALLBACK_AVATAR,
     type: (booking.session_type ?? "video") as "video" | "chat",
     time: new Date(booking.scheduled_at as string).toLocaleTimeString([], {
       hour: "2-digit",
@@ -87,7 +93,7 @@ export default async function DashboardPage() {
 
   // Dedupe to the 3 most recently-booked distinct patients.
   const seen = new Set<string>();
-  const recentPatients: { patientId: string; name: string; lastSession: string }[] = [];
+  const recentPatients: { patientId: string; name: string; avatar: string; lastSession: string }[] = [];
   for (const booking of recentBookingsRaw ?? []) {
     const pid = booking.patient_id as string | null;
     if (!pid || seen.has(pid)) continue;
@@ -95,6 +101,7 @@ export default async function DashboardPage() {
     recentPatients.push({
       patientId: pid,
       name: nameById.get(pid) ?? "Unknown Patient",
+      avatar: avatarById.get(pid) || FALLBACK_AVATAR,
       lastSession: new Date(booking.scheduled_at as string).toLocaleDateString(),
     });
     if (recentPatients.length >= 3) break;

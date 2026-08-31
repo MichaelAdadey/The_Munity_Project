@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import { PatientOverviewView } from "@/components/therapistpatients/PatientOverviewView";
-import { getPatient } from "@/lib/routes";
+import { requireRole } from "@/lib/require-role";
+import { routes } from "@/lib/routes";
+import { getTherapistPatientById } from "@/lib/therapist/patients-queries";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -8,7 +10,8 @@ interface PageProps {
 
 export default async function PatientOverviewPage({ params }: PageProps) {
   const { slug } = await params;
-  const patient = getPatient(slug);
+  const { user } = await requireRole(["therapist"], routes.therapistLogin);
+  const patient = await getTherapistPatientById(user.id, slug);
 
   if (!patient) {
     notFound();

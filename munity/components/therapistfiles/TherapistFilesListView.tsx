@@ -3,78 +3,17 @@
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronRight, Download, FileText, FolderOpen, Search } from "lucide-react";
+import { ChevronRight, FolderOpen, Search } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
-import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
-import { assets } from "@/lib/assets";
-import { patientRoutes, patientSlugs, patientsBySlug } from "@/lib/routes";
+import { LiveTicker } from "@/components/live/LiveFeedback";
+import { patientRoutes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
-type PatientFile = {
-  name: string;
-  type: string;
-  size: string;
-  updated: string;
-};
+interface TherapistFilesListViewProps {
+  patients: TherapistPatient[];
+}
 
-const filesByPatient: Record<(typeof patientSlugs)[number], PatientFile[]> = {
-  "leo-richards": [
-    {
-      name: "Intake Assessment.pdf",
-      type: "PDF",
-      size: "1.2 MB",
-      updated: "Mar 2, 2024",
-    },
-    {
-      name: "Consent Form.pdf",
-      type: "PDF",
-      size: "420 KB",
-      updated: "Feb 18, 2024",
-    },
-    {
-      name: "Workplace Stress Worksheet.docx",
-      type: "DOCX",
-      size: "88 KB",
-      updated: "Today",
-    },
-  ],
-  "elena-rodriguez": [
-    {
-      name: "Sleep Diary Template.pdf",
-      type: "PDF",
-      size: "310 KB",
-      updated: "Mar 10, 2024",
-    },
-    {
-      name: "Release of Information.pdf",
-      type: "PDF",
-      size: "540 KB",
-      updated: "Jan 22, 2024",
-    },
-  ],
-  "alex-mercer": [
-    {
-      name: "Grief Processing Journal.pdf",
-      type: "PDF",
-      size: "760 KB",
-      updated: "Mar 8, 2024",
-    },
-    {
-      name: "Emergency Contacts.pdf",
-      type: "PDF",
-      size: "190 KB",
-      updated: "Feb 1, 2024",
-    },
-  ],
-};
-
-const patients = patientSlugs.map((slug) => ({
-  ...patientsBySlug[slug],
-  avatar: assets.avatars[patientsBySlug[slug].avatarKey],
-  files: filesByPatient[slug],
-}));
-
-export function TherapistFilesListView() {
-  const { flash } = useLiveToast();
+export function TherapistFilesListView({ patients }: TherapistFilesListViewProps) {
   return (
     <TherapistAppShell
       active="Files"
@@ -91,14 +30,19 @@ export function TherapistFilesListView() {
         </div>
       }
     >
-      <LiveTicker items={["A worksheet was shared with Leo Richards today.", "All clinical files are synchronized and encrypted."]} />
+      <LiveTicker
+        items={[
+          `${patients.length} patient${patients.length === 1 ? "" : "s"} in your caseload.`,
+          "File storage isn't wired to a real store yet.",
+        ]}
+      />
       <div className="flex flex-col gap-6">
-        {patients.map((patient, index) => (
+        {patients.map((patient) => (
           <motion.section
             key={patient.slug}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.06 }}
+            transition={{ delay: 0.06 }}
             className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
           >
             <div className="flex flex-wrap items-center justify-between gap-4 border-b border-munity-border pb-5">
@@ -111,9 +55,9 @@ export function TherapistFilesListView() {
                 </div>
                 <div>
                   <p className="font-semibold text-munity-text">{patient.name}</p>
-                  <div className="flex items-center gap-2"><p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                    {patient.clientId} · {patient.files.length} files
-                  </p>{index === 0 ? <LivePulse label="Updated" /> : null}</div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                    {patient.clientId} · 0 files
+                  </p>
                 </div>
               </Link>
               <Link
@@ -126,35 +70,16 @@ export function TherapistFilesListView() {
               </Link>
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {patient.files.map((file) => (
-                <div
-                  key={file.name}
-                  className="flex items-center gap-4 rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4"
-                >
-                  <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-munity-lime/50">
-                    <FileText className="size-5 text-munity-green" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-munity-text">{file.name}</p>
-                    <p className="text-xs text-munity-muted">
-                      {file.type} · {file.size} · {file.updated}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => flash(`${file.name} download started`)}
-                    className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
-                    aria-label={`Download ${file.name}`}
-                  >
-                    <Download className="size-4" />
-                  </button>
-                </div>
-              ))}
-            </div>
+            {/* NOTE: file storage isn't backed by a real table yet. */}
+            <p className="mt-4 text-sm text-munity-muted">No files uploaded for {patient.name} yet.</p>
           </motion.section>
         ))}
       </div>
+      {patients.length === 0 ? (
+        <div className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+          You don&apos;t have any patients yet.
+        </div>
+      ) : null}
     </TherapistAppShell>
   );
 }

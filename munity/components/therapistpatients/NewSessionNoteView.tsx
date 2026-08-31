@@ -13,10 +13,9 @@ import { Button } from "@/components/ui/AppButton";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { Select } from "@/components/ui/AppSelect";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { assets } from "@/lib/assets";
 import { mockStore } from "@/lib/mock-store";
-import type { PatientRecord } from "@/lib/routes";
 import { patientRoutes } from "@/lib/routes";
+import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
 const moodOptions = [
   { value: "excellent", label: "Excellent (9–10)" },
@@ -45,14 +44,14 @@ const labelClassName =
   "mb-2 block text-sm font-semibold uppercase tracking-[0.12em] text-munity-green";
 
 interface NewSessionNoteViewProps {
-  patient: PatientRecord;
+  patient: TherapistPatient;
 }
 
 export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
   const { flash } = useLiveToast();
-  const avatar = assets.avatars[patient.avatarKey];
+  const avatar = patient.avatar;
   const notesHref = patientRoutes(patient.slug).clinicalNotes;
 
   const [title, setTitle] = useState("");
