@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
+  AlertTriangle,
   Bell,
   Check,
+  CheckCircle2,
   Clock3,
   Compass,
   Home,
@@ -26,20 +28,8 @@ import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
-import {
-  APPLICATION_REVIEW_EVENT,
-  ensureApplicationSubmitted,
-  formatSubmittedRelative,
-  getApplicantDisplayName,
-  getApplicationReview,
-  getReviewChecklist,
-  getReviewProgressPercent,
-  getReviewTickerItems,
-  type ReviewCheckStatus,
-  type ReviewChecklistItem,
-} from "@/lib/therapist-application-review";
-import { ONBOARDING_PROGRESS_EVENT } from "@/lib/onboarding-progress";
 import { routes } from "@/lib/routes";
+import type { CredentialVerificationStatus } from "@/lib/therapist/credential-status-queries";
 
 const secondaryInfo = [
   {
@@ -58,6 +48,89 @@ const secondaryInfo = [
     description: "Join 500+ professionals dedicated to modern therapy.",
   },
 ] as const;
+
+type ReviewCheckStatus = "complete" | "in_progress" | "pending";
+
+type ReviewChecklistItem = {
+  id: string;
+  label: string;
+  status: ReviewCheckStatus;
+  detail: string;
+};
+
+/** Once a therapist_details row exists, the four onboarding steps that fed it are all complete. */
+function getReviewChecklist(status: CredentialVerificationStatus): ReviewChecklistItem[] {
+  const submitted = status !== "not-submitted";
+  const decided = status === "verified" || status === "rejected";
+
+  return [
+    {
+      id: "received",
+      label: "Application Received",
+      status: submitted ? "complete" : "pending",
+      detail: submitted
+        ? "Your full application is with Clinical Operations."
+        : "Finish all onboarding steps to submit.",
+    },
+    {
+      id: "identity",
+      label: "Identity & Profile",
+      status: submitted ? "complete" : "pending",
+      detail: submitted
+        ? "Basic info and login details confirmed."
+        : "Complete Basic Info to verify identity.",
+    },
+    {
+      id: "license",
+      label: "License Credentials",
+      status: submitted ? "complete" : "pending",
+      detail: submitted
+        ? "Council registration and documents on file."
+        : "Upload licensing details and verification documents.",
+    },
+    {
+      id: "background",
+      label: "Background Check",
+      status: decided ? "complete" : submitted ? "in_progress" : "pending",
+      detail: decided
+        ? "Background check complete."
+        : submitted
+          ? "Manual review in progress — usually 24–48 business hours."
+          : "Starts after your application is submitted.",
+    },
+    {
+      id: "interview",
+      label: "Clinical Interview",
+      status: decided ? "complete" : "pending",
+      detail: decided
+        ? "Clinical interview complete."
+        : submitted
+          ? "Scheduled after background checks clear. Dashboard unlocks only once approved."
+          : "Final step before credentials are activated.",
+    },
+  ];
+}
+
+function getReviewProgressPercent(checklist: ReviewChecklistItem[]) {
+  const weights: Record<ReviewCheckStatus, number> = {
+    complete: 1,
+    in_progress: 0.45,
+    pending: 0,
+  };
+  const total = checklist.reduce((sum, item) => sum + weights[item.status], 0);
+  return Math.round((total / checklist.length) * 100);
+}
+
+function formatSubmittedRelative(submittedAt: string, now = Date.now()) {
+  const seconds = Math.max(0, Math.floor((now - new Date(submittedAt).getTime()) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 48) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 function checklistIcon(status: ReviewCheckStatus) {
   if (status === "complete") return Check;
@@ -98,50 +171,115 @@ function ChecklistRow({ item }: { item: ReviewChecklistItem }) {
   );
 }
 
-function ReviewStatusCard() {
-  const [now, setNow] = useState(() => Date.now());
-  const [checklist, setChecklist] = useState<ReviewChecklistItem[]>([]);
-  const [progress, setProgress] = useState(0);
-  const [applicantName, setApplicantName] = useState<string | null>(null);
-  const [submittedAt, setSubmittedAt] = useState<number | null>(null);
-  const [tickerItems, setTickerItems] = useState<string[]>([]);
+function SecondaryInfoSection() {
+  return (
+    <section className="grid grid-cols-1 gap-8 sm:grid-cols-3">
+      {secondaryInfo.map((item, index) => {
+        const Icon = item.icon;
+        return (
+          <motion.div
+            key={item.title}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 + index * 0.05 }}
+            className="flex flex-col items-center text-center"
+          >
+            <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
+              <Icon className="size-5 text-munity-green" />
+            </div>
+            <h2 className="text-base text-munity-text">{item.title}</h2>
+            <p className="mt-1 text-xs font-medium leading-relaxed text-munity-muted">
+              {item.description}
+            </p>
+          </motion.div>
+        );
+      })}
+    </section>
+  );
+}
 
-  function refresh() {
-    ensureApplicationSubmitted();
-    setChecklist(getReviewChecklist());
-    setProgress(getReviewProgressPercent());
-    setApplicantName(getApplicantDisplayName());
-    setSubmittedAt(getApplicationReview()?.submittedAt ?? null);
-    setTickerItems(getReviewTickerItems(Date.now()));
-    setNow(Date.now());
+interface ReviewStatusCardProps {
+  status: CredentialVerificationStatus;
+  submittedAt: string | null;
+  applicantName: string | null;
+}
+
+function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCardProps) {
+  if (status === "verified") {
+    return (
+      <>
+        <motion.article
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[32px] border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-8 flex size-24 items-center justify-center rounded-full bg-[#d9eaa3]">
+              <CheckCircle2 className="size-10 text-munity-green" strokeWidth={1.75} />
+            </div>
+            <h1 className="text-base text-munity-green">You&apos;re verified!</h1>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
+              {applicantName ? (
+                <>
+                  Congratulations, <span className="font-semibold text-munity-text">{applicantName}</span>.{" "}
+                </>
+              ) : null}
+              Clinical Operations has approved your credentials. Your therapist dashboard is now
+              live.
+            </p>
+            <div className="mt-10">
+              <Button href={routes.therapistDashboard} className="h-14 rounded-xl px-8">
+                <Home className="size-4" />
+                Go to Dashboard
+              </Button>
+            </div>
+          </div>
+        </motion.article>
+        <SecondaryInfoSection />
+      </>
+    );
   }
 
-  useEffect(() => {
-    refresh();
+  if (status === "rejected") {
+    return (
+      <>
+        <motion.article
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-[32px] border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center text-center">
+            <div className="relative mb-8 flex size-24 items-center justify-center rounded-full bg-[#ffdad6]">
+              <AlertTriangle className="size-10 text-[#93000a]" strokeWidth={1.75} />
+            </div>
+            <h1 className="text-base text-munity-green">Application not approved</h1>
+            <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
+              {applicantName ? (
+                <>
+                  Hi <span className="font-semibold text-munity-text">{applicantName}</span>,{" "}
+                </>
+              ) : null}
+              Clinical Operations was unable to verify your credentials with the information
+              provided. Reach out to support to learn what&apos;s missing or to appeal this
+              decision.
+            </p>
+            <div className="mt-10">
+              <Button href={routes.help} className="h-14 rounded-xl px-8">
+                <Mail className="size-4" />
+                Contact Support
+              </Button>
+            </div>
+          </div>
+        </motion.article>
+        <SecondaryInfoSection />
+      </>
+    );
+  }
 
-    function handleUpdate() {
-      refresh();
-    }
-
-    window.addEventListener(APPLICATION_REVIEW_EVENT, handleUpdate);
-    window.addEventListener(ONBOARDING_PROGRESS_EVENT, handleUpdate);
-    window.addEventListener("storage", handleUpdate);
-
-    const timer = window.setInterval(() => {
-      setNow(Date.now());
-      setTickerItems(getReviewTickerItems(Date.now()));
-    }, 15_000);
-
-    return () => {
-      window.removeEventListener(APPLICATION_REVIEW_EVENT, handleUpdate);
-      window.removeEventListener(ONBOARDING_PROGRESS_EVENT, handleUpdate);
-      window.removeEventListener("storage", handleUpdate);
-      window.clearInterval(timer);
-    };
-  }, []);
-
-  const submittedLabel =
-    submittedAt != null ? formatSubmittedRelative(submittedAt, now) : null;
+  const submitted = status === "in-review";
+  const checklist = getReviewChecklist(status);
+  const progress = getReviewProgressPercent(checklist);
+  const submittedLabel = submittedAt ? formatSubmittedRelative(submittedAt) : null;
 
   return (
     <>
@@ -158,11 +296,9 @@ function ReviewStatusCard() {
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <h1 className="text-base text-munity-green">
-              {submittedAt
-                ? "Application submitted for verification"
-                : "Finish onboarding to start review"}
+              {submitted ? "Application submitted for verification" : "Finish onboarding to start review"}
             </h1>
-            {submittedAt ? <LivePulse label="Review active" /> : null}
+            {submitted ? <LivePulse label="Review active" /> : null}
           </div>
 
           <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
@@ -175,9 +311,11 @@ function ReviewStatusCard() {
             live. Dashboard access unlocks only after approval.
           </p>
 
-          {tickerItems.length > 0 ? (
-            <div className="mt-6 w-full max-w-md">
-              <LiveTicker items={tickerItems} />
+          {!submitted ? (
+            <div className="mt-6">
+              <Button href={routes.therapistOnboarding.basicInfo} className="h-12 rounded-xl px-6">
+                Continue Onboarding
+              </Button>
             </div>
           ) : null}
         </div>
@@ -256,38 +394,24 @@ function ReviewStatusCard() {
         </div>
       </motion.article>
 
-      <section className="grid grid-cols-1 gap-8 sm:grid-cols-3">
-        {secondaryInfo.map((item, index) => {
-          const Icon = item.icon;
-          return (
-            <motion.div
-              key={item.title}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 + index * 0.05 }}
-              className="flex flex-col items-center text-center"
-            >
-              <div className="mb-3 flex size-10 items-center justify-center rounded-full bg-white shadow-[0_1px_1px_rgba(0,0,0,0.05)]">
-                <Icon className="size-5 text-munity-green" />
-              </div>
-              <h2 className="text-base text-munity-text">{item.title}</h2>
-              <p className="mt-1 text-xs font-medium leading-relaxed text-munity-muted">
-                {item.description}
-              </p>
-            </motion.div>
-          );
-        })}
-      </section>
+      <SecondaryInfoSection />
     </>
   );
 }
 
-export function CredentialAuthenticationView() {
-  const [activeTab, setActiveTab] = useState<ApplicationTabId>("review");
+interface CredentialAuthenticationViewProps {
+  status: CredentialVerificationStatus;
+  submittedAt: string | null;
+  applicantName: string | null;
+}
 
-  useEffect(() => {
-    ensureApplicationSubmitted();
-  }, []);
+export function CredentialAuthenticationView({
+  status,
+  submittedAt,
+  applicantName,
+}: CredentialAuthenticationViewProps) {
+  const [activeTab, setActiveTab] = useState<ApplicationTabId>("review");
+  const pendingReview = status === "in-review";
 
   return (
     <SidebarProvider storageKey="munity-credential-sidebar-open" expandedWidth={288}>
@@ -304,13 +428,18 @@ export function CredentialAuthenticationView() {
               <CredentialVerificationSidebar
                 activeTab={activeTab}
                 onSelectTab={setActiveTab}
+                submitted={pendingReview}
               />
             }
             mainClassName="flex flex-1 flex-col items-center px-6 py-16 lg:px-24 lg:py-24"
           >
             <AnimatedPage className="flex w-full max-w-2xl flex-col gap-12">
               {activeTab === "review" ? (
-                <ReviewStatusCard />
+                <ReviewStatusCard
+                  status={status}
+                  submittedAt={submittedAt}
+                  applicantName={applicantName}
+                />
               ) : (
                 <motion.div
                   key={activeTab}

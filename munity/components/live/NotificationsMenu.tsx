@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Bell, CheckCheck } from "lucide-react";
 import {
   DropdownMenu,
@@ -15,17 +16,81 @@ import { useLiveToast } from "@/components/live/LiveFeedback";
 import {
   activityRouteForRole,
   notificationsByRole,
+  toDisplayNotification,
+  type AppNotification,
   type NotificationRole,
 } from "@/lib/notifications";
+import {
+  fetchNotifications,
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/notifications-actions";
 
 export type { NotificationRole };
+
+const REAL_DATA_ROLES: NotificationRole[] = ["therapist"];
+const POLL_INTERVAL_MS = 30_000;
 
 export function NotificationsMenu({ role }: { role: NotificationRole }) {
   const router = useRouter();
   const { flash } = useLiveToast();
-  const items = notificationsByRole[role].slice(0, 4);
-  const unreadCount = notificationsByRole[role].filter((item) => item.unread).length;
+  const isReal = REAL_DATA_ROLES.includes(role);
   const activityHref = activityRouteForRole(role);
+
+  const [realItems, setRealItems] = useState<AppNotification[]>([]);
+
+  useEffect(() => {
+    if (!isReal) return;
+    let cancelled = false;
+
+    async function load() {
+      try {
+        const rows = await fetchNotifications(10);
+        if (!cancelled) setRealItems(rows.map(toDisplayNotification));
+      } catch {
+        // Bell stays quiet on a failed fetch — the full activity page will surface the error.
+      }
+    }
+
+    load();
+    const timer = window.setInterval(load, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [isReal]);
+
+  const items = (isReal ? realItems : notificationsByRole[role]).slice(0, 4);
+  const unreadCount = (isReal ? realItems : notificationsByRole[role]).filter(
+    (item) => item.unread,
+  ).length;
+
+  async function handleMarkAllRead() {
+    if (isReal) {
+      try {
+        await markAllNotificationsRead();
+        setRealItems((current) => current.map((item) => ({ ...item, unread: false })));
+      } catch (error) {
+        flash(error instanceof Error ? error.message : "Couldn't mark notifications read");
+        return;
+      }
+    }
+    flash("Marked all notifications as read");
+  }
+
+  async function handleItemClick(item: AppNotification) {
+    if (isReal && item.unread) {
+      try {
+        await markNotificationRead(item.id);
+        setRealItems((current) =>
+          current.map((row) => (row.id === item.id ? { ...row, unread: false } : row)),
+        );
+      } catch {
+        // Non-blocking — navigation still proceeds even if the read-receipt write fails.
+      }
+    }
+    router.push(item.href);
+  }
 
   return (
     <DropdownMenu>
@@ -54,7 +119,7 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
           </div>
           <button
             type="button"
-            onClick={() => flash("Marked all notifications as read")}
+            onClick={() => void handleMarkAllRead()}
             className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold text-munity-green hover:bg-munity-lime/40"
           >
             <CheckCheck className="size-3.5" />
@@ -68,7 +133,7 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
               <DropdownMenuItem
                 key={item.id}
                 className="cursor-pointer items-start gap-3 rounded-xl px-3 py-3 focus:bg-munity-lime/40"
-                onClick={() => router.push(item.href)}
+                onClick={() => void handleItemClick(item)}
               >
                 <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full bg-munity-lime/50 text-munity-green">
                   <Icon className="size-4" />

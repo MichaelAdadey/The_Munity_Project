@@ -8,7 +8,6 @@ import { Select } from "@/components/ui/AppSelect";
 import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
 import { getOnboardingStepData, saveOnboardingStepData, getAllOnboardingStepData } from "@/lib/onboarding-data";
 import { submitTherapistOnboarding } from "@/app/therapistonboarding/actions";
-import { submitTherapistApplication } from "@/lib/therapist-application-review";
 import { routes } from "@/lib/routes";
 
 const payoutMethodOptions = ["Mobile Money", "Bank Transfer"];
@@ -121,7 +120,6 @@ export default function PayoutPage() {
           bankAccountName: String(formData.get("bankAccountName") || "").trim(),
           bankAccountNumber: String(formData.get("bankAccountNumber") || "").trim(),
         });
-        submitTherapistApplication();
       }}
     >
       <div>

@@ -134,16 +134,6 @@ export type ModerationReport = {
   createdAt: string;
 };
 
-export type SessionNoteRecord = {
-  id: string;
-  patientSlug: string;
-  patientName: string;
-  title: string;
-  body: string;
-  sessionDate: string;
-  createdAt: string;
-};
-
 export type MemberProfile = {
   fullName: string;
   username: string;
@@ -894,27 +884,6 @@ export const seedReports: ModerationReport[] = [
     prevFlags: 1,
     reporterTrust: 87,
     createdAt: "2026-07-10T15:10:00Z",
-  },
-];
-
-export const seedSessionNotes: SessionNoteRecord[] = [
-  {
-    id: "n1",
-    patientSlug: "leo-richards",
-    patientName: "Leo Richards",
-    title: "Session 12 — Sleep & rumination",
-    body: "Client reported improved sleep latency after stimulus-control homework. Continued CBT for rumination; assigned thought record for next week.",
-    sessionDate: "2026-07-08",
-    createdAt: "2026-07-08T15:30:00Z",
-  },
-  {
-    id: "n2",
-    patientSlug: "elena-rodriguez",
-    patientName: "Elena Rodriguez",
-    title: "Intake follow-up",
-    body: "Reviewed goals: reduce panic frequency, rebuild social routine. Safety plan reviewed; no SI/HI.",
-    sessionDate: "2026-07-07",
-    createdAt: "2026-07-07T11:00:00Z",
   },
 ];
 

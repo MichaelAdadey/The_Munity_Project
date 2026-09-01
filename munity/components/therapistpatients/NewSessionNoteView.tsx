@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/AppButton";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import { Select } from "@/components/ui/AppSelect";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { mockStore } from "@/lib/mock-store";
+import { createSessionNote } from "@/lib/therapist/session-notes-actions";
 import { patientRoutes } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 
@@ -173,16 +173,19 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
       ]
         .filter(Boolean)
         .join("\n\n");
-      mockStore.addSessionNote({
-        patientSlug: patient.slug,
-        patientName: patient.name,
-        title: title.trim(),
-        body: details,
-        sessionDate,
-      });
-      await new Promise((resolve) => setTimeout(resolve, 900));
-      flash(`Session note for ${patient.name} saved`);
-      router.push(notesHref);
+      try {
+        await createSessionNote({
+          patientId: patient.slug,
+          title: title.trim(),
+          body: details,
+          sessionDate,
+        });
+        flash(`Session note for ${patient.name} saved`);
+        router.push(notesHref);
+        router.refresh();
+      } catch (error) {
+        flash(error instanceof Error ? error.message : "Couldn't save that session note");
+      }
     }, "Saving session note...");
   }
 

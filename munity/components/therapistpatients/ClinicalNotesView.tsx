@@ -20,66 +20,29 @@ import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { useLoading } from "@/components/ui/LoadingProvider";
-import { useMockStore } from "@/lib/mock-store";
 import { patientNavHref, patientRoutes, routes } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
+import type { SessionNote } from "@/lib/therapist/session-notes-queries";
+import { updateSessionNote } from "@/lib/therapist/session-notes-actions";
 
 type NoteSession = {
-  id: string | number;
+  id: string;
   date: string;
   title: string;
   excerpt: string;
-  tags?: string[];
-  active: boolean;
-  faded?: boolean;
   body?: string;
 };
 
-// NOTE: sample notes shown alongside any real notes saved via mockStore.addSessionNote —
-// clinical note history isn't backed by a real table yet, so these are illustrative filler.
-const sessions: NoteSession[] = [
-  {
-    id: 12,
-    date: "Today",
-    title: "Addressing Anxiety Triggers",
-    excerpt: "Patient reported increased stress during workplace transition. Focus",
-    tags: ["CBT", "MOOD: FAIR"],
-    active: true,
-  },
-  {
-    id: 11,
-    date: "Oct 17, 2023",
-    title: "Boundary Setting at Home",
-    excerpt: "Explored family dynamics and the concept of healthy detachment.…",
-    active: false,
-  },
-  {
-    id: 10,
-    date: "Oct 10, 2023",
-    title: "Initial Progress Review",
-    excerpt: "Month 3 review. Patient showing marked improvement in sleep…",
-    active: false,
-  },
-  {
-    id: 9,
-    date: "Oct 03, 2023",
-    title: "Grief and Loss Processing",
-    excerpt: "First session focusing on the recent loss of the pet. Narrative…",
-    active: false,
-    faded: true,
-  },
-];
-
 interface ClinicalNotesViewProps {
   patient: TherapistPatient;
+  notes: SessionNote[];
 }
 
-export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
-  const { sessionNotes } = useMockStore();
+export function ClinicalNotesView({ patient, notes }: ClinicalNotesViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
   const { flash } = useLiveToast();
-  const [activeSessionId, setActiveSessionId] = useState<string | number>(12);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(notes[0]?.id ?? null);
   const [saved, setSaved] = useState(false);
   const [tasks, setTasks] = useState([true, false]);
   const [exportOpen, setExportOpen] = useState(false);
@@ -96,21 +59,6 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
   const [riskState, setRiskState] = useState("Low risk");
   const avatar = patient.avatar;
   const firstName = patient.name.split(" ")[0];
-  const persistedSessions: NoteSession[] = sessionNotes
-    .filter((note) => note.patientSlug === patient.slug)
-    .map((note) => ({
-      id: note.id,
-      date: new Date(`${note.sessionDate}T12:00:00`).toLocaleDateString(undefined, {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      title: note.title,
-      excerpt: note.body,
-      tags: ["SAVED NOTE"],
-      body: note.body,
-      active: false,
-    }));
 
   function buildNoteHTML(session: NoteSession) {
     return `
@@ -177,19 +125,28 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
     const mailto = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`;
     window.location.href = mailto;
   }
-  const allSessions = [...persistedSessions, ...sessions];
+  const allSessions: NoteSession[] = notes.map((note) => ({
+    id: note.id,
+    date: new Date(`${note.sessionDate}T12:00:00`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }),
+    title: note.title,
+    excerpt: note.body,
+    body: note.body,
+  }));
   const activeSession =
-    allSessions.find((session) => session.id === activeSessionId) ?? allSessions[0];
+    allSessions.find((session) => session.id === activeSessionId) ?? allSessions[0] ?? null;
   const newNoteHref = patientRoutes(patient.slug).newSessionNote;
 
   useEffect(() => {
     if (!activeSession) return;
     setTitleState(activeSession.title ?? "");
     setSummaryState(activeSession.body ?? activeSession.excerpt ?? "");
-    // default clinical observations text (editable)
-    setObservationsState(
-      `Observed significant psychomotor agitation (hand wringing) when discussing her direct supervisor. Cognitive distortions identified: catastrophizing ("I'll be the first to be let go") and personalizing organizational changes. Affect remained congruent with mood throughout. Significant insight displayed during the role-playing exercise regarding her internal locus of control.`
-    );
+    setObservationsState("");
+    setMoodState("Fair (5-6)");
+    setRiskState("Low risk");
     // keep previous selections if present in the body text
     if (activeSession.body) {
       if (activeSession.body.includes("Low risk")) setRiskState("Low risk");
@@ -274,7 +231,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                       isActive
                         ? "border-2 border-munity-green"
                         : "border-munity-input-border"
-                    } ${session.faded ? "opacity-80" : ""}`}
+                    }`}
                   >
                     <div className="flex items-center justify-between text-sm">
                     <span
@@ -282,39 +239,29 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                         isActive ? "text-munity-green" : "text-munity-muted"
                       }`}
                     >
-                        Session #{session.id}
+                        Session
                       </span>
                       <span className="text-xs font-medium text-munity-muted">{session.date}</span>
                     </div>
                     <h3 className="mt-1 text-base text-munity-text">{session.title}</h3>
                     <p className="mt-1 text-sm leading-5 text-munity-muted">{session.excerpt}</p>
-                    {session.tags && (
-                      <div className="mt-2 flex gap-2">
-                        {session.tags.map((tag) => (
-                          <span
-                            key={tag}
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                              tag === "CBT"
-                                ? "bg-munity-lime text-munity-olive-text"
-                                : "bg-munity-divider text-munity-muted"
-                            }`}
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    )}
                   </motion.button>
                   );
                 })}
+                {allSessions.length === 0 ? (
+                  <div className="rounded-[20px] border border-dashed border-munity-input-border bg-white p-5 text-center text-sm text-munity-muted">
+                    No session notes saved for {firstName} yet.
+                  </div>
+                ) : null}
               </div>
             </aside>
 
+            {activeSession ? (
             <AnimatedPage className="flex flex-1 flex-col overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
               <div className="flex items-center justify-between border-b border-munity-input-border bg-munity-bg px-8 py-5">
                 <div>
                   <div className="flex items-center gap-2 text-sm">
-                    <span className="font-semibold tracking-wide text-munity-green">Session #{activeSession.id}</span>
+                    <span className="font-semibold tracking-wide text-munity-green">Session note</span>
                     <span className="text-munity-gray">•</span>
                     <span className="font-semibold tracking-wide text-munity-muted">{activeSession.date}</span>
                   </div>
@@ -370,11 +317,31 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                     )}
                   </div>
                   <Button
+                    disabled={!titleState.trim() || !summaryState.trim()}
                     onClick={() =>
                       withLoading(async () => {
-                        await new Promise((resolve) => setTimeout(resolve, 800));
-                        setSaved(true);
-                        flash("Clinical note changes saved");
+                        if (!activeSession) return;
+                        const body = [
+                          summaryState.trim(),
+                          observationsState.trim() &&
+                            `Clinical observations: ${observationsState.trim()}`,
+                          `Mood: ${moodState}. Risk: ${riskState}.`,
+                        ]
+                          .filter(Boolean)
+                          .join("\n\n");
+                        try {
+                          await updateSessionNote(activeSession.id, {
+                            title: titleState.trim(),
+                            body,
+                          });
+                          setSaved(true);
+                          flash("Clinical note changes saved");
+                          router.refresh();
+                        } catch (error) {
+                          flash(
+                            error instanceof Error ? error.message : "Couldn't save changes",
+                          );
+                        }
                       }, "Saving changes...")
                     }
                   >
@@ -386,7 +353,7 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
 
               <div className="flex-1 overflow-auto px-8 py-8">
                 <div className="mx-auto max-w-3xl space-y-10">
-                  <LiveTicker items={[`${patient.name}'s latest note is open for review.`, "All changes are saved locally in this workspace."]} />
+                  <LiveTicker items={[`${patient.name}'s latest note is open for review.`]} />
                   <section>
                     <h3 className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-green">
                       Session Summary
@@ -423,13 +390,13 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                         </select>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text">
-                      Observed significant psychomotor agitation (hand wringing) when discussing her
-                      direct supervisor. Cognitive distortions identified: catastrophizing (&quot;I&apos;ll be
-                      the first to be let go&quot;) and personalizing organizational changes. Affect
-                      remained congruent with mood throughout. Significant insight displayed during
-                      the role-playing exercise regarding her internal locus of control.
-                    </div>
+                    <textarea
+                      value={observationsState}
+                      onChange={(e) => setObservationsState(e.target.value)}
+                      placeholder="Affect, cognition, risk indicators, interventions used…"
+                      className="mt-4 w-full rounded-xl border border-munity-input-border/30 bg-munity-sidebar p-4 text-base leading-relaxed text-munity-text resize-y"
+                      rows={4}
+                    />
                   </section>
 
                   <section>
@@ -476,6 +443,20 @@ export function ClinicalNotesView({ patient }: ClinicalNotesViewProps) {
                 </div>
               </div>
             </AnimatedPage>
+            ) : (
+              <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-[20px] border border-dashed border-munity-input-border bg-white p-10 text-center shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
+                <p className="text-base font-semibold text-munity-text">
+                  No session notes yet for {patient.name}
+                </p>
+                <p className="max-w-sm text-sm text-munity-muted">
+                  Start documenting your work together — the first note becomes their session history.
+                </p>
+                <Button onClick={() => router.push(newNoteHref)}>
+                  <PlusCircle className="size-4" />
+                  New note
+                </Button>
+              </div>
+            )}
           </div>
         </CollapsibleSidebarLayout>
       </div>

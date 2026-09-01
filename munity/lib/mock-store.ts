@@ -12,7 +12,6 @@ import {
   seedReports,
   seedSavedPostIds,
   seedSavedResourceIds,
-  seedSessionNotes,
   seedSettings,
   seedSupportedPostIds,
   seedTherapistChats,
@@ -27,7 +26,6 @@ import {
   type MemberProfile,
   type MemberSettingsState,
   type ModerationReport,
-  type SessionNoteRecord,
   type TherapistChatMessage,
   type TherapistChatThread,
   type TherapistRecord,
@@ -107,7 +105,6 @@ export type MockStoreState = {
   therapistChats: TherapistChatThread[];
   therapistMessages: Record<string, TherapistChatMessage[]>;
   reports: ModerationReport[];
-  sessionNotes: SessionNoteRecord[];
   savedPostIds: string[];
   savedResourceIds: string[];
   supportedPostIds: string[];
@@ -130,7 +127,6 @@ function createSeedState(): MockStoreState {
     therapistChats: structuredClone(seedTherapistChats),
     therapistMessages: structuredClone(seedTherapistMessages),
     reports: structuredClone(seedReports),
-    sessionNotes: structuredClone(seedSessionNotes),
     savedPostIds: [...seedSavedPostIds],
     savedResourceIds: [...seedSavedResourceIds],
     supportedPostIds: [...seedSupportedPostIds],
@@ -712,26 +708,6 @@ export const mockStore = {
               resolution: "Wellness check initiated",
             }
           : report,
-      ),
-    }));
-  },
-  addSessionNote(note: Omit<SessionNoteRecord, "id" | "createdAt">) {
-    const record: SessionNoteRecord = {
-      ...note,
-      id: `n-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    setState((prev) => ({
-      ...prev,
-      sessionNotes: [record, ...prev.sessionNotes],
-    }));
-    return record;
-  },
-  updateSessionNote(id: string | number, patch: Partial<Omit<SessionNoteRecord, "id" | "createdAt">>) {
-    setState((prev) => ({
-      ...prev,
-      sessionNotes: prev.sessionNotes.map((note) =>
-        note.id === id ? { ...note, ...patch } : note
       ),
     }));
   },

@@ -30,4 +30,21 @@ export const createBooking = async ({
   });
 
   if (error) throw new Error(error.message);
+
+  const when = new Date(scheduledAt).toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  // Best-effort — a failed notification insert shouldn't fail the booking itself.
+  await supabase.from("notifications").insert({
+    recipient_id: therapistId,
+    type: "booking_request",
+    title: "New session request",
+    body: `A patient requested a ${sessionType === "chat" ? "text" : "video"} session for ${when}.`,
+    href: "/therapistappointments",
+  });
 };

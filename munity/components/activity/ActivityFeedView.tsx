@@ -11,18 +11,26 @@ import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
 import {
   activityRouteForRole,
   notificationsByRole,
+  toDisplayNotification,
   type NotificationRole,
 } from "@/lib/notifications";
+import type { RealNotification } from "@/lib/notifications-queries";
+import { markAllNotificationsRead, markNotificationRead } from "@/lib/notifications-actions";
 
 export function ActivityFeedView({
   role,
   adminName = "Munity Admin",
+  notifications,
 }: {
   role: NotificationRole;
   adminName?: string;
+  /** Real, server-fetched notifications. Only passed for roles wired to a real backend (therapist). */
+  notifications?: RealNotification[];
 }) {
   const { flash } = useLiveToast();
-  const items = notificationsByRole[role];
+  const isReal = notifications !== undefined;
+  const [realItems, setRealItems] = useState(() => (notifications ?? []).map(toDisplayNotification));
+  const items = isReal ? realItems : notificationsByRole[role];
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(items.map((item) => item.category)))],
     [items],
@@ -33,6 +41,36 @@ export function ActivityFeedView({
   const visible = items.filter(
     (item) => filter === "All" || item.category === filter,
   );
+
+  async function handleMarkAllRead() {
+    if (isReal) {
+      try {
+        await markAllNotificationsRead();
+        setRealItems((current) => current.map((item) => ({ ...item, unread: false })));
+      } catch (error) {
+        flash(error instanceof Error ? error.message : "Couldn't mark activity as read");
+        return;
+      }
+    } else {
+      setReadIds(items.map((item) => item.id));
+    }
+    flash("Marked all activity as read");
+  }
+
+  async function handleItemClick(id: string) {
+    if (isReal) {
+      try {
+        await markNotificationRead(id);
+        setRealItems((current) =>
+          current.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+        );
+      } catch {
+        // Non-blocking — navigation still proceeds even if the read-receipt write fails.
+      }
+    } else {
+      setReadIds((current) => [...new Set([...current, id])]);
+    }
+  }
 
   const content = (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
@@ -54,10 +92,7 @@ export function ActivityFeedView({
         </div>
         <button
           type="button"
-          onClick={() => {
-            setReadIds(items.map((item) => item.id));
-            flash("Marked all activity as read");
-          }}
+          onClick={() => void handleMarkAllRead()}
           className="inline-flex items-center gap-2 rounded-full bg-munity-lime/60 px-4 py-2 text-sm font-semibold text-munity-olive-text"
         >
           <CheckCheck className="size-4" />
@@ -97,7 +132,7 @@ export function ActivityFeedView({
             >
               <Link
                 href={item.href}
-                onClick={() => setReadIds((current) => [...new Set([...current, item.id])])}
+                onClick={() => void handleItemClick(item.id)}
                 className="flex items-start gap-4 px-5 py-4 transition hover:bg-munity-lime/20"
               >
                 <span className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-full bg-munity-lime/50 text-munity-green">

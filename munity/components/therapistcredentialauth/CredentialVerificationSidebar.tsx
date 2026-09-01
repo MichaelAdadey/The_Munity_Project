@@ -9,10 +9,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
-import {
-  APPLICATION_REVIEW_EVENT,
-  isApplicationSubmitted,
-} from "@/lib/therapist-application-review";
 import type { OnboardingStepId } from "@/lib/routes";
 import { routes } from "@/lib/routes";
 
@@ -32,29 +28,21 @@ const applicationSteps: {
 interface CredentialVerificationSidebarProps {
   activeTab: ApplicationTabId;
   onSelectTab: (tab: ApplicationTabId) => void;
+  /** Real submission state from therapist_details.verification_status. */
+  submitted: boolean;
 }
 
 export function CredentialVerificationSidebar({
   activeTab,
   onSelectTab,
+  submitted: reviewLive,
 }: CredentialVerificationSidebarProps) {
-  const { isStepComplete, progressPercent, refresh } = useOnboardingProgress();
-  const [reviewLive, setReviewLive] = useState(false);
+  const { isStepComplete, progressPercent } = useOnboardingProgress();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    function sync() {
-      setReviewLive(isApplicationSubmitted());
-      refresh();
-    }
-    sync();
-    window.addEventListener(APPLICATION_REVIEW_EVENT, sync);
-    return () => window.removeEventListener(APPLICATION_REVIEW_EVENT, sync);
-  }, [refresh]);
 
   return (
     <aside className="flex h-full w-72 flex-col gap-8 p-6">

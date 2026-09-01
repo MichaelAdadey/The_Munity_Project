@@ -1,6 +1,8 @@
 import type { ElementType } from "react";
 import {
+  AlertTriangle,
   Calendar,
+  CheckCircle2,
   Heart,
   MessageCircle,
   ShieldAlert,
@@ -8,6 +10,8 @@ import {
   Users,
 } from "lucide-react";
 import { routes } from "@/lib/routes";
+import { timeAgo } from "@/lib/utils";
+import type { NotificationType, RealNotification } from "@/lib/notifications-queries";
 
 export type NotificationRole = "member" | "therapist" | "admin";
 
@@ -162,6 +166,32 @@ export const notificationsByRole: Record<NotificationRole, AppNotification[]> = 
     },
   ],
 };
+
+const iconByType: Record<NotificationType, ElementType> = {
+  booking_request: Calendar,
+  verification_approved: CheckCircle2,
+  verification_rejected: AlertTriangle,
+};
+
+const categoryByType: Record<NotificationType, string> = {
+  booking_request: "Appointments",
+  verification_approved: "Account",
+  verification_rejected: "Account",
+};
+
+/** Adapts a real DB notification into the same shape the notification UI already renders. */
+export function toDisplayNotification(notification: RealNotification): AppNotification {
+  return {
+    id: notification.id,
+    title: notification.title,
+    detail: notification.body,
+    time: timeAgo(notification.createdAt),
+    href: notification.href ?? routes.therapistDashboard,
+    category: categoryByType[notification.type] ?? "Updates",
+    icon: iconByType[notification.type] ?? Calendar,
+    unread: !notification.read,
+  };
+}
 
 export function activityRouteForRole(role: NotificationRole) {
   switch (role) {

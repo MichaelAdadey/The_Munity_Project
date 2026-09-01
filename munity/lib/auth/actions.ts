@@ -252,6 +252,19 @@ export const signInTherapist = async (
     };
   }
 
+  // Credentials stay inactive until Clinical Operations approves the application —
+  // send anything short of "verified" (including no row yet) to the status page
+  // instead of the dashboard.
+  const { data: details } = await supabase
+    .from("therapist_details")
+    .select("verification_status")
+    .eq("profile_id", data.user.id)
+    .maybeSingle();
+
+  if (details?.verification_status !== "verified") {
+    redirect("/therapistcredentialauth");
+  }
+
   redirect("/therapistdashboard");
 };
 

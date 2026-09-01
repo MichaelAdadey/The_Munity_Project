@@ -6,21 +6,20 @@ import Link from "next/link";
 import { ChevronRight, FileText, Search } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
-import { useMockStore } from "@/lib/mock-store";
 import { patientRoutes } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
+import type { SessionNote } from "@/lib/therapist/session-notes-queries";
 
 interface TherapistClinicalNotesListViewProps {
   patients: TherapistPatient[];
+  notes: SessionNote[];
 }
 
-export function TherapistClinicalNotesListView({ patients }: TherapistClinicalNotesListViewProps) {
-  const { sessionNotes } = useMockStore();
-
+export function TherapistClinicalNotesListView({ patients, notes }: TherapistClinicalNotesListViewProps) {
   const patientsWithNotes = patients.map((patient) => ({
     ...patient,
-    notes: sessionNotes
-      .filter((note) => note.patientSlug === patient.slug)
+    notes: notes
+      .filter((note) => note.patientId === patient.slug)
       .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()),
   }));
 
