@@ -20,7 +20,11 @@ import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const profileMenuItems = [
   { label: "My Profile", href: routes.therapistProfile, icon: User },
-  { label: "My Appointments", href: routes.therapistAppointments, icon: Calendar },
+  {
+    label: "My Appointments",
+    href: routes.therapistAppointments,
+    icon: Calendar,
+  },
   { label: "Appearance", href: routes.therapistSettings, icon: Palette },
 ] as const;
 
@@ -60,7 +64,9 @@ export function ProfileAvatarMenu() {
             <ProfileAvatar src={avatarSrc} alt={avatarAlt} size={40} />
           </button>
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-munity-text">{profile?.fullName}</p>
+            <p className="truncate text-sm font-semibold text-munity-text">
+              {profile?.fullName}
+            </p>
             <p className="truncate text-xs text-munity-muted">Therapist</p>
           </div>
         </div>

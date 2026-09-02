@@ -43,7 +43,7 @@ export function MemberAvatarMenu() {
         className="rounded-full border-2 border-munity-lime outline-none transition hover:ring-2 hover:ring-munity-green/20 focus-visible:ring-2 focus-visible:ring-munity-green/30"
         aria-label="Open profile menu"
       >
-        <ProfileAvatar src={mockProfile.avatar} alt={fullName} size={36} />
+        <ProfileAvatar src={profile?.avatarUrl ?? mockProfile.avatar} alt={fullName} size={36} />
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
@@ -57,7 +57,7 @@ export function MemberAvatarMenu() {
             aria-label="View profile photo"
             className="cursor-zoom-in rounded-full outline-none focus-visible:ring-2 focus-visible:ring-munity-green/30"
           >
-            <ProfileAvatar src={mockProfile.avatar} alt={fullName} size={40} />
+            <ProfileAvatar src={profile?.avatarUrl ?? mockProfile.avatar} alt={fullName} size={40} />
           </button>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-munity-text">
@@ -88,7 +88,7 @@ export function MemberAvatarMenu() {
         </DropdownMenuItem>
       </DropdownMenuContent>
       <ImageLightbox
-        images={[mockProfile.avatar]}
+        images={[profile?.avatarUrl ?? mockProfile.avatar]}
         altText={`${fullName}'s profile photo`}
         open={avatarViewerOpen}
         onOpenChange={setAvatarViewerOpen}

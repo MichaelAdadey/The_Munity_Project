@@ -9,30 +9,34 @@ import { motion } from "framer-motion";
 import { BookSessionSheet } from "@/components/therapy/BookSessionSheet";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
-import { mockStore, useMockStore } from "@/lib/mock-store";
 import { messagesPath, routes } from "@/lib/routes";
+import { TherapyListItem } from "@/lib/therapy/queries";
+import {
+  formatExistingBookingWhen,
+  useMyBookings,
+} from "@/lib/therapy/booking-status";
+import { createBooking } from "@/lib/therapy/booking-actions";
 
 export function TherapistDetailView({
-  id,
   isLoggedIn = true,
+  therapist,
 }: {
-  id: string;
+  therapist: TherapyListItem | null;
   isLoggedIn?: boolean;
 }) {
   const router = useRouter();
-  const store = useMockStore();
   const { flash } = useLiveToast();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const therapist = store.therapists.find((item) => item.id === id);
-  const therapistBookings = store.bookings.filter((booking) => booking.therapistId === id);
-  const latestBooking = therapistBookings[0] ?? null;
-  const booked = therapistBookings.length > 0;
+  const [bookingInFlight, setBookingInFlight] = useState(false);
+  const { bookings, refresh: refreshBookings } = useMyBookings(flash);
 
   if (!therapist) {
     return (
       <MemberAppShell isLoggedIn={isLoggedIn}>
         <div className="mx-auto max-w-3xl rounded-[20px] border border-munity-border bg-white p-8 text-center">
-          <p className="text-munity-muted">This therapist could not be found.</p>
+          <p className="text-munity-muted">
+            This therapist could not be found.
+          </p>
           <Link
             href={routes.therapy}
             className="mt-4 inline-block font-semibold text-munity-green"
@@ -44,9 +48,20 @@ export function TherapistDetailView({
     );
   }
 
+  const therapistBookings = bookings.filter(
+    (b) => b.therapistId === therapist.id,
+  );
+  const latestBooking = therapistBookings[0] ?? 0;
+  const booked = therapistBookings.length > 0;
+
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>
-      <motion.div initial="hidden" animate="show" variants={liveFadeUp} className="mx-auto max-w-4xl">
+      <motion.div
+        initial="hidden"
+        animate="show"
+        variants={liveFadeUp}
+        className="mx-auto max-w-4xl"
+      >
         <Link
           href={routes.therapy}
           className="inline-flex items-center gap-2 text-sm font-semibold text-munity-green hover:underline"
@@ -57,7 +72,7 @@ export function TherapistDetailView({
           <div className="flex flex-col gap-6 sm:flex-row">
             <div className="relative size-32 shrink-0 overflow-hidden rounded-2xl bg-munity-sidebar">
               <Image
-                src={therapist.image}
+                src="/images/avatar-placeholder.png"
                 alt={therapist.name}
                 fill
                 className="object-cover"
@@ -78,13 +93,19 @@ export function TherapistDetailView({
                   {therapist.rating.toFixed(1)} ({therapist.reviewCount})
                 </span>
               </div>
-              <p className="mt-4 leading-relaxed text-munity-text">{therapist.bio}</p>
-              <p className="mt-4 inline-flex items-center gap-2 text-sm text-munity-muted">
-                <MapPin className="size-4" />
-                {therapist.location} · {therapist.languages.join(", ")}
-              </p>
+              {therapist.bio ? (
+                <p className="mt-4 leading-relaxed text-munity-text">
+                  {therapist.bio}
+                </p>
+              ) : null}
+              {therapist.location ? (
+                <p className="mt-4 inline-flex items-center gap-2 text-sm text-munity-muted">
+                  <MapPin className="size-4" />
+                  {therapist.location}
+                </p>
+              ) : null}
               <div className="mt-5 flex flex-wrap gap-2">
-                {therapist.tags.map((tag) => (
+                {therapist.specialties.map((tag) => (
                   <span
                     key={tag}
                     className="rounded-full bg-[#efeded] px-3 py-1 text-xs text-munity-muted"
@@ -102,8 +123,10 @@ export function TherapistDetailView({
               </p>
               <p className="font-semibold text-munity-text">
                 {booked && latestBooking
-                  ? latestBooking.when
-                  : `${therapist.nextAvailable} · ₵${therapist.rate}/hr`}
+                  ? formatExistingBookingWhen(latestBooking.scheduledAt)
+                  : therapist.rate != null
+                    ? `₵${therapist.rate}/hr`
+                    : "Rate not set"}
               </p>
             </div>
             <div className="flex gap-3">
@@ -141,12 +164,28 @@ export function TherapistDetailView({
         onClose={() => setSheetOpen(false)}
         therapistId={therapist.id}
         therapistName={therapist.name}
-        rate={therapist.rate}
+        rate={therapist.rate ?? 0}
         alreadyBooked={booked}
-        latestBookingWhen={latestBooking?.when}
-        onConfirm={({ when, scheduledAt }) => {
-          mockStore.bookSession(therapist.id, when, { scheduledAt });
-          flash(`Session booked with ${therapist.name} · ${when}`);
+        latestBookingWhen={
+          latestBooking
+            ? formatExistingBookingWhen(latestBooking.scheduledAt)
+            : null
+        }
+        submitting={bookingInFlight}
+        onConfirm={async ({ when, scheduledAt }) => {
+          setBookingInFlight(true);
+          try {
+            await createBooking({ therapistId: therapist.id, scheduledAt });
+            flash(`Session booked with ${therapist.name} · ${when}`);
+            refreshBookings();
+            setSheetOpen(false);
+          } catch (err) {
+            flash(
+              err instanceof Error ? err.message : "Couldn't book that session",
+            );
+          } finally {
+            setBookingInFlight(false);
+          }
         }}
       />
     </MemberAppShell>

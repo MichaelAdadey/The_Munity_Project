@@ -14,7 +14,13 @@ import {
   Users,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
-import { LivePulse, LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
+import {
+  LivePulse,
+  LiveTicker,
+  liveFadeUp,
+  liveStagger,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { MunityRingsIcon } from "@/components/icons/MunityIcons";
 import {
   Dialog,
@@ -24,28 +30,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { mockStore, useMockStore } from "@/lib/mock-store";
+import { mockStore } from "@/lib/mock-store";
 import type { CommunityRecord } from "@/lib/mock-db";
 import { communityPath, routes } from "@/lib/routes";
+import { CommunityListItem } from "@/lib/communities/queries";
+import {
+  joinCommunity,
+  leaveCommunity,
+} from "@/lib/communities/membership-actions";
 
-type CommunityFilter =
-  | "All"
-  | "Anxiety"
-  | "Depression"
-  | "Student Support"
-  | "Grief"
-  | "Neurodiversity"
-  | "Workplace Stress";
+// type CommunityFilter =
+//   | "All"
+//   | "Anxiety"
+//   | "Depression"
+//   | "Student Support"
+//   | "Grief"
+//   | "Neurodiversity"
+//   | "Workplace Stress";
 
-const filters: CommunityFilter[] = [
-  "All",
-  "Anxiety",
-  "Depression",
-  "Student Support",
-  "Grief",
-  "Neurodiversity",
-  "Workplace Stress",
-];
+// const filters: CommunityFilter[] = [
+//   "All",
+//   "Anxiety",
+//   "Depression",
+//   "Student Support",
+//   "Grief",
+//   "Neurodiversity",
+//   "Workplace Stress",
+// ];
 
 const createFilters: CommunityRecord["filter"][] = [
   "Anxiety",
@@ -81,11 +92,33 @@ const howItWorksSteps = [
   },
 ];
 
-export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean }) {
+export function CommunitiesView({
+  isLoggedIn = true,
+  communities,
+  initialMembershipIds,
+}: {
+  isLoggedIn?: boolean;
+  communities: CommunityListItem[];
+  initialMembershipIds: string[];
+}) {
   const router = useRouter();
-  const store = useMockStore();
   const { flash } = useLiveToast();
-  const [activeFilter, setActiveFilter] = useState<CommunityFilter>("All");
+  const [memberships, setMemberships] = useState<Set<string>>(
+    () => new Set(initialMembershipIds),
+  );
+
+  const availableCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          communities.map((c) => c.category).filter((c): c is string => !!c),
+        ),
+      ).sort(),
+    [communities],
+  );
+
+  const filters = ["All", ...availableCategories];
+  const [activeFilter, setActiveFilter] = useState<string>("All");
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [howOpen, setHowOpen] = useState(false);
@@ -98,24 +131,56 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
   const [moderateWhy, setModerateWhy] = useState("");
 
   const visible = useMemo(() => {
-    return store.communities.filter((community) => {
+    return communities.filter((community) => {
       const matchesFilter =
-        activeFilter === "All" || community.filter === activeFilter;
+        activeFilter === "All" || community.category === activeFilter;
       const query = search.trim().toLowerCase();
       const matchesSearch =
         !query ||
         community.name.toLowerCase().includes(query) ||
-        community.description.toLowerCase().includes(query) ||
-        community.tag.toLowerCase().includes(query);
+        (community.description ?? "").toLowerCase().includes(query) ||
+        (community.tag ?? "").toLowerCase().includes(query);
       return matchesFilter && matchesSearch;
     });
-  }, [activeFilter, search, store.communities]);
+  }, [activeFilter, search, communities]);
 
   function requireLogin() {
     if (isLoggedIn) return true;
     router.push(routes.login);
     return false;
   }
+
+  const handleToggleMembership = async (community: CommunityListItem) => {
+    if (!requireLogin()) return;
+    const wasJoined = memberships.has(community.id);
+
+    setMemberships((prev) => {
+      const next = new Set(prev);
+      if (wasJoined) next.delete(community.id);
+      else next.add(community.id);
+      return next;
+    });
+
+    try {
+      if (wasJoined) {
+        await leaveCommunity(community.id);
+      } else {
+        await joinCommunity(community.id);
+      }
+      flash(wasJoined ? `Left ${community.name}` : `Joined ${community.name}`);
+    } catch (error) {
+      // Roll back the optimistic update on failure
+      setMemberships((prev) => {
+        const next = new Set(prev);
+        if (wasJoined) next.add(community.id);
+        else next.delete(community.id);
+        return next;
+      });
+      flash(
+        error instanceof Error ? error.message : "Couldn't update membership",
+      );
+    }
+  };
 
   function resetCreateForm() {
     setName("");
@@ -162,9 +227,9 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
       searchValue={search}
       onSearchChange={setSearch}
     >
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-10">
+      <div className="mx-auto flex max-w-7xl flex-col gap-10">
         {/* Hero */}
-        <section className="relative overflow-hidden rounded-[32px] p-8 md:min-h-[280px] md:p-12">
+        <section className="relative overflow-hidden rounded-4xl p-8 md:min-h-70 md:p-12">
           <div
             className="absolute inset-0"
             style={{
@@ -177,16 +242,18 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               Find your people.
             </h1>
             <p className="mt-4 text-lg leading-relaxed text-munity-muted">
-              Join safe, moderated spaces where empathy is the standard. Connect with
-              others walking a similar path.
+              Join safe, moderated spaces where empathy is the standard. Connect
+              with others walking a similar path.
             </p>
-            <div className="mt-4"><LivePulse label="Active spaces" count={store.memberships.length} /></div>
+            <div className="mt-4">
+              <LivePulse label="Active spaces" count={memberships.size} />
+            </div>
             <div className="mt-8 flex flex-wrap gap-4">
               <motion.button
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 onClick={() => setHowOpen(true)}
-                className="rounded-xl border border-[#c5c8b8] bg-[rgba(251,249,248,0.5)] px-6 py-3 text-sm font-semibold tracking-wide text-munity-text backdrop-blur-sm transition hover:bg-white"
+                className="rounded-xl border border-munity-input-border bg-[rgba(251,249,248,0.5)] px-6 py-3 text-sm font-semibold tracking-wide text-munity-text backdrop-blur-sm transition hover:bg-white"
               >
                 How it works
               </motion.button>
@@ -207,7 +274,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 className={`shrink-0 rounded-full px-6 py-2 text-sm font-semibold tracking-wide transition ${
                   active
                     ? "bg-munity-green text-white shadow-sm"
-                    : "border border-[#c5c8b8] bg-white text-munity-muted hover:border-munity-green/40 hover:text-munity-green"
+                    : "border border-munity-input-border bg-white text-munity-muted hover:border-munity-green/40 hover:text-munity-green"
                 }`}
               >
                 {filter}
@@ -217,20 +284,34 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
         </div>
 
         {/* Grid */}
-        <LiveTicker items={store.communities.slice(0, 3).map((community) => `${community.name} has ${community.membersLabel} connecting today.`)} />
-        <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <LiveTicker
+          items={communities
+            .slice(0, 3)
+            .map(
+              (community) =>
+                `${community.name} has ${community.membersLabel} connecting today.`,
+            )}
+        />
+        <motion.div
+          variants={liveStagger}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3"
+        >
           {visible.map((community) => {
-            const Icon = filterIcons[community.filter] ?? Users;
-            const joined = store.memberships.includes(community.id);
+            const Icon = filterIcons[community.category ?? ""] ?? Users;
+            const joined = memberships.has(community.id);
             return (
               <motion.article
                 key={community.id}
                 variants={liveFadeUp}
-                className="flex flex-col overflow-hidden rounded-[20px] border border-[#e5e5e1] bg-white"
+                className="flex flex-col overflow-hidden rounded-[20px] border border-munity-border bg-white"
               >
                 <div className="relative h-32 w-full">
                   <Image
-                    src={community.image}
+                    src={
+                      community.image ?? "/images/communities/mindful-paths.png"
+                    }
                     alt={community.name}
                     fill
                     className="object-cover"
@@ -246,39 +327,34 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                     <h2 className="text-2xl font-semibold leading-tight text-munity-text">
                       {community.name}
                     </h2>
-                    <span className="mt-1 rounded-md bg-[#efeded] px-2 py-1 text-xs font-medium text-munity-muted">
-                      {community.tag}
-                    </span>
+                    {community.tag ? (
+                      <span className="mt-1 rounded-md bg-[#efeded] px-2 py-1 text-xs font-medium text-munity-muted">
+                        {community.tag}
+                      </span>
+                    ) : null}
                   </div>
                   <p className="line-clamp-2 text-base leading-relaxed text-munity-muted">
                     {community.description}
                   </p>
                   <div className="mt-auto flex items-center justify-between pt-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold tracking-wide text-[#75796b]">
+                    <div className="flex items-center gap-2 text-sm font-semibold tracking-wide text-munity-gray">
                       <Users className="size-4" />
                       {community.membersLabel}
                     </div>
                     <div className="flex gap-2">
-                    <Link
-                      href={communityPath(community.slug)}
-                      className="rounded-xl border border-munity-green px-4 py-2 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/30"
-                    >
-                      View
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (!isLoggedIn) {
-                          router.push(routes.login);
-                          return;
-                        }
-                        mockStore.toggleMembership(community.id);
-                        flash(joined ? `Left ${community.name}` : `Joined ${community.name}`);
-                      }}
-                      className="rounded-xl bg-munity-lime px-5 py-2 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:brightness-95"
-                    >
-                      {joined ? "Joined" : "Join"}
-                    </button>
+                      <Link
+                        href={communityPath(community.slug)}
+                        className="rounded-xl border border-munity-green px-4 py-2 text-sm font-semibold tracking-wide text-munity-green transition hover:bg-munity-lime/30"
+                      >
+                        View
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => void handleToggleMembership(community)}
+                        className="rounded-xl bg-munity-lime px-5 py-2 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:brightness-95"
+                      >
+                        {joined ? "Joined" : "Join"}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -286,7 +362,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
             );
           })}
 
-          <article className="flex min-h-[320px] flex-col items-center justify-center gap-6 rounded-[20px] bg-munity-green p-8 text-center">
+          <article className="flex min-h-80 flex-col items-center justify-center gap-6 rounded-[20px] bg-munity-green p-8 text-center">
             <div className="flex size-16 items-center justify-center rounded-2xl bg-white/10">
               <Users className="size-7 text-munity-lime" />
             </div>
@@ -295,7 +371,8 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 Can&apos;t find what you&apos;re looking for?
               </h2>
               <p className="mt-2 text-sm leading-relaxed text-white/75">
-                Start a moderated space for your community and help others feel less alone.
+                Start a moderated space for your community and help others feel
+                less alone.
               </p>
             </div>
             <button
@@ -321,10 +398,12 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
         {/* Footer */}
         <footer className="mt-4 flex flex-col gap-6 border-t border-munity-border pt-8 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-sm font-semibold text-munity-text">Munity Peer Support</p>
+            <p className="text-sm font-semibold text-munity-text">
+              Munity Peer Support
+            </p>
             <p className="mt-1 text-xs text-munity-muted">
-              © {new Date().getFullYear()} Munity. For emergencies, contact local crisis
-              services immediately.
+              © {new Date().getFullYear()} Munity. For emergencies, contact
+              local crisis services immediately.
             </p>
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs font-medium text-munity-muted">
@@ -358,7 +437,8 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
           <DialogHeader>
             <DialogTitle>Create a community</DialogTitle>
             <DialogDescription>
-              Start a moderated peer space. You&apos;ll join as the first member.
+              Start a moderated peer space. You&apos;ll join as the first
+              member.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -370,7 +450,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Evening Calm Check-ins"
-                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+                className="w-full rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
               />
             </label>
             <label className="block space-y-1.5">
@@ -379,8 +459,10 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               </span>
               <select
                 value={topic}
-                onChange={(e) => setTopic(e.target.value as CommunityRecord["filter"])}
-                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+                onChange={(e) =>
+                  setTopic(e.target.value as CommunityRecord["filter"])
+                }
+                className="w-full rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
               >
                 {createFilters.map((filter) => (
                   <option key={filter} value={filter}>
@@ -397,7 +479,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
                 placeholder="Optional label"
-                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+                className="w-full rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
               />
             </label>
             <label className="block space-y-1.5">
@@ -409,15 +491,15 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
                 placeholder="What kind of support will this space hold?"
-                className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+                className="w-full resize-none rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
               />
             </label>
           </div>
-          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+          <DialogFooter className="border-munity-border bg-[#f3f4ee]">
             <button
               type="button"
               onClick={() => setCreateOpen(false)}
-              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+              className="rounded-xl border-2 border-munity-gray bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
             >
               Cancel
             </button>
@@ -450,7 +532,9 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                   {index + 1}
                 </span>
                 <div>
-                  <p className="text-sm font-semibold text-munity-text">{step.title}</p>
+                  <p className="text-sm font-semibold text-munity-text">
+                    {step.title}
+                  </p>
                   <p className="mt-0.5 text-sm leading-relaxed text-munity-muted">
                     {step.body}
                   </p>
@@ -458,11 +542,11 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
               </li>
             ))}
           </ol>
-          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+          <DialogFooter className="border-munity-border bg-[#f3f4ee]">
             <button
               type="button"
               onClick={() => setHowOpen(false)}
-              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+              className="rounded-xl border-2 border-munity-gray bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
             >
               Close
             </button>
@@ -498,8 +582,8 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
           <DialogHeader>
             <DialogTitle>Apply to moderate</DialogTitle>
             <DialogDescription>
-              Moderators help keep spaces kind and on-track. This is a preview — your
-              application is stored locally for the demo.
+              Moderators help keep spaces kind and on-track. This is a preview —
+              your application is stored locally for the demo.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -511,7 +595,7 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 value={moderateFocus}
                 onChange={(e) => setModerateFocus(e.target.value)}
                 placeholder="e.g. Anxiety Allies"
-                className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+                className="w-full rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
               />
             </label>
             <label className="block space-y-1.5">
@@ -523,15 +607,15 @@ export function CommunitiesView({ isLoggedIn = true }: { isLoggedIn?: boolean })
                 onChange={(e) => setModerateWhy(e.target.value)}
                 rows={3}
                 placeholder="Optional — a few words about your experience or interest"
-                className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
+                className="w-full resize-none rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 placeholder:text-munity-muted/70 focus:ring-2"
               />
             </label>
           </div>
-          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+          <DialogFooter className="border-munity-border bg-[#f3f4ee]">
             <button
               type="button"
               onClick={() => setModerateOpen(false)}
-              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+              className="rounded-xl border-2 border-munity-gray bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
             >
               Cancel
             </button>
