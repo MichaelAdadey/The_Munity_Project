@@ -92,7 +92,9 @@ export const fetchChats = async (): Promise<ChatSummary[]> => {
     return {
       id: row.id,
       name,
-      avatar: PLACEHOLDER_AVATAR,
+      avatar:
+        (iAmPatient ? row.therapist_avatar_url : row.patient_avatar_url) ??
+        PLACEHOLDER_AVATAR,
       online: false, // no presence tracking yet
       time: row.last_message_at ? formatChatTime(row.last_message_at) : "",
       preview:

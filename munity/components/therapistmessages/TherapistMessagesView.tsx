@@ -3,12 +3,11 @@
 import Image from "next/image";
 import { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
-import { ImageIcon, Mic, Phone, Plus, Search, Send, Video } from "lucide-react";
+import { Mic, Phone, Search, Send, Video } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { CallOverlay } from "@/components/messages/CallOverlay";
-import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
-// import { assets } from "@/lib/assets";
+import { useCallSession } from "@/hooks/useCallSession";
+import { useLiveToast } from "@/components/live/LiveFeedback";
 import { chatIdFromPatient } from "@/lib/therapist-chats";
 import {
   sendChatMessage,
@@ -18,104 +17,10 @@ import {
 
 export { chatIdFromPatient };
 
-// type ThreadMessage = {
-//   id: string;
-//   from: "me" | "them";
-//   content: string;
-//   time: string;
-// };
-
-// type TherapistChat = {
-//   id: string;
-//   name: string;
-//   patientId: string;
-//   preview: string;
-//   time: string;
-//   avatar: string;
-//   online?: boolean;
-// };
-
-// const chats: TherapistChat[] = [
-//   {
-//     id: "marcus-thorne",
-//     name: "Marcus Thorne",
-//     patientId: "#MT-82",
-//     preview: "I’ve joined the waiting room.",
-//     time: "2:00 PM",
-//     avatar: assets.avatars.alex,
-//     online: true,
-//   },
-//   {
-//     id: "sarah-jenkins",
-//     name: "Sarah Jenkins",
-//     patientId: "#SJ-41",
-//     preview: "Hi Doctor — I’m ready whenever you are.",
-//     time: "4:30 PM",
-//     avatar: assets.avatars.elena,
-//     online: true,
-//   },
-//   {
-//     id: "leo-richards",
-//     name: "Leo Richards",
-//     patientId: "#LR-2847",
-//     preview: "The workplace stress worksheet helped today.",
-//     time: "Yesterday",
-//     avatar: assets.avatars.leo,
-//   },
-// ];
-
-// const seedMessages: Record<string, ThreadMessage[]> = {
-//   "marcus-thorne": [
-//     {
-//       id: "m1",
-//       from: "them",
-//       content: "I’ve joined the waiting room for our video session.",
-//       time: "1:58 PM",
-//     },
-//     {
-//       id: "m2",
-//       from: "me",
-//       content: "Thanks Marcus — I’ll connect in a moment. How are you feeling right now?",
-//       time: "1:59 PM",
-//     },
-//   ],
-//   "sarah-jenkins": [
-//     {
-//       id: "m1",
-//       from: "them",
-//       content: "Hi Doctor — I’m ready whenever you are.",
-//       time: "4:28 PM",
-//     },
-//     {
-//       id: "m2",
-//       from: "me",
-//       content: "Thanks for checking in. How has your day felt so far?",
-//       time: "4:29 PM",
-//     },
-//   ],
-//   "leo-richards": [
-//     {
-//       id: "m1",
-//       from: "them",
-//       content: "The workplace stress worksheet helped today.",
-//       time: "Yesterday",
-//     },
-//     {
-//       id: "m2",
-//       from: "me",
-//       content: "Glad to hear that. Let’s review what worked in our next session.",
-//       time: "Yesterday",
-//     },
-//   ],
-// };
-
 function TherapistMessagesContent() {
-  const store = useMockStore();
   const searchParams = useSearchParams();
   const { flash } = useLiveToast();
-  // const [activeChatId, setActiveChatId] = useState(chats[0]?.id ?? "marcus-thorne");
   const [draft, setDraft] = useState("");
-  // const [threads, setThreads] = useState(seedMessages);
   const [search, setSearch] = useState("");
   const call = useCallSession();
 
@@ -140,8 +45,8 @@ function TherapistMessagesContent() {
 
   const filteredChats = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return store.therapistChats;
-    return store.therapistChats.filter(
+    if (!query) return chats;
+    return chats.filter(
       (chat) =>
         chat.name.toLowerCase().includes(query) ||
         (chat.patientId ?? "").toLowerCase().includes(query),
@@ -166,6 +71,21 @@ function TherapistMessagesContent() {
       setDraft(content);
       flash(error instanceof Error ? error.message : "Couldn't send message");
     }
+  }
+
+  async function handleCallEnded(summary: { kind: string; duration: string }) {
+    if (!activeChat) return;
+    try {
+      await sendChatMessage(
+        activeChat.id,
+        `${summary.kind} ended · ${summary.duration}`,
+      );
+      loadMessages(activeChat.id);
+      loadChats();
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Couldn't log call end");
+    }
+    flash(`${summary.kind} ended`);
   }
 
   if (chatsLoading) {
@@ -205,7 +125,7 @@ function TherapistMessagesContent() {
       headerVariant="compact"
       actions={
         <div className="relative mr-auto hidden sm:block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-munity-gray" />
           <input
             type="search"
             value={search}
@@ -270,7 +190,7 @@ function TherapistMessagesContent() {
           </div>
         </section>
 
-        <section className="hidden min-w-0 flex-1 flex-col bg-[#fbf9f8] md:flex">
+        <section className="hidden min-w-0 flex-1 flex-col bg-munity-bg md:flex">
           <div className="flex h-16 items-center justify-between border-b border-[rgba(197,200,184,0.3)] px-6">
             <div>
               <h3 className="text-sm font-semibold text-munity-text">
@@ -281,6 +201,30 @@ function TherapistMessagesContent() {
                   #{activeChat.patientId.slice(0, 6).toUpperCase()}
                 </p>
               ) : null}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  const error = await call.start("voice", activeChat.id);
+                  if (error) flash(error);
+                }}
+                className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
+                aria-label="Voice call"
+              >
+                <Phone className="size-4.5" />
+              </button>
+              <button
+                type="button"
+                onClick={async () => {
+                  const error = await call.start("video", activeChat.id);
+                  if (error) flash(error);
+                }}
+                className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
+                aria-label="Video call"
+              >
+                <Video className="size-5" />
+              </button>
             </div>
           </div>
 
@@ -365,13 +309,17 @@ function TherapistMessagesContent() {
                 placeholder="Type a message..."
                 className="min-w-0 flex-1 bg-transparent px-1 py-2 text-base text-munity-text outline-none placeholder:text-[rgba(69,72,60,0.5)]"
               />
-              {draft ? <span className="text-xs font-medium text-munity-muted">Typing…</span> : null}
+              {draft ? (
+                <span className="text-xs font-medium text-munity-muted">
+                  Typing…
+                </span>
+              ) : null}
               <button
                 type="button"
                 className="rounded-xl p-2 text-munity-muted transition hover:bg-white"
                 aria-label="Voice message"
               >
-                <Mic className="size-[18px]" />
+                <Mic className="size-4.5" />
               </button>
               <button
                 type="button"
@@ -391,10 +339,7 @@ function TherapistMessagesContent() {
         participantName={activeChat.name}
         participantAvatar={activeChat.avatar}
         flash={flash}
-        onEnd={({ kind, duration }) => {
-          mockStore.sendTherapistMessage(activeChat.id, `${kind} ended · ${duration}`);
-          flash(`${kind} ended`);
-        }}
+        onEnd={(summary) => void handleCallEnded(summary)}
       />
     </TherapistAppShell>
   );

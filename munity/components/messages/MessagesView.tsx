@@ -12,14 +12,15 @@ import {
   Calendar,
   ImageIcon,
   Mic,
+  Phone,
   Plus,
   SquarePen,
   Send,
+  Video,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
-// import { CallOverlay } from "@/components/messages/CallOverlay";
+import { CallOverlay } from "@/components/messages/CallOverlay";
 import { LivePulse, useLiveToast } from "@/components/live/LiveFeedback";
-// import { mockStore } from "@/lib/mock-store";
 import { therapyPath } from "@/lib/routes";
 import {
   ensureTherapistThread,
@@ -27,12 +28,11 @@ import {
   useChatMessages,
   useChats,
 } from "@/lib/messages/client-queries";
-// import { useCallSession } from "@/hooks/useCallSession";
+import { useCallSession } from "@/hooks/useCallSession";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
 
 export function MessagesView() {
-  // const store = useMockStore();
   const searchParams = useSearchParams();
   const { flash } = useLiveToast();
 
@@ -48,7 +48,7 @@ export function MessagesView() {
   const [filter, setFilter] = useState<ChatFilter>("All");
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
-  // const call = useCallSession();
+  const call = useCallSession();
 
   useEffect(() => {
     const therapistId = searchParams.get("therapist");
@@ -76,29 +76,6 @@ export function MessagesView() {
       setActiveChatId(chatId);
     }
   }, [searchParams, loadChats, flash, setActiveChatId]);
-
-  // ── Call UI (still a visual-only preview) ──────────────────────
-  // useEffect(() => {
-  //   if (!callMode) return;
-  //   setCallPhase("connecting");
-  //   setCallSeconds(0);
-  //   setMuted(false);
-  //   setCameraOff(false);
-  //   setCallMinimized(false);
-  //   const connectTimer = window.setTimeout(
-  //     () => setCallPhase("connected"),
-  //     1400,
-  //   );
-  //   return () => window.clearTimeout(connectTimer);
-  // }, [callMode, activeChatId]);
-
-  // useEffect(() => {
-  //   if (!callMode || callPhase !== "connected") return;
-  //   const tick = window.setInterval(() => {
-  //     setCallSeconds((prev) => prev + 1);
-  //   }, 1000);
-  //   return () => window.clearInterval(tick);
-  // }, [callMode, callPhase]);
 
   const filteredChats = chats.filter((chat) => {
     const matchesFilter = filter === "All" || chat.filter === filter;
@@ -137,9 +114,6 @@ export function MessagesView() {
   const therapistProfileHref = activeChat.therapistId
     ? therapyPath(activeChat.therapistId)
     : null;
-  // const therapistMeta = activeChat.therapistId
-  //   ? store.therapists.find((item) => item.id === activeChat.therapistId)
-  //   : undefined;
   const sharedMedia = [
     "/images/messages/media-stones.jpg",
     "/images/messages/media-brain.jpg",
@@ -161,29 +135,20 @@ export function MessagesView() {
     }
   }
 
-  // function startCall(mode: CallMode) {
-  //   call.start(mode);
-  //   flash(
-  //     mode === "video"
-  //       ? `Starting video call with ${activeChat.name}`
-  //       : `Calling ${activeChat.name}…`,
-  //   );
-  // }
-
-  // function endCall() {
-  //   if (!callMode) return;
-  //   const kind = callMode === "video" ? "Video call" : "Voice call";
-  //   const duration =
-  //     callPhase === "connected" ? formatCallDuration(callSeconds) : "0:00";
-  //   mockStore.sendMessage(activeChat.id, `${kind} ended · ${duration}`);
-  //   flash(`${kind} ended`);
-  //   setCallMode(null);
-  //   setCallPhase("connecting");
-  //   setCallSeconds(0);
-  //   setMuted(false);
-  //   setCameraOff(false);
-  //   setCallMinimized(false);
-  // }
+  async function handleCallEnded(summary: { kind: string; duration: string }) {
+    if (!activeChat) return;
+    try {
+      await sendChatMessage(
+        activeChat.id,
+        `${summary.kind} ended · ${summary.duration}`,
+      );
+      loadMessages(activeChat.id);
+      loadChats();
+    } catch (error) {
+      flash(error instanceof Error ? error.message : "Couldn't log call end");
+    }
+    flash(`${summary.kind} ended`);
+  }
 
   return (
     <MemberAppShell
@@ -299,10 +264,13 @@ export function MessagesView() {
                 </p>
               )}
             </div>
-            {/* <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => startCall("voice")}
+                onClick={async () => {
+                  const error = await call.start("voice", activeChat.id);
+                  if (error) flash(error);
+                }}
                 className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
                 aria-label="Voice call"
               >
@@ -310,13 +278,16 @@ export function MessagesView() {
               </button>
               <button
                 type="button"
-                onClick={() => startCall("video")}
+                onClick={async () => {
+                  const error = await call.start("video", activeChat.id);
+                  if (error) flash(error);
+                }}
                 className="rounded-full p-2 text-munity-muted transition hover:bg-white hover:text-munity-green"
                 aria-label="Video call"
               >
                 <Video className="size-5" />
               </button>
-            </div> */}
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
@@ -459,7 +430,7 @@ export function MessagesView() {
               </button>
               <button
                 type="button"
-                onClick={() => sendMessage()}
+                onClick={() => void sendMessage()}
                 className="flex size-10 items-center justify-center rounded-xl bg-munity-green text-white transition hover:bg-munity-green-dark"
                 aria-label="Send message"
               >
@@ -573,229 +544,13 @@ export function MessagesView() {
         ) : null}
       </div>
 
-      {/* <AnimatePresence>
-        {callMode && !callMinimized ? (
-          <motion.div
-            key="call-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-80 flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/15 bg-[#24301c] text-white shadow-2xl"
-            >
-              <div className="absolute right-3 top-3 z-10 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCallMinimized(true);
-                    flash(
-                      "Call minimized — keep chatting while you stay on the line",
-                    );
-                  }}
-                  className="flex size-9 items-center justify-center rounded-full bg-black/35 text-white transition hover:bg-black/50"
-                  aria-label="Minimize call"
-                >
-                  <Minimize2 className="size-4" />
-                </button>
-              </div>
-
-              {callMode === "video" ? (
-                <div className="relative h-90 w-full bg-[#1a2214]">
-                  {!cameraOff ? (
-                    <Image
-                      src={activeChat.avatar}
-                      alt={activeChat.name}
-                      fill
-                      className="object-cover opacity-90"
-                    />
-                  ) : (
-                    <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#1a2214]">
-                      <div className="relative size-24 overflow-hidden rounded-full border-4 border-white/20">
-                        <Image
-                          src={activeChat.avatar}
-                          alt={activeChat.name}
-                          fill
-                          className="object-cover"
-                        />
-                      </div>
-                      <p className="text-sm text-white/70">Camera is off</p>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-[#1a2214] via-transparent to-black/30" />
-                  <div className="absolute bottom-4 right-4 h-28 w-20 overflow-hidden rounded-xl border-2 border-white/40 bg-munity-green shadow-lg">
-                    <div className="flex h-full items-center justify-center text-xs font-semibold text-white/90">
-                      You
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center px-8 pb-4 pt-12">
-                  <div className="relative size-28 overflow-hidden rounded-full border-4 border-white/20 shadow-xl">
-                    <Image
-                      src={activeChat.avatar}
-                      alt={activeChat.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="px-8 pb-8 pt-4 text-center">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-munity-lime/90">
-                  {callMode === "video" ? "Video call" : "Voice call"}
-                </p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                  {activeChat.name}
-                </h2>
-                <p className="mt-2 text-sm text-white/70">
-                  {callPhase === "connecting"
-                    ? "Connecting…"
-                    : formatCallDuration(callSeconds)}
-                </p>
-
-                <div className="mt-8 flex items-center justify-center gap-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMuted((prev) => !prev);
-                      flash(muted ? "Microphone on" : "Microphone muted");
-                    }}
-                    className={`flex size-14 items-center justify-center rounded-full transition ${
-                      muted
-                        ? "bg-white text-munity-text"
-                        : "bg-white/15 text-white hover:bg-white/25"
-                    }`}
-                    aria-label={muted ? "Unmute" : "Mute"}
-                  >
-                    {muted ? (
-                      <MicOff className="size-5" />
-                    ) : (
-                      <Mic className="size-5" />
-                    )}
-                  </button>
-
-                  {callMode === "video" ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCameraOff((prev) => !prev);
-                        flash(cameraOff ? "Camera on" : "Camera off");
-                      }}
-                      className={`flex size-14 items-center justify-center rounded-full transition ${
-                        cameraOff
-                          ? "bg-white text-munity-text"
-                          : "bg-white/15 text-white hover:bg-white/25"
-                      }`}
-                      aria-label={
-                        cameraOff ? "Turn camera on" : "Turn camera off"
-                      }
-                    >
-                      {cameraOff ? (
-                        <VideoOff className="size-5" />
-                      ) : (
-                        <Video className="size-5" />
-                      )}
-                    </button>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={endCall}
-                    className="flex size-14 items-center justify-center rounded-full bg-[#ba1a1a] text-white shadow-lg transition hover:bg-[#9f1515]"
-                    aria-label="End call"
-                  >
-                    <PhoneOff className="size-5" />
-                  </button>
-                </div>
-                <p className="mt-5 text-xs text-white/50">
-                  Preview call · no live audio/video in this demo
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {callMode && callMinimized ? (
-          <motion.div
-            key="call-pip"
-            initial={{ opacity: 0, y: 24, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.95 }}
-            className="fixed bottom-5 right-5 z-80 w-70 overflow-hidden rounded-2xl border border-white/20 bg-[#24301c] text-white shadow-2xl"
-          >
-            <button
-              type="button"
-              onClick={() => setCallMinimized(false)}
-              className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-white/5"
-            >
-              <div className="relative size-12 shrink-0 overflow-hidden rounded-full border-2 border-white/25">
-                <Image
-                  src={activeChat.avatar}
-                  alt={activeChat.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold">
-                  {activeChat.name}
-                </p>
-                <p className="mt-0.5 text-xs text-munity-lime/90">
-                  {callMode === "video" ? "Video" : "Voice"} ·{" "}
-                  {callPhase === "connecting"
-                    ? "Connecting…"
-                    : formatCallDuration(callSeconds)}
-                </p>
-              </div>
-              <Maximize2 className="size-4 shrink-0 text-white/70" />
-            </button>
-            <div className="flex items-center justify-between gap-2 border-t border-white/10 px-3 py-2.5">
-              <button
-                type="button"
-                onClick={() => {
-                  setMuted((prev) => !prev);
-                  flash(muted ? "Microphone on" : "Microphone muted");
-                }}
-                className={`flex size-9 items-center justify-center rounded-full transition ${
-                  muted
-                    ? "bg-white text-munity-text"
-                    : "bg-white/15 hover:bg-white/25"
-                }`}
-                aria-label={muted ? "Unmute" : "Mute"}
-              >
-                {muted ? (
-                  <MicOff className="size-4" />
-                ) : (
-                  <Mic className="size-4" />
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={() => setCallMinimized(false)}
-                className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold transition hover:bg-white/25"
-              >
-                Expand
-              </button>
-              <button
-                type="button"
-                onClick={endCall}
-                className="flex size-9 items-center justify-center rounded-full bg-[#ba1a1a] transition hover:bg-[#9f1515]"
-                aria-label="End call"
-              >
-                <PhoneOff className="size-4" />
-              </button>
-            </div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence> */}
+      <CallOverlay
+        session={call}
+        participantName={activeChat.name}
+        participantAvatar={activeChat.avatar}
+        flash={flash}
+        onEnd={(summary) => void handleCallEnded(summary)}
+      />
     </MemberAppShell>
   );
 }
