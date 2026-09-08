@@ -72,7 +72,7 @@ export function TherapistDetailView({
           <div className="flex flex-col gap-6 sm:flex-row">
             <div className="relative size-32 shrink-0 overflow-hidden rounded-2xl bg-munity-sidebar">
               <Image
-                src="/images/avatar-placeholder.png"
+                src={therapist.avatarUrl ?? "/images/avatar-placeholder.png"}
                 alt={therapist.name}
                 fill
                 className="object-cover"

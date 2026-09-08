@@ -378,7 +378,7 @@ export function TherapyView({
                     <div className="flex gap-4">
                       <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-[#efeded]">
                         <Image
-                          src="/images/avatar-placeholder.png"
+                          src={therapist.avatarUrl ?? "/images/avatar-placeholder.png"}
                           alt={therapist.name}
                           fill
                           className="object-cover"

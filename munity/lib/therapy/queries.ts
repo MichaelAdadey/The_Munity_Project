@@ -11,6 +11,7 @@ export type TherapyListItem = {
   rate: number | null;
   location: string | null;
   verificationStatus: string | null;
+  avatarUrl: string | null;
 };
 
 export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
@@ -27,7 +28,7 @@ export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
      specialties,
      practice_location,
      verification_status,
-     profiles!therapist_details_profile_id_fkey ( first_name, last_name )`,
+     profiles!therapist_details_profile_id_fkey ( first_name, last_name, avatar_url )`,
   );
 
   if (error) throw new Error(error.message);
@@ -36,6 +37,7 @@ export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
     const profile = row.profiles as unknown as {
       first_name: string;
       last_name: string;
+      avatar_url: string | null;
     } | null;
     // const profile = profileRow?.[0] ?? null;
     const name = profile
@@ -57,6 +59,7 @@ export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
       rate: (row.rate as number | null) ?? null,
       location: (row.practice_location as string | null) ?? null,
       verificationStatus: (row.verification_status as string | null) ?? null,
+      avatarUrl: profile?.avatar_url ?? null,
     };
   });
 };
@@ -79,7 +82,7 @@ export const getTherapistById = async (
        specialties,
        practice_location,
        verification_status,
-       profiles!therapist_details_profile_id_fkey ( first_name, last_name )`,
+       profiles!therapist_details_profile_id_fkey ( first_name, last_name, avatar_url )`,
     )
     .eq("profile_id", id)
     .maybeSingle();
@@ -89,6 +92,7 @@ export const getTherapistById = async (
   const profile = row.profiles as unknown as {
     first_name: string;
     last_name: string;
+    avatar_url: string | null;
   } | null;
   const name = profile
     ? `${profile.first_name} ${profile.last_name}`.trim()
@@ -108,5 +112,6 @@ export const getTherapistById = async (
     rate: (row.rate as number | null) ?? null,
     location: (row.practice_location as string | null) ?? null,
     verificationStatus: (row.verification_status as string | null) ?? null,
+    avatarUrl: profile?.avatar_url ?? null,
   };
 };
