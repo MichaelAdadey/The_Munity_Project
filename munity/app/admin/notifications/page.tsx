@@ -1,12 +1,17 @@
-import { redirect } from "next/navigation";
 import { ActivityFeedView } from "@/components/activity/ActivityFeedView";
-import { getMockSession } from "@/lib/mock-session";
+import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
+import { getNotifications } from "@/lib/notifications-queries";
 
 export default async function AdminNotificationsPage() {
-  const session = await getMockSession();
-  if (!session || session.role !== "admin") {
-    redirect(routes.adminLogin);
-  }
-  return <ActivityFeedView role="admin" adminName={session.name} />;
+  const { user, profile } = await requireRole(["admin"], routes.adminLogin);
+  const notifications = await getNotifications(user.id);
+
+  return (
+    <ActivityFeedView
+      role="admin"
+      adminName={`${profile.first_name} ${profile.last_name}`.trim()}
+      notifications={notifications}
+    />
+  );
 }

@@ -15,7 +15,10 @@ import {
   type NotificationRole,
 } from "@/lib/notifications";
 import type { RealNotification } from "@/lib/notifications-queries";
-import { markAllNotificationsRead, markNotificationRead } from "@/lib/notifications-actions";
+import {
+  markAllNotificationsRead,
+  markNotificationRead,
+} from "@/lib/notifications-actions";
 
 export function ActivityFeedView({
   role,
@@ -29,7 +32,9 @@ export function ActivityFeedView({
 }) {
   const { flash } = useLiveToast();
   const isReal = notifications !== undefined;
-  const [realItems, setRealItems] = useState(() => (notifications ?? []).map(toDisplayNotification));
+  const [realItems, setRealItems] = useState(() =>
+    (notifications ?? []).map(toDisplayNotification),
+  );
   const items = isReal ? realItems : notificationsByRole[role];
   const categories = useMemo(
     () => ["All", ...Array.from(new Set(items.map((item) => item.category)))],
@@ -46,9 +51,15 @@ export function ActivityFeedView({
     if (isReal) {
       try {
         await markAllNotificationsRead();
-        setRealItems((current) => current.map((item) => ({ ...item, unread: false })));
+        setRealItems((current) =>
+          current.map((item) => ({ ...item, unread: false })),
+        );
       } catch (error) {
-        flash(error instanceof Error ? error.message : "Couldn't mark activity as read");
+        flash(
+          error instanceof Error
+            ? error.message
+            : "Couldn't mark activity as read",
+        );
         return;
       }
     } else {
@@ -62,7 +73,9 @@ export function ActivityFeedView({
       try {
         await markNotificationRead(id);
         setRealItems((current) =>
-          current.map((item) => (item.id === id ? { ...item, unread: false } : item)),
+          current.map((item) =>
+            item.id === id ? { ...item, unread: false } : item,
+          ),
         );
       } catch {
         // Non-blocking — navigation still proceeds even if the read-receipt write fails.
@@ -79,14 +92,20 @@ export function ActivityFeedView({
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
             Inbox
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-munity-text">All activity</h1>
+          <h1 className="mt-2 text-3xl font-bold text-munity-text">
+            All activity
+          </h1>
           <p className="mt-1 text-base text-munity-muted">
             Communities, messages, therapy, and platform updates in one place.
           </p>
           <div className="mt-3">
             <LivePulse
               label="Unread"
-              count={items.filter((item) => item.unread && !readIds.includes(item.id)).length}
+              count={
+                items.filter(
+                  (item) => item.unread && !readIds.includes(item.id),
+                ).length
+              }
             />
           </div>
         </div>
@@ -140,15 +159,19 @@ export function ActivityFeedView({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-munity-text">{item.title}</span>
-                    <span className="rounded-full bg-[#f5f3f3] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-munity-muted">
+                    <span className="text-sm font-semibold text-munity-text">
+                      {item.title}
+                    </span>
+                    <span className="rounded-full bg-munity-sidebar px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-munity-muted">
                       {item.category}
                     </span>
                   </span>
                   <span className="mt-1 block text-sm leading-relaxed text-munity-muted">
                     {item.detail}
                   </span>
-                  <span className="mt-2 block text-xs text-munity-muted">{item.time}</span>
+                  <span className="mt-2 block text-xs text-munity-muted">
+                    {item.time}
+                  </span>
                 </span>
                 {unread ? (
                   <span className="mt-2 size-2.5 shrink-0 rounded-full bg-munity-green" />

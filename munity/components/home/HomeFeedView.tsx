@@ -6,11 +6,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Bookmark,
+  Flag,
   Heart,
   ImageIcon,
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
   Plus,
   Smile,
   Trash2,
@@ -40,13 +42,15 @@ import {
   toggleSupport,
 } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB, type FeedPost } from "@/types/feed";
-import type { FeedPost as MockFeedPost } from "@/lib/mock-db";
 import {
   useCommunityOptions,
   useMyCommunities,
 } from "@/lib/communities/client-queries";
 import { useVerifiedTherapists } from "@/lib/therapy/client-queries";
 import { joinCommunity } from "@/lib/communities/membership-actions";
+import { ReportDialog } from "../reports/ReportDialog";
+import { ImageLightbox } from "../ui/image-lightbox";
+import { EditPostDialog } from "./EditPostDialog";
 
 const demoPhotoLibrary = [
   {
@@ -160,10 +164,14 @@ export function HomeFeedView() {
   const [search, setSearch] = useState("");
   const [openPostMenu, setOpenPostMenu] = useState<string | null>(null);
   const [lightboxPost, setLightboxPost] = useState<FeedPost | null>(null);
+  const [reportTarget, setReportTarget] = useState<{
+    type: "post" | "comment";
+    id: string;
+  } | null>(null);
   // NOTE: no trigger sets this yet (no "Edit" option in the post menu below), and
   // EditPostDialog still targets the old mock-store post shape rather than the real
   // Supabase-backed feed from useFeed() — editing isn't wired up end-to-end.
-  const [editingPost, setEditingPost] = useState<MockFeedPost | null>(null);
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -913,25 +921,17 @@ export function HomeFeedView() {
                           <span className="text-munity-olive-text">
                             {post.feeling}
                           </span>
-                          {/* {post.communityName ? (
+                          {post.communityName && post.communitySlug ? (
                             <>
                               <span className="size-1 rounded-full bg-munity-input-border" />
                               <Link
-                                href={
-                                  post.communityId
-                                    ? communityPath(
-                                        store.communities.find(
-                                          (c) => c.id === post.communityId,
-                                        )?.slug ?? "mindful-paths",
-                                      )
-                                    : routes.communities
-                                }
+                                href={communityPath(post.communitySlug)}
                                 className="text-munity-green hover:underline"
                               >
                                 {post.communityName}
                               </Link>
                             </>
-                          ) : null} */}
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -949,16 +949,43 @@ export function HomeFeedView() {
                       >
                         <MoreHorizontal className="size-4" />
                       </button>
-                      {openPostMenu === post.id && post.isMine ? (
+                      {openPostMenu === post.id ? (
                         <div className="absolute right-0 z-10 mt-1 min-w-36 rounded-xl border border-munity-border bg-white p-1 shadow-lg">
-                          <button
-                            type="button"
-                            onClick={() => void handleDeletePost(post.id)}
-                            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="size-4" />
-                            Delete
-                          </button>
+                          {post.isMine ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingPost(post);
+                                  setOpenPostMenu(null);
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-munity-text hover:bg-munity-sidebar"
+                              >
+                                <Pencil className="size-4" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDeletePost(post.id)}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="size-4" />
+                                Delete
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReportTarget({ type: "post", id: post.id });
+                                setOpenPostMenu(null);
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-munity-text hover:bg-munity-sidebar"
+                            >
+                              <Flag className="size-4" />
+                              Report
+                            </button>
+                          )}
                         </div>
                       ) : null}
                     </div>
@@ -976,7 +1003,8 @@ export function HomeFeedView() {
                       tabIndex={0}
                       onClick={() => setLightboxPost(post)}
                       onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") setLightboxPost(post);
+                        if (event.key === "Enter" || event.key === " ")
+                          setLightboxPost(post);
                       }}
                       aria-label="View post photo"
                       className="relative mt-4 h-56 w-full cursor-zoom-in overflow-hidden rounded-2xl sm:h-64"
@@ -1074,9 +1102,26 @@ export function HomeFeedView() {
                                   <p className="text-xs font-semibold text-munity-green">
                                     {comment.author}
                                   </p>
-                                  <p className="text-[11px] text-munity-muted">
-                                    {formatRelativeTime(comment.createdAt)}
-                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-[11px] text-munity-muted">
+                                      {formatRelativeTime(comment.createdAt)}
+                                    </p>
+                                    {comment.authorId !== profile?.id ? (
+                                      <button
+                                        type="button"
+                                        onClick={() =>
+                                          setReportTarget({
+                                            type: "comment",
+                                            id: comment.id,
+                                          })
+                                        }
+                                        className="text-munity-muted hover:text-[#93000a]"
+                                        aria-label="Report comment"
+                                      >
+                                        <Flag className="size-3" />
+                                      </button>
+                                    ) : null}
+                                  </div>
                                 </div>
                                 <p className="mt-1 text-sm text-munity-text">
                                   {comment.content}
@@ -1232,7 +1277,9 @@ export function HomeFeedView() {
                 >
                   <div className="relative size-10 shrink-0 overflow-hidden rounded-full">
                     <Image
-                      src="/images/avatar-placeholder.png"
+                      src={
+                        therapist.avatarUrl ?? "/images/avatar-placeholder.png"
+                      }
                       alt={therapist.name}
                       fill
                       className="object-cover"
@@ -1348,22 +1395,33 @@ export function HomeFeedView() {
           </motion.div>
         ) : null}
       </AnimatePresence>
-      {/* <ImageLightbox
+      <ReportDialog
+        open={reportTarget !== null}
+        onClose={() => setReportTarget(null)}
+        targetType={reportTarget?.type ?? "post"}
+        targetId={reportTarget?.id ?? ""}
+        flash={flash}
+      />
+      <ImageLightbox
         open={lightboxPost !== null}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setLightboxPost(null);
         }}
         images={lightboxPost?.imageUrl ? [lightboxPost.imageUrl] : []}
-        altText={lightboxPost ? `Photo from ${lightboxPost.author}'s post` : "Post image"}
+        altText={
+          lightboxPost
+            ? `Photo from ${lightboxPost.author}'s post`
+            : "Post image"
+        }
       />
-
       <EditPostDialog
         post={editingPost}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setEditingPost(null);
         }}
         flash={flash}
-      /> */}
+        onSaved={refresh}
+      />
     </MemberAppShell>
   );
 }

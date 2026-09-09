@@ -249,6 +249,39 @@ export const sendChatMessage = async (threadId: string, content: string) => {
     content,
   });
   if (error) throw new Error(error.message);
+
+  // Best-effort — a failed notification insert shouldn't fail message sending.
+  const { data: thread } = await supabase
+    .from("chat_threads")
+    .select("patient_id, therapist_id")
+    .eq("id", threadId)
+    .maybeSingle();
+
+  if (thread) {
+    const recipientId =
+      thread.patient_id === user.id ? thread.therapist_id : thread.patient_id;
+    if (recipientId) {
+      const { data: senderProfile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const senderName = senderProfile
+        ? `${senderProfile.first_name} ${senderProfile.last_name}`.trim()
+        : "Someone";
+
+      const recipientIsPatient = recipientId === thread.patient_id;
+      await supabase.from("notifications").insert({
+        recipient_id: recipientId,
+        type: "new_message",
+        title: "New message",
+        body: `${senderName} sent you a message.`,
+        href: recipientIsPatient
+          ? `/messages?chat=${threadId}`
+          : `/therapistmessages?chat=${threadId}`,
+      });
+    }
+  }
 };
 
 export const markThreadRead = async (threadId: string) => {

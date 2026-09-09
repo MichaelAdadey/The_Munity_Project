@@ -59,9 +59,44 @@ export const createPost = async (input: {
 
   revalidatePath("/home");
   if (parsed.data.communityId) {
-    revalidatePath("/Communities/[slug]", "page")
+    revalidatePath("/Communities/[slug]", "page");
   }
   return { success: "Posted" };
+};
+
+export const updatePost = async (input: {
+  postId: string;
+  content: string;
+  imageUrl?: string | null;
+}): Promise<FeedActionState> => {
+  const content = input.content.trim();
+  if (content.length === 0 && !input.imageUrl) {
+    return { error: "Add text or a photo before saving." };
+  }
+  if (content.length > 2000) {
+    return { error: "Post is too long." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      content,
+      image_url: input.imageUrl ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.postId)
+    .eq("author_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/home");
+  return { success: "Post updated" };
 };
 
 export const deletePost = async (postId: string): Promise<FeedActionState> => {
@@ -116,6 +151,32 @@ export const toggleSupport = async (
       user_id: user.id,
     });
     if (error) return { error: error.message };
+
+    // Best-effort — a failed notification insert shouldn't fail the support itself.
+    const { data: post } = await supabase
+      .from("posts")
+      .select("author_id, is_anonymous")
+      .eq("id", postId)
+      .maybeSingle();
+
+    if (post && post.author_id !== user.id) {
+      const { data: supporterProfile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const supporterName = supporterProfile
+        ? `${supporterProfile.first_name} ${supporterProfile.last_name}`.trim()
+        : "Someone";
+
+      await supabase.from("notifications").insert({
+        recipient_id: post.author_id,
+        type: "post_supported",
+        title: "New support on your post",
+        body: `${supporterName} supported your post.`,
+        href: "/home",
+      });
+    }
   }
 
   revalidatePath("/home");
@@ -181,6 +242,32 @@ export const addComment = async (
   });
 
   if (error) return { error: error.message };
+
+  // Best-effort notification to the post's author.
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id")
+    .eq("id", parsed.data.postId)
+    .maybeSingle();
+
+  if (post && post.author_id !== user.id) {
+    const { data: commenterProfile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    const commenterName = commenterProfile
+      ? `${commenterProfile.first_name} ${commenterProfile.last_name}`.trim()
+      : "Someone";
+
+    await supabase.from("notifications").insert({
+      recipient_id: post.author_id,
+      type: "post_commented",
+      title: "New comment on your post",
+      body: `${commenterName} commented on your post.`,
+      href: "/home",
+    });
+  }
 
   revalidatePath("/home");
   return { success: "Comment added" };

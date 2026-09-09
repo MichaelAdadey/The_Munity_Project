@@ -38,6 +38,7 @@ import {
   joinCommunity,
   leaveCommunity,
 } from "@/lib/communities/membership-actions";
+import { submitModeratorApplication } from "@/lib/moderators/actions";
 
 // type CommunityFilter =
 //   | "All"
@@ -129,6 +130,7 @@ export function CommunitiesView({
   const [topic, setTopic] = useState<CommunityRecord["filter"]>("Anxiety");
   const [moderateFocus, setModerateFocus] = useState("");
   const [moderateWhy, setModerateWhy] = useState("");
+  const [submittingModeration, setSubmittingModeration] = useState(false);
 
   const visible = useMemo(() => {
     return communities.filter((community) => {
@@ -207,16 +209,29 @@ export function CommunitiesView({
     router.push(communityPath(community.slug));
   }
 
-  function handleModerateApply() {
+  async function handleModerateApply() {
     if (!requireLogin()) return;
     if (!moderateFocus.trim()) {
       flash("Tell us which space you'd like to moderate");
       return;
     }
-    flash("Moderator application submitted — we'll review it soon");
-    setModerateFocus("");
-    setModerateWhy("");
-    setModerateOpen(false);
+    setSubmittingModeration(true);
+    try {
+      const result = await submitModeratorApplication({
+        focus: moderateFocus,
+        why: moderateWhy,
+      });
+      if (result.error) {
+        flash(result.error);
+        return;
+      }
+      flash("Moderator application submitted — our team will review it soon");
+      setModerateFocus("");
+      setModerateWhy("");
+      setModerateOpen(false);
+    } finally {
+      setSubmittingModeration(false);
+    }
   }
 
   return (
@@ -582,8 +597,8 @@ export function CommunitiesView({
           <DialogHeader>
             <DialogTitle>Apply to moderate</DialogTitle>
             <DialogDescription>
-              Moderators help keep spaces kind and on-track. This is a preview —
-              your application is stored locally for the demo.
+              Moderators help keep spaces kind and on-track. Our team reviews
+              every application.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -621,10 +636,11 @@ export function CommunitiesView({
             </button>
             <button
               type="button"
-              onClick={handleModerateApply}
-              className="rounded-xl bg-munity-lime px-4 py-2.5 text-sm font-semibold text-munity-olive-text transition hover:brightness-95"
+              onClick={() => void handleModerateApply()}
+              disabled={submittingModeration}
+              className="rounded-xl bg-munity-lime px-4 py-2.5 text-sm font-semibold text-munity-olive-text transition hover:brightness-95 disabled:opacity-60"
             >
-              Submit application
+              {submittingModeration ? "Submitting..." : "Submit application"}
             </button>
           </DialogFooter>
         </DialogContent>

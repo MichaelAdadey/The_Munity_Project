@@ -42,6 +42,7 @@ export const routes = {
   adminResources: "/admin/resources",
   adminSettings: "/admin/settings",
   adminNotifications: "/admin/notifications",
+  adminModeratorApplications: "/admin/moderator-applications",
   therapistOnboarding: {
     basicInfo: "/therapistonboarding/basic-info",
     credentials: "/therapistonboarding/credentials",
@@ -75,7 +76,11 @@ export function therapistMessagesPath(opts?: { chatId?: string }) {
   return routes.therapistMessages;
 }
 
-export type OnboardingStepId = "basic-info" | "credentials" | "specialties" | "payout";
+export type OnboardingStepId =
+  | "basic-info"
+  | "credentials"
+  | "specialties"
+  | "payout";
 
 export const onboardingSteps: {
   id: OnboardingStepId;
@@ -147,7 +152,10 @@ export type PatientNavSection =
   | "Files"
   | "Care Plan";
 
-export function patientNavHref(slug: PatientSlug, section: PatientNavSection): string {
+export function patientNavHref(
+  slug: PatientSlug,
+  section: PatientNavSection,
+): string {
   const paths = patientRoutes(slug);
   switch (section) {
     case "Overview":

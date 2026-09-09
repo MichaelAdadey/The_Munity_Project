@@ -44,6 +44,9 @@ export type FeedPost = {
   savedByMe: boolean;
   /** True when the signed-in user owns this post (show Delete) */
   isMine: boolean;
+  communityId: string | null;
+  communityName: string | null;
+  communitySlug: string | null;
 };
 
 export type FeedComment = {
