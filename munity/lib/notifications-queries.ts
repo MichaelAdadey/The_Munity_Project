@@ -3,7 +3,8 @@ import { createClient } from "./supabase/server";
 export type NotificationType =
   | "booking_request"
   | "verification_approved"
-  | "verification_rejected";
+  | "verification_rejected"
+  | "new_report";
 
 export type RealNotification = {
   id: string;

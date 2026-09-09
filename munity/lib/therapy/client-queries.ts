@@ -8,6 +8,7 @@ export type TherapistSummary = {
   name: string;
   credentials: string;
   specialties: string[];
+  avatarUrl: string | null;
 };
 
 export const fetchVerifiedTherapists = async (): Promise<
@@ -22,7 +23,7 @@ export const fetchVerifiedTherapists = async (): Promise<
        professional_title,
        title,
        specialties,
-       profiles!therapist_details_profile_id_fkey ( first_name, last_name )`,
+       profiles!therapist_details_profile_id_fkey ( first_name, last_name, avatar_url )`,
     )
     .eq("verification_status", "verified");
 
@@ -32,6 +33,7 @@ export const fetchVerifiedTherapists = async (): Promise<
     const profile = row.profiles as unknown as {
       first_name: string;
       last_name: string;
+      avatar_url: string;
     } | null;
     const name = profile
       ? `${profile.first_name} ${profile.last_name}`.trim()
@@ -45,6 +47,7 @@ export const fetchVerifiedTherapists = async (): Promise<
         (row.title as string | null) ||
         "Therapist",
       specialties: (row.specialties as string[] | null) ?? [],
+      avatarUrl: profile?.avatar_url ?? null,
     };
   });
 };

@@ -1,4 +1,5 @@
 import type { CatalogResource } from "@/lib/resource-categories";
+import { DbResource } from "./resources/queries";
 
 export type ResourceExperience = "article" | "video" | "guide";
 
@@ -27,7 +28,7 @@ export type CaptionCue = {
   text: string;
 };
 
-export function getVideoCaptions(resource: CatalogResource): CaptionCue[] {
+export function getVideoCaptions(resource: DbResource): CaptionCue[] {
   return [
     {
       start: 0,
@@ -67,7 +68,7 @@ export function getVideoCaptions(resource: CatalogResource): CaptionCue[] {
   ];
 }
 
-export function captionsToVtt(resource: CatalogResource, cues: CaptionCue[]) {
+export function captionsToVtt(resource: DbResource, cues: CaptionCue[]) {
   const lines = ["WEBVTT", ""];
   cues.forEach((cue, index) => {
     lines.push(String(index + 1));
@@ -79,14 +80,18 @@ export function captionsToVtt(resource: CatalogResource, cues: CaptionCue[]) {
   return `${lines.join("\n")}\n`;
 }
 
-export function captionsToPlainText(resource: CatalogResource, cues: CaptionCue[]) {
+export function captionsToPlainText(resource: DbResource, cues: CaptionCue[]) {
   const body = cues
     .map((cue) => `[${formatClock(cue.start)}] ${cue.text}`)
     .join("\n\n");
   return `${resource.title}\n${resource.duration}\n\n${resource.description}\n\n--- Captions ---\n\n${body}\n`;
 }
 
-export function downloadTextFile(filename: string, contents: string, mime: string) {
+export function downloadTextFile(
+  filename: string,
+  contents: string,
+  mime: string,
+) {
   const blob = new Blob([contents], { type: mime });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");

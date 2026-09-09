@@ -1,10 +1,16 @@
-import { redirect } from "next/navigation";
-import { AdminSubpageView } from "@/components/admin/AdminSubpageView";
-import { getMockSession } from "@/lib/mock-session";
+import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
+import { AdminGrowthView } from "@/components/admin/AdminGrowthView";
+import { getGrowthMetrics } from "@/lib/admin/growth-queries";
 
 export default async function AdminGrowthPage() {
-  const session = await getMockSession();
-  if (!session || session.role !== "admin") redirect(routes.adminLogin);
-  return <AdminSubpageView adminName={session.name} section="growth" />;
+  const { profile } = await requireRole(["admin"], routes.adminLogin);
+  const metrics = await getGrowthMetrics();
+
+  return (
+    <AdminGrowthView
+      adminName={`${profile.first_name} ${profile.last_name}`.trim()}
+      metrics={metrics}
+    />
+  );
 }

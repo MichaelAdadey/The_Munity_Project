@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -28,42 +29,66 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { mockStore, useMockStore } from "@/lib/mock-store";
-import type { ModerationReport } from "@/lib/mock-db";
+import { formatRelativeTime } from "@/hooks/use-feed";
+import type { AdminReportRow } from "@/lib/admin/moderation-queries";
+import {
+  markReportInReview,
+  reopenReport,
+  resolveReport,
+} from "@/lib/admin/moderation-actions";
 import { routes } from "@/lib/routes";
 
 type ReportTab = "All Reports" | "Pending" | "In Review" | "Resolved";
 type SeverityFilter = "All" | "CRITICAL" | "MEDIUM" | "LOW";
 type SortKey = "newest" | "severity" | "status";
+type Resolution = "Warn" | "Remove content" | "Suspend" | "Dismiss";
 
 const tabs: ReportTab[] = ["All Reports", "Pending", "In Review", "Resolved"];
 const PAGE_SIZE = 5;
 
-const severityRank: Record<ModerationReport["severity"], number> = {
+const severityRank: Record<AdminReportRow["severity"], number> = {
   CRITICAL: 0,
   MEDIUM: 1,
   LOW: 2,
 };
 
-const statusRank: Record<ModerationReport["status"], number> = {
-  "Pending Urgent": 0,
-  Pending: 1,
-  "In Review": 2,
-  Resolved: 3,
+const statusRank: Record<AdminReportRow["status"], number> = {
+  pending: 0,
+  in_review: 1,
+  resolved: 2,
 };
 
-function statusMatchesTab(status: ModerationReport["status"], tab: ReportTab) {
+function statusMatchesTab(status: AdminReportRow["status"], tab: ReportTab) {
   if (tab === "All Reports") return true;
-  if (tab === "Pending") return status === "Pending" || status === "Pending Urgent";
-  if (tab === "In Review") return status === "In Review";
-  return status === "Resolved";
+  if (tab === "Pending") return status === "pending";
+  if (tab === "In Review") return status === "in_review";
+  return status === "resolved";
 }
 
-function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
-  const { reports } = useMockStore();
+function statusLabel(report: AdminReportRow): string {
+  if (report.status === "pending")
+    return report.urgent ? "Pending Urgent" : "Pending";
+  if (report.status === "in_review") return "In Review";
+  return "Resolved";
+}
+
+function reasonTone(reason: string): "danger" | "lime" | "neutral" {
+  if (reason === "Self-Harm" || reason === "Hate Speech") return "danger";
+  if (reason === "Spam") return "lime";
+  return "neutral";
+}
+
+function AdminModerationContent({
+  reports,
+  searchQuery,
+}: {
+  reports: AdminReportRow[];
+  searchQuery: string;
+}) {
+  const router = useRouter();
   const { flash } = useLiveToast();
   const [tab, setTab] = useState<ReportTab>("All Reports");
-  const [selectedId, setSelectedId] = useState("8492");
+  const [selectedId, setSelectedId] = useState(reports[0]?.id ?? "");
   const [page, setPage] = useState(1);
   const [severityFilter, setSeverityFilter] = useState<SeverityFilter>("All");
   const [sortKey, setSortKey] = useState<SortKey>("newest");
@@ -72,12 +97,13 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
     const query = searchQuery.trim().toLowerCase();
     const list = reports.filter((report) => {
       if (!statusMatchesTab(report.status, tab)) return false;
-      if (severityFilter !== "All" && report.severity !== severityFilter) return false;
+      if (severityFilter !== "All" && report.severity !== severityFilter)
+        return false;
       if (!query) return true;
       return (
-        report.id.includes(query) ||
-        report.reporter.toLowerCase().includes(query) ||
-        report.target.toLowerCase().includes(query) ||
+        report.id.toLowerCase().includes(query) ||
+        report.reporterName.toLowerCase().includes(query) ||
+        report.targetAuthorName.toLowerCase().includes(query) ||
         report.reason.toLowerCase().includes(query) ||
         report.targetSnippet.toLowerCase().includes(query) ||
         report.caseContent.toLowerCase().includes(query)
@@ -89,14 +115,17 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         return severityRank[a.severity] - severityRank[b.severity];
       }
       if (sortKey === "status") {
-        return statusRank[a.status] - statusRank[b.status];
+        const rankDiff = statusRank[a.status] - statusRank[b.status];
+        if (rankDiff !== 0) return rankDiff;
+        return Number(b.urgent) - Number(a.urgent);
       }
-      return Number(b.id) - Number(a.id);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
   }, [reports, tab, severityFilter, sortKey, searchQuery]);
 
   useEffect(() => {
-    setPage(1);
+    const timer = window.setTimeout(() => setPage(1));
+    return () => window.clearTimeout(timer);
   }, [searchQuery, tab, severityFilter, sortKey]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -109,19 +138,31 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
     filtered[0] ??
     reports[0];
 
-  const activeReports = reports.filter((report) => report.status !== "Resolved").length;
-  const pendingReports = reports.filter(
-    (report) => report.status === "Pending" || report.status === "Pending Urgent",
+  const activeReports = reports.filter(
+    (report) => report.status !== "resolved",
   ).length;
-  const urgentReports = reports.filter((report) => report.status === "Pending Urgent").length;
+  const pendingReports = reports.filter(
+    (report) => report.status === "pending",
+  ).length;
+  const urgentReports = reports.filter((report) => report.urgent).length;
   const resolvedToday = reports.filter((report) => {
     if (!report.resolvedAt) return false;
-    return report.resolvedAt.slice(0, 10) === new Date().toISOString().slice(0, 10);
+    return (
+      report.resolvedAt.slice(0, 10) === new Date().toISOString().slice(0, 10)
+    );
   }).length;
-  const avgResponseMins = Math.max(
-    8,
-    18 - Math.min(resolvedToday * 2, 8) - Math.min(activeReports, 4),
-  );
+
+  const avgResponseMins = useMemo(() => {
+    const resolved = reports.filter((r) => r.resolvedAt);
+    if (resolved.length === 0) return null;
+    const totalMins = resolved.reduce((sum, r) => {
+      const mins =
+        (new Date(r.resolvedAt!).getTime() - new Date(r.createdAt).getTime()) /
+        60000;
+      return sum + Math.max(0, mins);
+    }, 0);
+    return Math.round(totalMins / resolved.length);
+  }, [reports]);
 
   const tabCount = (item: ReportTab) =>
     reports.filter((report) => statusMatchesTab(report.status, item)).length;
@@ -130,20 +171,40 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
     setSelectedId(id);
   }
 
-  function resolveSelected(resolution: string) {
-    if (!selected) return;
-    mockStore.resolveReport(selected.id, resolution);
-    flash(`${resolution} applied to report #${selected.id}.`);
+  async function handleResolve(id: string, resolution: Resolution) {
+    const result = await resolveReport(id, resolution);
+    if (result.error) {
+      flash(result.error);
+      return;
+    }
+    flash(`${resolution} applied to report.`);
+    router.refresh();
   }
 
-  function markInReview(reportId: string) {
-    mockStore.updateReportStatus(reportId, "In Review");
-    flash(`Report #${reportId} is now in review.`);
+  async function handleMarkInReview(id: string) {
+    const result = await markReportInReview(id);
+    if (result.error) {
+      flash(result.error);
+      return;
+    }
+    flash("Report is now in review.");
+    router.refresh();
   }
 
-  function startWellnessCheck(reportId: string) {
-    mockStore.initiateWellnessCheck(reportId);
-    flash(`Wellness check initiated for report #${reportId}. Crisis protocol notified.`);
+  async function handleReopen(id: string) {
+    const result = await reopenReport(id);
+    if (result.error) {
+      flash(result.error);
+      return;
+    }
+    flash("Report reopened.");
+    router.refresh();
+  }
+
+  function handleWellnessCheck() {
+    flash(
+      "Wellness check initiated — placeholder only, no crisis-response system connected yet.",
+    );
   }
 
   function changeTab(next: ReportTab) {
@@ -178,22 +239,32 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
   );
 
   return (
-    <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-6">
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-[20px] border border-[rgba(197,200,184,0.3)] bg-white p-6 shadow-[0px_4px_10px_rgba(85,107,47,0.05)]">
-          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">Active Reports</p>
+          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">
+            Active Reports
+          </p>
           <div className="mt-1 flex items-end justify-between gap-3">
-            <p className="text-5xl font-bold tracking-[-0.96px] text-munity-green">{activeReports}</p>
-            <span className="mb-2 rounded-lg bg-munity-lime px-2 py-1 text-base text-[#56642b]">
-              {resolvedToday > 0 ? `${resolvedToday} resolved today` : `${pendingReports} pending`}
+            <p className="text-5xl font-bold tracking-[-0.96px] text-munity-green">
+              {activeReports}
+            </p>
+            <span className="mb-2 rounded-lg bg-munity-lime px-2 py-1 text-base text-munity-green-dark">
+              {resolvedToday > 0
+                ? `${resolvedToday} resolved today`
+                : `${pendingReports} pending`}
             </span>
           </div>
         </article>
 
         <article className="rounded-[20px] border border-[rgba(197,200,184,0.3)] bg-white p-6 shadow-[0px_4px_10px_rgba(85,107,47,0.05)]">
-          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">Pending Review</p>
+          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">
+            Pending Review
+          </p>
           <div className="mt-1 flex items-end justify-between gap-3">
-            <p className="text-5xl font-bold tracking-[-0.96px] text-[#474836]">{pendingReports}</p>
+            <p className="text-5xl font-bold tracking-[-0.96px] text-[#474836]">
+              {pendingReports}
+            </p>
             <div className="mb-2">
               <LivePulse label="Pending" count={pendingReports} />
             </div>
@@ -201,7 +272,9 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         </article>
 
         <article className="rounded-[20px] border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.1)] p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)]">
-          <p className="text-base uppercase tracking-[0.8px] text-[#ba1a1a]">Urgent (Crisis)</p>
+          <p className="text-base uppercase tracking-[0.8px] text-[#ba1a1a]">
+            Urgent (Crisis)
+          </p>
           <div className="mt-1 flex items-end justify-between gap-3">
             <p className="text-5xl font-bold tracking-[-0.96px] text-[#ba1a1a]">
               {String(urgentReports).padStart(2, "0")}
@@ -211,9 +284,13 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         </article>
 
         <article className="rounded-[20px] border border-[rgba(197,200,184,0.3)] bg-white p-6 shadow-[0px_4px_10px_rgba(85,107,47,0.05)]">
-          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">Avg. Response</p>
+          <p className="text-base uppercase tracking-[0.8px] text-munity-muted">
+            Avg. Response
+          </p>
           <div className="mt-1 flex items-end justify-between gap-3">
-            <p className="text-5xl font-bold tracking-[-0.96px] text-munity-green">{avgResponseMins}m</p>
+            <p className="text-5xl font-bold tracking-[-0.96px] text-munity-green">
+              {avgResponseMins !== null ? `${avgResponseMins}m` : "—"}
+            </p>
             <Gauge className="mb-2 size-8 text-munity-muted" />
           </div>
         </article>
@@ -232,7 +309,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                   className={`rounded-full px-6 py-2 text-base transition ${
                     active
                       ? "bg-munity-green text-white shadow-sm"
-                      : "text-munity-muted hover:bg-[#f5f3f3]"
+                      : "text-munity-muted hover:bg-munity-sidebar"
                   }`}
                 >
                   {item} ({tabCount(item)})
@@ -242,9 +319,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
           </div>
           <div className="flex gap-2">
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex items-center gap-2 rounded-xl border border-[#c5c8b8] px-4 py-2 text-base text-munity-muted outline-none transition hover:bg-[#f5f3f3]"
-              >
+              <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-xl border border-munity-input-border px-4 py-2 text-base text-munity-muted outline-none transition hover:bg-munity-sidebar">
                 <Filter className="size-3.5" />
                 {severityFilter === "All" ? "Filter By" : severityFilter}
               </DropdownMenuTrigger>
@@ -252,23 +327,23 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                 align="end"
                 className="min-w-44 border border-munity-border bg-white p-1.5 shadow-lg"
               >
-                {(["All", "CRITICAL", "MEDIUM", "LOW"] as SeverityFilter[]).map((option) => (
-                  <DropdownMenuItem
-                    key={option}
-                    className="cursor-pointer rounded-lg px-3 py-2 text-sm"
-                    onClick={() => changeSeverity(option)}
-                  >
-                    {option === "All" ? "All severities" : option}
-                    {severityFilter === option ? " ✓" : ""}
-                  </DropdownMenuItem>
-                ))}
+                {(["All", "CRITICAL", "MEDIUM", "LOW"] as SeverityFilter[]).map(
+                  (option) => (
+                    <DropdownMenuItem
+                      key={option}
+                      className="cursor-pointer rounded-lg px-3 py-2 text-sm"
+                      onClick={() => changeSeverity(option)}
+                    >
+                      {option === "All" ? "All severities" : option}
+                      {severityFilter === option ? " ✓" : ""}
+                    </DropdownMenuItem>
+                  ),
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
 
             <DropdownMenu>
-              <DropdownMenuTrigger
-                className="inline-flex items-center gap-2 rounded-xl border border-[#c5c8b8] px-4 py-2 text-base text-munity-muted outline-none transition hover:bg-[#f5f3f3]"
-              >
+              <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-xl border border-munity-input-border px-4 py-2 text-base text-munity-muted outline-none transition hover:bg-munity-sidebar">
                 <ArrowUpDown className="size-3.5" />
                 Sort
               </DropdownMenuTrigger>
@@ -298,8 +373,8 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[1000px] w-full border-collapse text-left">
-            <thead className="bg-[#f5f3f3]">
+          <table className="min-w-250 w-full border-collapse text-left">
+            <thead className="bg-munity-sidebar">
               <tr className="border-b border-[rgba(197,200,184,0.3)] text-[11px] font-bold uppercase tracking-[0.55px] text-munity-muted">
                 <th className="px-6 py-4">Report ID</th>
                 <th className="px-6 py-4">Reporter</th>
@@ -313,13 +388,17 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
             <tbody>
               {visible.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-sm text-munity-muted">
+                  <td
+                    colSpan={7}
+                    className="px-6 py-12 text-center text-sm text-munity-muted"
+                  >
                     No reports match this filter.
                   </td>
                 </tr>
               ) : (
                 visible.map((report) => {
                   const selectedRow = selected?.id === report.id;
+                  const tone = reasonTone(report.reason);
                   return (
                     <motion.tr
                       key={report.id}
@@ -330,33 +409,39 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                           : "rgba(255, 255, 255, 0)",
                       }}
                       transition={{ duration: 0.2 }}
-                      className={`cursor-pointer border-b border-[rgba(197,200,184,0.2)] transition hover:bg-[#f5f3f3]/60 ${
+                      className={`cursor-pointer border-b border-[rgba(197,200,184,0.2)] transition hover:bg-munity-sidebar/60 ${
                         report.urgent ? "bg-[rgba(255,218,214,0.03)]" : ""
                       } ${selectedRow ? "ring-1 ring-inset ring-munity-green/20" : ""}`}
                     >
                       <td className="px-6 py-5 font-mono text-xs text-munity-muted">
-                        #REP-{report.id}
+                        #{report.id.slice(0, 8).toUpperCase()}
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex items-center gap-3">
                           <span className="flex size-8 items-center justify-center rounded-full bg-[#efeded] text-xs font-bold text-munity-green">
                             {report.reporterInitials}
                           </span>
-                          <span className="text-base text-munity-text">{report.reporter}</span>
+                          <span className="text-base text-munity-text">
+                            {report.reporterName}
+                          </span>
                         </div>
                       </td>
                       <td className="px-6 py-5">
-                        <p className="text-base text-munity-green">{report.target}</p>
-                        <p className="text-xs text-munity-muted/70">{report.targetSnippet}</p>
+                        <p className="text-base text-munity-green">
+                          {report.targetAuthorName}
+                        </p>
+                        <p className="text-xs text-munity-muted/70">
+                          {report.targetSnippet}
+                        </p>
                       </td>
                       <td className="px-6 py-5">
                         <span
                           className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                            report.reasonTone === "danger"
+                            tone === "danger"
                               ? "bg-[#ffdad6] text-[#93000a]"
-                              : report.reasonTone === "lime"
-                                ? "bg-munity-lime text-[#5a682f]"
-                                : "bg-[#e4e2e2] text-munity-muted"
+                              : tone === "lime"
+                                ? "bg-munity-lime text-munity-olive-text"
+                                : "bg-munity-divider text-munity-muted"
                           }`}
                         >
                           {report.reason}
@@ -366,23 +451,23 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                         <span className="inline-flex items-center gap-2 text-base">
                           <span
                             className={`size-2 rounded-full ${
-                              report.status === "Pending Urgent"
+                              report.status === "pending" && report.urgent
                                 ? "bg-[#ba1a1a]"
-                                : report.status === "In Review"
-                                  ? "bg-[#75796b]"
-                                  : report.status === "Resolved"
+                                : report.status === "in_review"
+                                  ? "bg-munity-gray"
+                                  : report.status === "resolved"
                                     ? "bg-munity-green"
-                                    : "bg-[#c5c8b8]"
+                                    : "bg-munity-input-border"
                             }`}
                           />
                           <span
                             className={
-                              report.status === "Pending Urgent"
+                              report.status === "pending" && report.urgent
                                 ? "text-[#ba1a1a]"
                                 : "text-munity-muted"
                             }
                           >
-                            {report.status}
+                            {statusLabel(report)}
                           </span>
                         </span>
                       </td>
@@ -393,7 +478,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                               ? "bg-[#ba1a1a] text-white"
                               : report.severity === "MEDIUM"
                                 ? "border border-[rgba(197,200,184,0.5)] bg-[#fff8e8] text-[#8a6d00]"
-                                : "border border-[rgba(197,200,184,0.5)] bg-[#e4e2e2] text-munity-muted"
+                                : "border border-[rgba(197,200,184,0.5)] bg-munity-divider text-munity-muted"
                           }`}
                         >
                           {report.severity}
@@ -402,7 +487,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                       <td className="px-6 py-5">
                         <DropdownMenu>
                           <DropdownMenuTrigger
-                            className="rounded-lg p-2 text-munity-muted outline-none transition hover:bg-[#f5f3f3] hover:text-munity-text"
+                            className="rounded-lg p-2 text-munity-muted outline-none transition hover:bg-munity-sidebar hover:text-munity-text"
                             aria-label={`Open actions for report ${report.id}`}
                             onClick={(e) => e.stopPropagation()}
                           >
@@ -417,18 +502,20 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                               className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                               onClick={() => {
                                 selectReport(report.id);
-                                flash(`Opened case #${report.id}.`);
+                                flash(
+                                  `Opened case #${report.id.slice(0, 8).toUpperCase()}.`,
+                                );
                               }}
                             >
                               Open case
                             </DropdownMenuItem>
-                            {report.status !== "Resolved" ? (
+                            {report.status !== "resolved" ? (
                               <>
                                 <DropdownMenuItem
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    markInReview(report.id);
+                                    void handleMarkInReview(report.id);
                                   }}
                                 >
                                   Mark in review
@@ -437,7 +524,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    startWellnessCheck(report.id);
+                                    handleWellnessCheck();
                                   }}
                                 >
                                   Wellness check
@@ -447,8 +534,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    mockStore.resolveReport(report.id, "Warn");
-                                    flash(`Warn applied to report #${report.id}.`);
+                                    void handleResolve(report.id, "Warn");
                                   }}
                                 >
                                   Warn user
@@ -457,8 +543,10 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    mockStore.resolveReport(report.id, "Remove content");
-                                    flash(`Content removed for report #${report.id}.`);
+                                    void handleResolve(
+                                      report.id,
+                                      "Remove content",
+                                    );
                                   }}
                                 >
                                   Remove content
@@ -468,8 +556,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    mockStore.resolveReport(report.id, "Suspend");
-                                    flash(`Account suspended for report #${report.id}.`);
+                                    void handleResolve(report.id, "Suspend");
                                   }}
                                 >
                                   Suspend account
@@ -478,8 +565,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                                   className="cursor-pointer rounded-lg px-3 py-2 text-sm"
                                   onClick={() => {
                                     selectReport(report.id);
-                                    mockStore.resolveReport(report.id, "Dismiss");
-                                    flash(`Report #${report.id} dismissed.`);
+                                    void handleResolve(report.id, "Dismiss");
                                   }}
                                 >
                                   Dismiss
@@ -488,10 +574,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                             ) : (
                               <DropdownMenuItem
                                 className="cursor-pointer rounded-lg px-3 py-2 text-sm"
-                                onClick={() => {
-                                  mockStore.updateReportStatus(report.id, "Pending");
-                                  flash(`Report #${report.id} reopened.`);
-                                }}
+                                onClick={() => void handleReopen(report.id)}
                               >
                                 Reopen report
                               </DropdownMenuItem>
@@ -510,7 +593,8 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4">
           <p className="text-sm text-munity-muted">
             Showing {filtered.length === 0 ? 0 : pageStart + 1}–
-            {Math.min(pageStart + PAGE_SIZE, filtered.length)} of {filtered.length} reports
+            {Math.min(pageStart + PAGE_SIZE, filtered.length)} of{" "}
+            {filtered.length} reports
             {severityFilter !== "All" ? ` · ${severityFilter}` : ""}
           </p>
           <div className="flex items-center gap-2">
@@ -519,7 +603,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               aria-label="Previous page"
               disabled={currentPage <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="flex size-9 items-center justify-center rounded-xl border border-[#c5c8b8] disabled:opacity-40"
+              className="flex size-9 items-center justify-center rounded-xl border border-munity-input-border disabled:opacity-40"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -531,7 +615,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
                 className={`flex size-9 items-center justify-center rounded-xl text-sm font-semibold ${
                   currentPage === n
                     ? "bg-munity-green text-white"
-                    : "border border-[#c5c8b8] text-munity-text"
+                    : "border border-munity-input-border text-munity-text"
                 }`}
               >
                 {n}
@@ -542,7 +626,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               aria-label="Next page"
               disabled={currentPage >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              className="flex size-9 items-center justify-center rounded-xl border border-[#c5c8b8] disabled:opacity-40"
+              className="flex size-9 items-center justify-center rounded-xl border border-munity-input-border disabled:opacity-40"
             >
               <ChevronRight className="size-4" />
             </button>
@@ -557,7 +641,7 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               <div className="relative size-16 overflow-hidden rounded-full bg-[#efeded]">
                 <Image
                   src="/images/admin/case-avatar.jpg"
-                  alt={selected.target}
+                  alt={selected.targetAuthorName}
                   fill
                   className="object-cover"
                   sizes="64px"
@@ -565,54 +649,66 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="text-2xl font-semibold text-munity-text">{selected.target}</h2>
+                  <h2 className="text-2xl font-semibold text-munity-text">
+                    {selected.targetAuthorName}
+                  </h2>
                   {selected.urgent ? (
                     <span className="rounded-full bg-[#ba1a1a] px-3 py-1 text-xs font-bold uppercase text-white">
                       Urgent Case
                     </span>
                   ) : null}
-                  {selected.status === "Resolved" ? (
+                  {selected.status === "resolved" ? (
                     <span className="rounded-full bg-munity-lime px-3 py-1 text-xs font-bold uppercase text-munity-olive-text">
                       Resolved · {selected.resolution ?? "Closed"}
                     </span>
                   ) : null}
                 </div>
                 <p className="mt-1 text-sm text-munity-muted">
-                  Reported for: <span className="font-bold text-munity-text">{selected.reason}</span>
-                  {" • "}Case #{selected.id}
+                  Reported for:{" "}
+                  <span className="font-bold text-munity-text">
+                    {selected.reason}
+                  </span>
+                  {" • "}Case #{selected.id.slice(0, 8).toUpperCase()}
                 </p>
+                {selected.reasonDetails ? (
+                  <p className="mt-1 text-xs italic text-munity-muted">
+                    Reporter note: &quot;{selected.reasonDetails}&quot;
+                  </p>
+                ) : null}
               </div>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-[rgba(197,200,184,0.3)] bg-[#f5f3f3] p-5">
+            <div className="mt-6 rounded-2xl border border-[rgba(197,200,184,0.3)] bg-munity-sidebar p-5">
               <p className="text-base italic leading-relaxed text-munity-text">
                 &ldquo;{selected.caseContent}&rdquo;
               </p>
               <p className="mt-3 text-xs text-munity-muted">
-                Posted {selected.postedAgo} in &apos;{selected.postedIn}&apos;
+                Posted {formatRelativeTime(selected.createdAt)} in &apos;
+                {selected.postedIn}&apos;
               </p>
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
               <span className="rounded-full bg-munity-lime/70 px-3 py-1.5 text-xs font-semibold text-munity-olive-text">
-                Sentiment: {selected.sentiment}
+                Reported by: {selected.reporterName}
               </span>
-              <span className="rounded-full bg-[#fff3cd] px-3 py-1.5 text-xs font-semibold text-[#8a6d00]">
-                Prev. Flags: {selected.prevFlags}
-              </span>
-              <span className="rounded-full bg-munity-lime/70 px-3 py-1.5 text-xs font-semibold text-munity-olive-text">
-                Trusted Reporter: {selected.reporter} ({selected.reporterTrust}%)
-              </span>
+              {selected.contentDeleted ? (
+                <span className="rounded-full bg-munity-divider px-3 py-1.5 text-xs font-semibold text-munity-muted">
+                  Content already removed
+                </span>
+              ) : null}
             </div>
           </article>
 
           <article className="rounded-[20px] border border-[rgba(197,200,184,0.3)] bg-white p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-4">
-            <h3 className="text-xl font-semibold text-munity-text">Resolution Tools</h3>
+            <h3 className="text-xl font-semibold text-munity-text">
+              Resolution Tools
+            </h3>
             <div className="mt-5 flex flex-col gap-3">
               <button
                 type="button"
-                disabled={selected.status === "Resolved"}
-                onClick={() => startWellnessCheck(selected.id)}
+                disabled={selected.status === "resolved"}
+                onClick={handleWellnessCheck}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ba1a1a] px-4 py-3 text-sm font-semibold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <HeartPulse className="size-4" />
@@ -620,8 +716,11 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               </button>
               <button
                 type="button"
-                disabled={selected.status === "Resolved" || selected.status === "In Review"}
-                onClick={() => markInReview(selected.id)}
+                disabled={
+                  selected.status === "resolved" ||
+                  selected.status === "in_review"
+                }
+                onClick={() => void handleMarkInReview(selected.id)}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-munity-green px-4 py-3 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/40 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Hourglass className="size-4" />
@@ -629,48 +728,49 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
               </button>
               <button
                 type="button"
-                disabled={selected.status === "Resolved"}
+                disabled={selected.status === "resolved"}
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-munity-lime px-4 py-3 text-sm font-semibold text-munity-olive-text transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => resolveSelected("Warn")}
+                onClick={() => void handleResolve(selected.id, "Warn")}
               >
                 <Mail className="size-4" />
                 Warn User
               </button>
               <button
                 type="button"
-                disabled={selected.status === "Resolved"}
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-munity-text px-4 py-3 text-sm font-semibold text-munity-text transition hover:bg-[#f5f3f3] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => resolveSelected("Remove content")}
+                disabled={
+                  selected.status === "resolved" || selected.contentDeleted
+                }
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-munity-text px-4 py-3 text-sm font-semibold text-munity-text transition hover:bg-munity-sidebar disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() =>
+                  void handleResolve(selected.id, "Remove content")
+                }
               >
                 <Trash2 className="size-4" />
                 Remove Content
               </button>
               <button
                 type="button"
-                disabled={selected.status === "Resolved"}
+                disabled={selected.status === "resolved"}
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#ba1a1a] px-4 py-3 text-sm font-semibold text-[#ba1a1a] transition hover:bg-[#ffdad6]/40 disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => resolveSelected("Suspend")}
+                onClick={() => void handleResolve(selected.id, "Suspend")}
               >
                 <Ban className="size-4" />
                 Suspend Account
               </button>
               <button
                 type="button"
-                disabled={selected.status === "Resolved"}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#eae8e7] px-4 py-3 text-sm font-semibold text-munity-muted transition hover:bg-[#e4e2e2] disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() => resolveSelected("Dismiss")}
+                disabled={selected.status === "resolved"}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#eae8e7] px-4 py-3 text-sm font-semibold text-munity-muted transition hover:bg-munity-divider disabled:cursor-not-allowed disabled:opacity-50"
+                onClick={() => void handleResolve(selected.id, "Dismiss")}
               >
                 <Check className="size-4" />
                 Dismiss Report
               </button>
-              {selected.status === "Resolved" ? (
+              {selected.status === "resolved" ? (
                 <button
                   type="button"
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-munity-green px-4 py-3 text-sm font-semibold text-munity-green transition hover:bg-munity-lime/40"
-                  onClick={() => {
-                    mockStore.updateReportStatus(selected.id, "Pending");
-                    flash(`Report #${selected.id} reopened.`);
-                  }}
+                  onClick={() => void handleReopen(selected.id)}
                 >
                   Reopen Report
                 </button>
@@ -680,15 +780,15 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
         </section>
       ) : null}
 
-      <footer className="mt-2 border-t border-[rgba(197,200,184,0.1)] bg-[#e4e2e2] px-6 py-8 md:-mx-2 md:px-10">
+      <footer className="mt-2 border-t border-[rgba(197,200,184,0.1)] bg-munity-divider px-6 py-8 md:-mx-2 md:px-10">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
             <p className="text-sm font-bold tracking-wide text-munity-text">
               Munity Peer Support • Moderation Protocol v2.4.1
             </p>
             <p className="mt-1 text-xs font-medium text-munity-muted">
-              © {new Date().getFullYear()} Munity Peer Support. For emergencies, contact local
-              crisis services immediately.
+              © {new Date().getFullYear()} Munity Peer Support. For emergencies,
+              contact local crisis services immediately.
             </p>
           </div>
           <div className="flex flex-wrap gap-4 text-xs font-medium text-munity-muted">
@@ -711,7 +811,13 @@ function AdminModerationContent({ searchQuery }: { searchQuery: string }) {
   );
 }
 
-export function AdminModerationView({ adminName }: { adminName: string }) {
+export function AdminModerationView({
+  adminName,
+  reports,
+}: {
+  adminName: string;
+  reports: AdminReportRow[];
+}) {
   const [searchQuery, setSearchQuery] = useState("");
 
   return (
@@ -722,7 +828,7 @@ export function AdminModerationView({ adminName }: { adminName: string }) {
       searchValue={searchQuery}
       onSearchChange={setSearchQuery}
     >
-      <AdminModerationContent searchQuery={searchQuery} />
+      <AdminModerationContent reports={reports} searchQuery={searchQuery} />
     </AdminAppShell>
   );
 }
