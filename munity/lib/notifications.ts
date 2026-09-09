@@ -173,22 +173,30 @@ export const notificationsByRole: Record<NotificationRole, AppNotification[]> =
 
 const iconByType: Record<NotificationType, ElementType> = {
   booking_request: Calendar,
+  booking_cancelled: AlertTriangle,
   verification_approved: CheckCircle2,
   verification_rejected: AlertTriangle,
   new_report: ShieldAlert,
   new_moderator_application: Users,
   moderator_application_approved: CheckCircle2,
   moderator_application_rejected: AlertTriangle,
+  post_supported: Heart,
+  post_commented: MessageCircle,
+  new_message: MessageCircle,
 };
 
 const categoryByType: Record<NotificationType, string> = {
   booking_request: "Appointments",
+  booking_cancelled: "Appointments",
   verification_approved: "Account",
   verification_rejected: "Account",
   new_report: "Moderation",
   new_moderator_application: "Communities",
   moderator_application_approved: "Communities",
   moderator_application_rejected: "Communities",
+  post_supported: "Community",
+  post_commented: "Community",
+  new_message: "Messages",
 };
 
 /** Adapts a real DB notification into the same shape the notification UI already renders. */

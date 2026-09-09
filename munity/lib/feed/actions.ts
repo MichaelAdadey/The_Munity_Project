@@ -59,7 +59,7 @@ export const createPost = async (input: {
 
   revalidatePath("/home");
   if (parsed.data.communityId) {
-    revalidatePath("/Communities/[slug]", "page")
+    revalidatePath("/Communities/[slug]", "page");
   }
   return { success: "Posted" };
 };
@@ -151,6 +151,32 @@ export const toggleSupport = async (
       user_id: user.id,
     });
     if (error) return { error: error.message };
+
+    // Best-effort — a failed notification insert shouldn't fail the support itself.
+    const { data: post } = await supabase
+      .from("posts")
+      .select("author_id, is_anonymous")
+      .eq("id", postId)
+      .maybeSingle();
+
+    if (post && post.author_id !== user.id) {
+      const { data: supporterProfile } = await supabase
+        .from("profiles")
+        .select("first_name, last_name")
+        .eq("id", user.id)
+        .maybeSingle();
+      const supporterName = supporterProfile
+        ? `${supporterProfile.first_name} ${supporterProfile.last_name}`.trim()
+        : "Someone";
+
+      await supabase.from("notifications").insert({
+        recipient_id: post.author_id,
+        type: "post_supported",
+        title: "New support on your post",
+        body: `${supporterName} supported your post.`,
+        href: "/home",
+      });
+    }
   }
 
   revalidatePath("/home");
@@ -216,6 +242,32 @@ export const addComment = async (
   });
 
   if (error) return { error: error.message };
+
+  // Best-effort notification to the post's author.
+  const { data: post } = await supabase
+    .from("posts")
+    .select("author_id")
+    .eq("id", parsed.data.postId)
+    .maybeSingle();
+
+  if (post && post.author_id !== user.id) {
+    const { data: commenterProfile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", user.id)
+      .maybeSingle();
+    const commenterName = commenterProfile
+      ? `${commenterProfile.first_name} ${commenterProfile.last_name}`.trim()
+      : "Someone";
+
+    await supabase.from("notifications").insert({
+      recipient_id: post.author_id,
+      type: "post_commented",
+      title: "New comment on your post",
+      body: `${commenterName} commented on your post.`,
+      href: "/home",
+    });
+  }
 
   revalidatePath("/home");
   return { success: "Comment added" };
