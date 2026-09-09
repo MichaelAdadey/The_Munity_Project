@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { useCallMedia } from "@/hooks/useCallMedia";
 import { getChatCallRoomUrl } from "@/lib/video/chat-calls";
+import { sendCallSignal } from "@/lib/video/call-signals";
 
 export type CallMode = "voice" | "video";
-export type CallPhase = "connecting" | "connected";
+export type CallPhase = "ringing" | "connecting" | "connected";
 
 export function formatCallDuration(seconds: number) {
   const mins = Math.floor(seconds / 60)
@@ -63,12 +64,24 @@ export function useCallSession() {
   }, [callMode, callPhase]);
 
   const start = useCallback(async (mode: CallMode, threadId: string) => {
+    await sendCallSignal(threadId, mode);
     setCallMode(mode); // triggers the "connecting" veneer immediately
     const result = await getChatCallRoomUrl(threadId);
     if (result.error) {
       setRoomUrl(null);
       // Surface the error however your flash mechanism is wired at the call site —
       // simplest is returning it so MessagesView can flash it.
+      return result.error;
+    }
+    setRoomUrl(result.url ?? null);
+    return null;
+  }, []);
+
+  const join = useCallback(async (mode: CallMode, threadId: string) => {
+    setCallMode(mode);
+    const result = await getChatCallRoomUrl(threadId);
+    if (result.error) {
+      setRoomUrl(null);
       return result.error;
     }
     setRoomUrl(result.url ?? null);
@@ -98,6 +111,7 @@ export function useCallSession() {
     media,
     roomUrl,
     start,
+    join,
     end,
   };
 }
