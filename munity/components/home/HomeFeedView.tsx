@@ -12,6 +12,7 @@ import {
   Lightbulb,
   MessageCircle,
   MoreHorizontal,
+  Pencil,
   Plus,
   Smile,
   Trash2,
@@ -41,7 +42,6 @@ import {
   toggleSupport,
 } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB, type FeedPost } from "@/types/feed";
-import type { FeedPost as MockFeedPost } from "@/lib/mock-db";
 import {
   useCommunityOptions,
   useMyCommunities,
@@ -49,6 +49,8 @@ import {
 import { useVerifiedTherapists } from "@/lib/therapy/client-queries";
 import { joinCommunity } from "@/lib/communities/membership-actions";
 import { ReportDialog } from "../reports/ReportDialog";
+import { ImageLightbox } from "../ui/image-lightbox";
+import { EditPostDialog } from "./EditPostDialog";
 
 const demoPhotoLibrary = [
   {
@@ -169,7 +171,7 @@ export function HomeFeedView() {
   // NOTE: no trigger sets this yet (no "Edit" option in the post menu below), and
   // EditPostDialog still targets the old mock-store post shape rather than the real
   // Supabase-backed feed from useFeed() — editing isn't wired up end-to-end.
-  const [editingPost, setEditingPost] = useState<MockFeedPost | null>(null);
+  const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
@@ -919,25 +921,17 @@ export function HomeFeedView() {
                           <span className="text-munity-olive-text">
                             {post.feeling}
                           </span>
-                          {/* {post.communityName ? (
+                          {post.communityName && post.communitySlug ? (
                             <>
                               <span className="size-1 rounded-full bg-munity-input-border" />
                               <Link
-                                href={
-                                  post.communityId
-                                    ? communityPath(
-                                        store.communities.find(
-                                          (c) => c.id === post.communityId,
-                                        )?.slug ?? "mindful-paths",
-                                      )
-                                    : routes.communities
-                                }
+                                href={communityPath(post.communitySlug)}
                                 className="text-munity-green hover:underline"
                               >
                                 {post.communityName}
                               </Link>
                             </>
-                          ) : null} */}
+                          ) : null}
                         </div>
                       </div>
                     </div>
@@ -958,14 +952,27 @@ export function HomeFeedView() {
                       {openPostMenu === post.id ? (
                         <div className="absolute right-0 z-10 mt-1 min-w-36 rounded-xl border border-munity-border bg-white p-1 shadow-lg">
                           {post.isMine ? (
-                            <button
-                              type="button"
-                              onClick={() => void handleDeletePost(post.id)}
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
-                            >
-                              <Trash2 className="size-4" />
-                              Delete
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingPost(post);
+                                  setOpenPostMenu(null);
+                                }}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-munity-text hover:bg-munity-sidebar"
+                              >
+                                <Pencil className="size-4" />
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => void handleDeletePost(post.id)}
+                                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="size-4" />
+                                Delete
+                              </button>
+                            </>
                           ) : (
                             <button
                               type="button"
@@ -1395,22 +1402,26 @@ export function HomeFeedView() {
         targetId={reportTarget?.id ?? ""}
         flash={flash}
       />
-      {/* <ImageLightbox
+      <ImageLightbox
         open={lightboxPost !== null}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setLightboxPost(null);
         }}
         images={lightboxPost?.imageUrl ? [lightboxPost.imageUrl] : []}
-        altText={lightboxPost ? `Photo from ${lightboxPost.author}'s post` : "Post image"}
+        altText={
+          lightboxPost
+            ? `Photo from ${lightboxPost.author}'s post`
+            : "Post image"
+        }
       />
-
       <EditPostDialog
         post={editingPost}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) setEditingPost(null);
         }}
         flash={flash}
-      /> */}
+        onSaved={refresh}
+      />
     </MemberAppShell>
   );
 }

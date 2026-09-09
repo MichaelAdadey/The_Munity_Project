@@ -176,6 +176,9 @@ const iconByType: Record<NotificationType, ElementType> = {
   verification_approved: CheckCircle2,
   verification_rejected: AlertTriangle,
   new_report: ShieldAlert,
+  new_moderator_application: Users,
+  moderator_application_approved: CheckCircle2,
+  moderator_application_rejected: AlertTriangle,
 };
 
 const categoryByType: Record<NotificationType, string> = {
@@ -183,6 +186,9 @@ const categoryByType: Record<NotificationType, string> = {
   verification_approved: "Account",
   verification_rejected: "Account",
   new_report: "Moderation",
+  new_moderator_application: "Communities",
+  moderator_application_approved: "Communities",
+  moderator_application_rejected: "Communities",
 };
 
 /** Adapts a real DB notification into the same shape the notification UI already renders. */

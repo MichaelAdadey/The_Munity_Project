@@ -64,6 +64,41 @@ export const createPost = async (input: {
   return { success: "Posted" };
 };
 
+export const updatePost = async (input: {
+  postId: string;
+  content: string;
+  imageUrl?: string | null;
+}): Promise<FeedActionState> => {
+  const content = input.content.trim();
+  if (content.length === 0 && !input.imageUrl) {
+    return { error: "Add text or a photo before saving." };
+  }
+  if (content.length > 2000) {
+    return { error: "Post is too long." };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be signed in." };
+
+  const { error } = await supabase
+    .from("posts")
+    .update({
+      content,
+      image_url: input.imageUrl ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.postId)
+    .eq("author_id", user.id);
+
+  if (error) return { error: error.message };
+
+  revalidatePath("/home");
+  return { success: "Post updated" };
+};
+
 export const deletePost = async (postId: string): Promise<FeedActionState> => {
   const supabase = await createClient();
   const {

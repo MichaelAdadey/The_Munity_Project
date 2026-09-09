@@ -10,33 +10,70 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { mockStore } from "@/lib/mock-store";
-import type { FeedPost } from "@/lib/mock-db";
+import { updatePost } from "@/lib/feed/actions";
+import { uploadPostImage } from "@/lib/feed/upload-image";
+import type { FeedPost } from "@/types/feed";
 
 interface EditPostDialogProps {
   post: FeedPost | null;
   onOpenChange: (open: boolean) => void;
   flash: (message: string) => void;
+  onSaved: () => void;
 }
 
-export function EditPostDialog({ post, onOpenChange, flash }: EditPostDialogProps) {
+export function EditPostDialog({
+  post,
+  onOpenChange,
+  flash,
+  onSaved,
+}: EditPostDialogProps) {
   const [content, setContent] = useState("");
-  const [image, setImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Re-seed the draft whenever a different post is opened for editing.
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
   if (post && post.id !== editingPostId) {
     setEditingPostId(post.id);
     setContent(post.content);
-    setImage(post.image);
+    setImageUrl(post.imageUrl);
   }
 
-  function handleSave() {
+  async function handlePickFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const result = await uploadPostImage(file);
+      if ("error" in result) {
+        flash(result.error);
+        return;
+      }
+      setImageUrl(result.url);
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function handleSave() {
     if (!post) return;
-    if (!content.trim() && !image) return;
-    mockStore.updatePost(post.id, { content, image });
-    flash("Post updated");
-    onOpenChange(false);
+    if (!content.trim() && !imageUrl) return;
+
+    setSaving(true);
+    try {
+      const result = await updatePost({ postId: post.id, content, imageUrl });
+      if (result.error) {
+        flash(result.error);
+        return;
+      }
+      flash("Post updated");
+      onSaved();
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -44,7 +81,9 @@ export function EditPostDialog({ post, onOpenChange, flash }: EditPostDialogProp
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit post</DialogTitle>
-          <DialogDescription>Update your post&apos;s text or photo.</DialogDescription>
+          <DialogDescription>
+            Update your post&apos;s text or photo.
+          </DialogDescription>
         </DialogHeader>
 
         <textarea
@@ -55,20 +94,35 @@ export function EditPostDialog({ post, onOpenChange, flash }: EditPostDialogProp
           className="w-full resize-none rounded-xl border border-munity-input-border bg-munity-bg p-3 text-sm text-munity-text outline-none transition focus:border-munity-green focus:shadow-[0_0_0_3px_rgba(62,82,25,0.12)]"
         />
 
-        {image ? (
+        {imageUrl ? (
           <div className="relative overflow-hidden rounded-2xl">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={image} alt="Post attachment" className="max-h-64 w-full object-cover" />
+            <img
+              src={imageUrl}
+              alt="Post attachment"
+              className="max-h-64 w-full object-cover"
+            />
             <button
               type="button"
-              onClick={() => setImage(null)}
+              onClick={() => setImageUrl(null)}
               className="absolute right-3 top-3 rounded-full bg-black/55 p-2 text-white backdrop-blur-sm"
               aria-label="Remove photo"
             >
               <X className="size-4" />
             </button>
           </div>
-        ) : null}
+        ) : (
+          <label className="inline-flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-munity-input-border px-3 py-2 text-xs font-semibold text-munity-text hover:bg-munity-sidebar">
+            {uploading ? "Uploading..." : "Add a photo"}
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={handlePickFile}
+            />
+          </label>
+        )}
 
         <DialogFooter>
           <button
@@ -80,11 +134,11 @@ export function EditPostDialog({ post, onOpenChange, flash }: EditPostDialogProp
           </button>
           <button
             type="button"
-            onClick={handleSave}
-            disabled={!content.trim() && !image}
+            onClick={() => void handleSave()}
+            disabled={saving || (!content.trim() && !imageUrl)}
             className="rounded-xl bg-munity-green px-4 py-2 text-sm font-semibold text-white transition hover:bg-munity-green-dark disabled:cursor-not-allowed disabled:opacity-50"
           >
-            Save changes
+            {saving ? "Saving..." : "Save changes"}
           </button>
         </DialogFooter>
       </DialogContent>

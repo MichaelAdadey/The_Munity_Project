@@ -4,7 +4,10 @@ export type NotificationType =
   | "booking_request"
   | "verification_approved"
   | "verification_rejected"
-  | "new_report";
+  | "new_report"
+  | "new_moderator_application"
+  | "moderator_application_approved"
+  | "moderator_application_rejected";
 
 export type RealNotification = {
   id: string;
