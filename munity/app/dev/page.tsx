@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight } from "lucide-react";
-import { routes } from "@/lib/routes";
+import { routes, patientNavHref } from "@/lib/routes";
+import { createClient } from "@/lib/supabase/server";
+import { getTherapistPatients, type TherapistPatient } from "@/lib/therapist/patients-queries";
 
 const screens = [
   { title: "Landing Page", subtitle: "Public homepage", href: routes.home },
@@ -85,21 +87,36 @@ const screens = [
     subtitle: "Documents and worksheets across your caseload",
     href: routes.therapistFiles,
   },
-  {
-    title: "Care Plan",
-    subtitle: "Treatment goals across your caseload",
-    href: routes.therapistCarePlan,
-  },
-  // NOTE: per-patient screens (/therapistpatients/[slug]/...) used to be listed here via
-  // 3 hardcoded demo patients. Patient detail routes now require a real booking relationship
-  // with the signed-in therapist, so there's no fixed slug to link to from this static index —
-  // reach them via the "Patients" screen above once signed in as a therapist with real patients.
 ];
 
-export default function DevIndexPage() {
+/**
+ * Per-patient screens need a real booking relationship with the signed-in
+ * therapist, so there's no fixed slug to link to statically. If a therapist
+ * is currently signed in, look up their real patients and link to those.
+ */
+async function getSignedInTherapistPatients(): Promise<TherapistPatient[] | null> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "therapist") return null;
+
+  return getTherapistPatients(user.id);
+}
+
+export default async function DevIndexPage() {
   if (process.env.NODE_ENV === "production") {
     notFound();
   }
+
+  const therapistPatients = await getSignedInTherapistPatients();
 
   return (
     <main className="min-h-screen bg-munity-bg">
@@ -128,6 +145,35 @@ export default function DevIndexPage() {
             </li>
           ))}
         </ul>
+
+        <h2 className="mt-16 text-2xl font-bold text-munity-green">Your Patients</h2>
+        {therapistPatients === null ? (
+          <p className="mt-2 text-sm text-munity-muted">
+            Sign in as a therapist to see direct links to your real patients here — reach them via
+            the &ldquo;Patients&rdquo; screen above once signed in.
+          </p>
+        ) : therapistPatients.length === 0 ? (
+          <p className="mt-2 text-sm text-munity-muted">
+            No patients yet — patients appear here once someone books a session with you.
+          </p>
+        ) : (
+          <ul className="mt-6 space-y-4">
+            {therapistPatients.map((patient) => (
+              <li key={patient.id}>
+                <Link
+                  href={patientNavHref(patient.slug, "Overview")}
+                  className="group flex items-center justify-between rounded-2xl border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] transition hover:border-munity-green/30"
+                >
+                  <div>
+                    <h3 className="text-lg font-semibold text-munity-text">{patient.name}</h3>
+                    <p className="mt-1 text-sm text-munity-muted">{patient.status} · {patient.sessionCount} session{patient.sessionCount === 1 ? "" : "s"}</p>
+                  </div>
+                  <ArrowRight className="size-5 text-munity-green transition group-hover:translate-x-1" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   );

@@ -20,7 +20,10 @@ export type CredentialsData = {
   licensingBody: string;
   regionOfIssue: string;
   yearsOfExperience: number;
+  /** Original filename, for display only. */
   documentName: string;
+  /** Storage path of the uploaded document — the actual proof of upload. */
+  documentPath: string;
 };
 
 export type SpecialtiesData = {
@@ -80,7 +83,7 @@ export function isOnboardingStepFilled(
         hasText(d.registrationNumber) &&
         hasText(d.licensingBody) &&
         hasText(d.regionOfIssue) &&
-        hasText(d.documentName) &&
+        hasText(d.documentPath) &&
         Number.isFinite(d.yearsOfExperience)
       );
     }

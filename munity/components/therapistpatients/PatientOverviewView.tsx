@@ -1,10 +1,9 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { Clock, MoreVertical, Video } from "lucide-react";
 import { TopNav } from "@/components/therapistlayout/TopNav";
 import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
@@ -13,80 +12,69 @@ import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
-import { DropdownMenu } from "@/components/ui/DropdownMenu";
 import { useLoading } from "@/components/ui/LoadingProvider";
+import { BookSessionSheet } from "@/components/therapy/BookSessionSheet";
 import { patientNavHref } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
-
-const moodPeriods = ["Last 7 Days", "Last 30 Days", "Last 90 Days"];
-
-const moodData: Record<string, { height: string; opacity: string }[]> = {
-  "Last 7 Days": [
-    { height: "55%", opacity: "opacity-30" },
-    { height: "70%", opacity: "opacity-40" },
-    { height: "62%", opacity: "opacity-35" },
-    { height: "78%", opacity: "opacity-45" },
-    { height: "85%", opacity: "opacity-50" },
-    { height: "72%", opacity: "opacity-38" },
-    { height: "90%", opacity: "opacity-55" },
-  ],
-  "Last 30 Days": [
-    { height: "67%", opacity: "opacity-20" },
-    { height: "75%", opacity: "opacity-30" },
-    { height: "50%", opacity: "opacity-10" },
-    { height: "83%", opacity: "opacity-40" },
-    { height: "67%", opacity: "opacity-25" },
-    { height: "80%", opacity: "opacity-35" },
-    { height: "95%", opacity: "opacity-50" },
-  ],
-  "Last 90 Days": [
-    { height: "45%", opacity: "opacity-15" },
-    { height: "58%", opacity: "opacity-22" },
-    { height: "62%", opacity: "opacity-28" },
-    { height: "70%", opacity: "opacity-32" },
-    { height: "76%", opacity: "opacity-36" },
-    { height: "88%", opacity: "opacity-42" },
-    { height: "92%", opacity: "opacity-48" },
-  ],
-};
-
-const activities = [
-  {
-    date: "TODAY",
-    title: "Journal Entry Logged",
-    detail: '"Feeling more grounded after the morning walk..."',
-    italic: true,
-    dot: "bg-munity-green",
-  },
-  {
-    date: "YESTERDAY",
-    title: "Completed Mood Check-in",
-    detail: "Reported Mood: 8/10 (Stable)",
-    dot: "bg-munity-green-dark",
-  },
-  {
-    date: "MAR 12",
-    title: "Goal Met: Social Engagement",
-    detail: "Attended a community workshop",
-    dot: "bg-munity-divider",
-  },
-];
+import { createAppointmentForPatient } from "@/lib/therapist/appointments-actions";
+import { saveClinicianNote } from "@/lib/therapist/clinician-notes-actions";
+import type { MoodEntryRow } from "@/lib/mood/mood-queries";
+import { MOOD_LABELS, MOOD_SCORE } from "@/lib/mood/mood-scale";
+import { timeAgo } from "@/lib/utils";
 
 interface PatientOverviewViewProps {
   patient: TherapistPatient;
+  therapistId: string;
+  initialClinicianNote?: string;
+  moodEntries?: MoodEntryRow[];
 }
 
-export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
+function buildWeeklyMoodBars(entries: MoodEntryRow[]) {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date();
+    day.setHours(0, 0, 0, 0);
+    day.setDate(day.getDate() - (6 - i));
+    return day;
+  });
+
+  return days.map((day) => {
+    const dayEntries = entries.filter((entry) => {
+      const created = new Date(entry.createdAt);
+      return (
+        created.getFullYear() === day.getFullYear() &&
+        created.getMonth() === day.getMonth() &&
+        created.getDate() === day.getDate()
+      );
+    });
+
+    const score =
+      dayEntries.length === 0
+        ? null
+        : dayEntries.reduce((sum, entry) => sum + MOOD_SCORE[entry.mood], 0) / dayEntries.length;
+
+    return { label: day.toLocaleDateString(undefined, { weekday: "short" }), score };
+  });
+}
+
+export function PatientOverviewView({
+  patient,
+  therapistId,
+  initialClinicianNote = "",
+  moodEntries = [],
+}: PatientOverviewViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
   const { flash } = useLiveToast();
-  const [moodPeriod, setMoodPeriod] = useState("Last 30 Days");
-  const [notes, setNotes] = useState("");
-  const [booked, setBooked] = useState(false);
+  const [notes, setNotes] = useState(initialClinicianNote);
+  const [savedNote, setSavedNote] = useState(initialClinicianNote);
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingInFlight, setBookingInFlight] = useState(false);
 
   const avatar = patient.avatar;
   const clinicalNotesHref = patientNavHref(patient.slug, "Clinical Notes");
-  const moodBars = useMemo(() => moodData[moodPeriod], [moodPeriod]);
+  const moodBars = buildWeeklyMoodBars(moodEntries);
+  const latestMood = moodEntries[0] ?? null;
+  const recentActivity = moodEntries.slice(0, 5);
 
   return (
     <SidebarProvider storageKey="munity-patient-sidebar-open">
@@ -132,21 +120,9 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                     </span>
                   </div>
                 </div>
-                {/* NOTE: this button doesn't create a real booking yet — therapist-initiated
-                    scheduling isn't built (booking creation is currently patient-initiated only). */}
                 <div className="flex gap-2">
-                  <Button
-                    className="px-5 py-4"
-                    onClick={() =>
-                      withLoading(async () => {
-                        await new Promise((resolve) => setTimeout(resolve, 800));
-                        setBooked(true);
-                        flash(`Session booked with ${patient.name}`);
-                      }, "Booking session...")
-                    }
-                    disabled={booked}
-                  >
-                    {booked ? "Session Booked ✓" : "Book Session"}
+                  <Button className="px-5 py-4" onClick={() => setBookingOpen(true)}>
+                    Book Session
                   </Button>
                   <Button variant="outline" className="px-3 py-3">
                     <MoreVertical className="size-4" />
@@ -171,49 +147,61 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
 
           <LiveTicker
             items={[
-              `${patient.name} logged a journal entry this morning.`,
-              `Mood trend is stable across the ${moodPeriod.toLowerCase()}.`,
+              `${patient.sessionCount} session${patient.sessionCount === 1 ? "" : "s"} on record with ${patient.name}.`,
               "Next session preparation is ready to review.",
             ]}
           />
 
-          {/* NOTE: Mood Trends, Recent Activity, and Private Clinician Notes below are still
-              placeholder content — patient-facing mood check-ins and journaling aren't wired to
-              real per-patient data yet. Patient identity above this point is real. */}
           <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
             <section className="rounded-[20px] border border-munity-border bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)] lg:col-span-2">
               <div className="flex items-start justify-between">
                 <div>
                   <h2 className="text-base text-munity-text">Mood Trends</h2>
                   <p className="text-base text-munity-muted">
-                    Patient self-reported mood levels over the selected period
+                    Patient self-reported mood levels — last 7 days
                   </p>
                 </div>
-                <DropdownMenu value={moodPeriod} options={moodPeriods} onChange={setMoodPeriod} />
+                {latestMood ? (
+                  <span className="rounded-full bg-munity-lime/40 px-3 py-1 text-xs font-bold text-munity-green-dark">
+                    Latest: {MOOD_LABELS[latestMood.mood]}
+                  </span>
+                ) : null}
               </div>
-              <div className="relative mt-8 flex h-64 items-end justify-between gap-2 border-b border-l border-munity-input-border px-2 pb-4">
-                {[...Array(4)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="pointer-events-none absolute inset-x-0 border-t border-dashed border-munity-input-border"
-                    style={{ bottom: `${(i + 1) * 25}%` }}
-                  />
-                ))}
-                {moodBars.map((bar, i) => (
-                  <motion.div
-                    key={`${moodPeriod}-${i}`}
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: bar.height, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 22, delay: i * 0.05 }}
-                    className={`w-[70px] rounded-t-lg bg-munity-green ${bar.opacity}`}
-                  />
-                ))}
-              </div>
-              <div className="mt-4 flex justify-between px-2 text-base text-munity-muted">
-                {["Wk 1", "Wk 2", "Wk 3", "Wk 4"].map((w) => (
-                  <span key={w}>{w}</span>
-                ))}
-              </div>
+              {moodEntries.length === 0 ? (
+                <div className="mt-8 flex h-64 flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-munity-input-border px-6 text-center">
+                  <p className="text-sm font-semibold text-munity-text">No mood check-ins yet</p>
+                  <p className="max-w-xs text-sm text-munity-muted">
+                    {patient.name} hasn&apos;t logged a mood check-in in the last 7 days.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="relative mt-8 flex h-64 items-end justify-between gap-2 border-b border-l border-munity-input-border px-2 pb-4">
+                    {[...Array(4)].map((_, i) => (
+                      <div
+                        key={i}
+                        className="pointer-events-none absolute inset-x-0 border-t border-dashed border-munity-input-border"
+                        style={{ bottom: `${(i + 1) * 25}%` }}
+                      />
+                    ))}
+                    {moodBars.map((bar) => (
+                      <div
+                        key={bar.label}
+                        title={bar.score == null ? "No check-in" : `${bar.score.toFixed(1)} / 6`}
+                        className={`w-[13%] rounded-t-lg ${
+                          bar.score == null ? "bg-munity-input-border" : "bg-munity-green"
+                        }`}
+                        style={{ height: bar.score == null ? "4%" : `${(bar.score / 6) * 100}%` }}
+                      />
+                    ))}
+                  </div>
+                  <div className="mt-4 flex justify-between px-2 text-base text-munity-muted">
+                    {moodBars.map((bar) => (
+                      <span key={bar.label}>{bar.label}</span>
+                    ))}
+                  </div>
+                </>
+              )}
             </section>
 
             <section className="relative flex flex-col justify-between overflow-hidden rounded-[20px] bg-munity-green p-8 shadow-lg">
@@ -268,29 +256,32 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                 <h2 className="text-base text-munity-text">Recent Activity</h2>
                 <Clock className="size-[18px] text-munity-muted" />
               </div>
-              <div className="relative space-y-8 pl-12">
-                <div className="absolute bottom-2 left-4 top-2 w-0.5 bg-munity-input-border" />
-                {activities.map((item, i) => (
-                  <motion.div
-                    key={item.date}
-                    className="relative"
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: i * 0.08 }}
-                  >
-                    <div
-                      className={`absolute -left-8 top-1 size-4 rounded-full shadow-[0_0_0_4px_white] ${item.dot}`}
-                    />
-                    <p className="text-xs font-bold uppercase text-munity-muted">{item.date}</p>
-                    <h4 className="mt-1 text-base font-bold text-munity-text">{item.title}</h4>
-                    <p
-                      className={`text-sm text-munity-muted ${item.italic ? "font-semibold italic" : "font-semibold"}`}
-                    >
-                      {item.detail}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
+              {recentActivity.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-munity-input-border p-6 text-center">
+                  <p className="text-sm font-semibold text-munity-text">No recent activity</p>
+                  <p className="mt-1 text-sm text-munity-muted">
+                    Mood check-ins from {patient.name} will show up here.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-4">
+                  {recentActivity.map((entry) => (
+                    <li key={entry.createdAt} className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-munity-text">
+                          Logged a mood check-in: {MOOD_LABELS[entry.mood]}
+                        </p>
+                        {entry.note ? (
+                          <p className="mt-1 truncate text-sm text-munity-muted">&ldquo;{entry.note}&rdquo;</p>
+                        ) : null}
+                      </div>
+                      <span className="shrink-0 text-xs font-medium text-munity-muted">
+                        {timeAgo(entry.createdAt)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
               <Link
                 href={patientNavHref(patient.slug, "Progress")}
                 className="mt-8 block w-full text-center text-sm font-bold text-munity-green hover:underline"
@@ -319,17 +310,27 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
                 className="mt-6 w-full resize-none bg-transparent text-base text-munity-gray outline-none"
               />
               <div className="mt-6 flex justify-end gap-3">
-                <Button variant="ghost" onClick={() => setNotes("")}>
+                <Button
+                  variant="ghost"
+                  onClick={() => setNotes(savedNote)}
+                  disabled={notes === savedNote}
+                >
                   Discard
                 </Button>
                 <Button
                   onClick={() =>
                     withLoading(async () => {
-                      await new Promise((resolve) => setTimeout(resolve, 700));
-                      flash("Private clinician draft saved");
+                      try {
+                        await saveClinicianNote(patient.id, notes.trim());
+                        setSavedNote(notes.trim());
+                        setNotes(notes.trim());
+                        flash("Private clinician draft saved");
+                      } catch (error) {
+                        flash(error instanceof Error ? error.message : "Couldn't save draft");
+                      }
                     }, "Saving draft...")
                   }
-                  disabled={!notes.trim()}
+                  disabled={!notes.trim() || notes === savedNote}
                 >
                   Save Draft
                 </Button>
@@ -339,6 +340,28 @@ export function PatientOverviewView({ patient }: PatientOverviewViewProps) {
         </AnimatedPage>
         </CollapsibleSidebarLayout>
       </div>
+      <BookSessionSheet
+        open={bookingOpen}
+        onClose={() => setBookingOpen(false)}
+        therapistId={therapistId}
+        therapistName={patient.name}
+        alreadyBooked={Boolean(patient.nextSessionAt)}
+        latestBookingWhen={patient.nextSessionLabel}
+        submitting={bookingInFlight}
+        onConfirm={async ({ when, scheduledAt }) => {
+          setBookingInFlight(true);
+          try {
+            await createAppointmentForPatient({ patientId: patient.id, scheduledAt });
+            flash(`Session booked with ${patient.name} · ${when}`);
+            setBookingOpen(false);
+            router.refresh();
+          } catch (error) {
+            flash(error instanceof Error ? error.message : "Couldn't book session");
+          } finally {
+            setBookingInFlight(false);
+          }
+        }}
+      />
     </div>
     </SidebarProvider>
   );

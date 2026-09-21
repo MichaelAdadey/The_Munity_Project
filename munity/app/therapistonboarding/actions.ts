@@ -68,7 +68,7 @@ export async function submitTherapistOnboarding(payload: {
       license_number: credentials.registrationNumber,
       region_of_issue: credentials.regionOfIssue,
       years_of_experience: credentials.yearsOfExperience,
-      license_document_name: credentials.documentName,
+      license_document_name: credentials.documentPath,
       specialties: specialties.specialties,
       payout_methods: payout.payoutMethods,
       mobile_money_network: payout.mobileMoneyNetwork,

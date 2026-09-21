@@ -2,6 +2,7 @@ import { requireRole } from "@/lib/require-role";
 import { createClient } from "@/lib/supabase/server";
 import { routes } from "@/lib/routes";
 import { TherapistDashboardView } from "@/components/therapistdashboard/TherapistDashboardView";
+import { getDistressAlertsForTherapist } from "@/lib/mood/mood-queries";
 
 export default async function DashboardPage() {
   const { user, profile } = await requireRole(["therapist"], routes.therapistLogin);
@@ -22,6 +23,7 @@ export default async function DashboardPage() {
     { data: therapistDetails },
     { data: todaysBookingsRaw },
     { data: recentBookingsRaw },
+    distressAlerts,
   ] = await Promise.all([
     supabase
       .from("bookings")
@@ -54,6 +56,7 @@ export default async function DashboardPage() {
       .eq("therapist_id", user.id)
       .order("scheduled_at", { ascending: false })
       .limit(20),
+    getDistressAlertsForTherapist(user.id),
   ]);
 
   // Look up patient names in one extra query rather than a fragile embedded join.
@@ -118,6 +121,7 @@ export default async function DashboardPage() {
       }}
       todaysSchedule={todaysSchedule}
       recentPatients={recentPatients}
+      distressAlerts={distressAlerts}
     />
   );
 }

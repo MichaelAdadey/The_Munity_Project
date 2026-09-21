@@ -24,6 +24,8 @@ import {
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
 import { patientRoutes, routes } from "@/lib/routes";
+import type { DistressAlert } from "@/lib/mood/mood-queries";
+import { MOOD_LABELS } from "@/lib/mood/mood-scale";
 
 export type DashboardStats = {
   upcomingSessions: number;
@@ -53,6 +55,7 @@ interface TherapistDashboardViewProps {
   stats: DashboardStats;
   todaysSchedule: ScheduleItem[];
   recentPatients: RecentPatientItem[];
+  distressAlerts?: DistressAlert[];
 }
 
 export function TherapistDashboardView({
@@ -60,6 +63,7 @@ export function TherapistDashboardView({
   stats,
   todaysSchedule,
   recentPatients,
+  distressAlerts = [],
 }: TherapistDashboardViewProps) {
   const { flash } = useLiveToast();
   const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
@@ -123,19 +127,36 @@ export function TherapistDashboardView({
       title={`Welcome back, ${therapistName}`}
       subtitle="Here's an overview of your schedule today."
     >
-      {/* NOTE: this crisis-alert banner is still placeholder content — wiring it to
-          real patient check-ins/distress flags is a separate feature not yet built. */}
-      <section className="flex flex-col gap-3 rounded-2xl border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.4)] p-4 sm:flex-row sm:items-start sm:gap-4">
-        <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#93000a]" />
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold tracking-wide text-[#93000a]">
-            Urgent: Patient Crisis Flag
-          </h2>
-          <p className="mt-1 text-xs font-medium leading-relaxed text-munity-muted">
-            This alert is a placeholder — real check-in/distress flagging isn&apos;t built yet.
-          </p>
-        </div>
-      </section>
+      {distressAlerts.length > 0 ? (
+        <section className="flex flex-col gap-3 rounded-2xl border border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.4)] p-4 sm:flex-row sm:items-start sm:gap-4">
+          <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#93000a]" />
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold tracking-wide text-[#93000a]">
+              {distressAlerts.length === 1
+                ? "Urgent: Patient Crisis Flag"
+                : `Urgent: ${distressAlerts.length} Patient Crisis Flags`}
+            </h2>
+            <ul className="mt-2 space-y-1.5">
+              {distressAlerts.map((alert) => (
+                <li key={alert.patientId}>
+                  <Link
+                    href={patientRoutes(alert.patientId).overview}
+                    className="text-xs font-medium leading-relaxed text-[#93000a] hover:underline"
+                  >
+                    {alert.name} logged &ldquo;{MOOD_LABELS[alert.mood]}&rdquo; ·{" "}
+                    {new Date(alert.createdAt).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       <LiveTicker
         items={[

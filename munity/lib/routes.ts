@@ -16,7 +16,6 @@ export const routes = {
   therapistSettings: "/therapistsettings",
   therapistAnalytics: "/therapistanalytics",
   therapistFiles: "/therapistfiles",
-  therapistCarePlan: "/therapistcareplan",
   therapistCredentialAuth: "/therapistcredentialauth",
   resources: "/resources",
   messages: "/messages",
@@ -136,7 +135,6 @@ export function patientRoutes(slug: PatientSlug) {
     newSessionNote: `/therapistpatients/${slug}/clinical-notes/new`,
     progress: `/therapistpatients/${slug}/progress`,
     files: `/therapistpatients/${slug}/files`,
-    carePlan: `/therapistpatients/${slug}/care-plan`,
   };
 }
 
@@ -144,8 +142,7 @@ export type PatientNavSection =
   | "Overview"
   | "Clinical Notes"
   | "Progress"
-  | "Files"
-  | "Care Plan";
+  | "Files";
 
 export function patientNavHref(slug: PatientSlug, section: PatientNavSection): string {
   const paths = patientRoutes(slug);
@@ -158,7 +155,5 @@ export function patientNavHref(slug: PatientSlug, section: PatientNavSection): s
       return paths.progress;
     case "Files":
       return paths.files;
-    case "Care Plan":
-      return paths.carePlan;
   }
 }

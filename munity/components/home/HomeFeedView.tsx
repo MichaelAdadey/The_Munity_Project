@@ -21,6 +21,7 @@ import {
   X,
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
+import { DailyMoodCheckin } from "@/components/home/DailyMoodCheckin";
 // import { EditPostDialog } from "@/components/home/EditPostDialog";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
 // import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
@@ -593,6 +594,7 @@ export function HomeFeedView() {
 
         {/* Center feed */}
         <section className="relative flex flex-col gap-5 lg:col-span-6">
+          <DailyMoodCheckin />
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

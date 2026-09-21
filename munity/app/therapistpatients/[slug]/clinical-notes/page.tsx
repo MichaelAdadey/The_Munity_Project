@@ -7,10 +7,12 @@ import { getSessionNotesForPatient } from "@/lib/therapist/session-notes-queries
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ note?: string }>;
 }
 
-export default async function PatientClinicalNotesPage({ params }: PageProps) {
+export default async function PatientClinicalNotesPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { note } = await searchParams;
   const { user } = await requireRole(["therapist"], routes.therapistLogin);
   const patient = await getTherapistPatientById(user.id, slug);
 
@@ -20,5 +22,5 @@ export default async function PatientClinicalNotesPage({ params }: PageProps) {
 
   const notes = await getSessionNotesForPatient(user.id, patient.id);
 
-  return <ClinicalNotesView patient={patient} notes={notes} />;
+  return <ClinicalNotesView patient={patient} notes={notes} initialNoteId={note} />;
 }

@@ -14,7 +14,7 @@ type BookSessionSheetProps = {
   onClose: () => void;
   therapistId: string;
   therapistName: string;
-  rate: number;
+  rate?: number;
   alreadyBooked: boolean;
   latestBookingWhen?: string | null;
   submitting: boolean;
@@ -111,7 +111,7 @@ export function BookSessionSheet({
                   {therapistName}
                 </h2>
                 <p className="mt-1 text-sm text-munity-muted">
-                  ${rate}/hr · pick an open slot
+                  {rate !== undefined ? `$${rate}/hr · ` : ""}Pick an open slot
                 </p>
               </div>
               <button

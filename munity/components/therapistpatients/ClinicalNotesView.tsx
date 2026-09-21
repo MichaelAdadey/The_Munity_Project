@@ -36,13 +36,16 @@ type NoteSession = {
 interface ClinicalNotesViewProps {
   patient: TherapistPatient;
   notes: SessionNote[];
+  initialNoteId?: string;
 }
 
-export function ClinicalNotesView({ patient, notes }: ClinicalNotesViewProps) {
+export function ClinicalNotesView({ patient, notes, initialNoteId }: ClinicalNotesViewProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
   const { flash } = useLiveToast();
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(notes[0]?.id ?? null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(
+    (initialNoteId && notes.some((note) => note.id === initialNoteId) ? initialNoteId : notes[0]?.id) ?? null,
+  );
   const [saved, setSaved] = useState(false);
   const [tasks, setTasks] = useState([true, false]);
   const [exportOpen, setExportOpen] = useState(false);

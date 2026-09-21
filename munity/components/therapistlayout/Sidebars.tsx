@@ -7,7 +7,6 @@ import {
   FileText,
   TrendingUp,
   FolderOpen,
-  Briefcase,
   Users,
   Calendar,
   Clock,
@@ -25,8 +24,7 @@ export type PatientNavItem =
   | "Overview"
   | "Clinical Notes"
   | "Progress"
-  | "Files"
-  | "Care Plan";
+  | "Files";
 
 interface PatientSidebarProps {
   active: PatientNavItem;
@@ -44,7 +42,6 @@ const navItems: { label: PatientNavItem; section: PatientNavSection; icon: React
   { label: "Clinical Notes", section: "Clinical Notes", icon: FileText },
   { label: "Progress", section: "Progress", icon: TrendingUp },
   { label: "Files", section: "Files", icon: FolderOpen },
-  { label: "Care Plan", section: "Care Plan", icon: Briefcase },
 ];
 
 export function PatientSidebar({
@@ -214,7 +211,6 @@ export type TherapistNavItem =
   | "Sessions"
   | "Analysis"
   | "Files"
-  | "Care Plan"
   | "Availability"
   | "Profile"
   | "Settings";
