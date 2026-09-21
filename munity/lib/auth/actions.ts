@@ -120,15 +120,29 @@ export const signIn = async (
   }
 
   if (!data.user) {
-    return { error: "Login failed. No user returned."}
+    return { error: "Login failed. No user returned." };
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role, is_suspended")
+    .eq("id", data.user?.id)
+    .single();
+
+  if (profile?.is_suspended) {
+    await supabase.auth.signOut();
+    return {
+      error: "This account has been suspended. Contact support for details.",
+    };
   }
 
   // Route by role (admins should use /admin/login, but handle if they use this form)
-  const role = await getProfileRole(supabase, data.user.id);
+  // const role = await getProfileRole(supabase, data.user.id);
+  const role = profile?.role as UserRole | undefined;
   if (role === USER_ROLES.ADMIN) {
     redirect("/admin");
   } else if (role === USER_ROLES.THERAPIST) {
-    redirect("/therapistdashboard")
+    redirect("/therapistdashboard");
   }
 
   // Successful login → leave the auth pages
@@ -195,7 +209,6 @@ export const signInAdmin = async (
   redirect("/admin");
 };
 
-
 export const signInTherapist = async (
   _prevState: AuthActionState,
   formData: FormData,
@@ -227,9 +240,16 @@ export const signInTherapist = async (
   // query return null under RLS — which looks like "stuck on login".
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, is_suspended")
     .eq("id", data.user.id)
     .maybeSingle();
+
+  if (profile?.is_suspended) {
+    await supabase.auth.signOut();
+    return {
+      error: "This account has been suspended. Contact support for details.",
+    };
+  }
 
   if (profileError) {
     await supabase.auth.signOut();
@@ -272,20 +292,20 @@ export const signInTherapist = async (
  * Read role from public.profiles for the signed-in user.
  * Returns null if the row is missing (shouldn't happen if the trigger ran).
  */
-const getProfileRole = async (
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  userId: string,
-): Promise<UserRole | null> => {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle();
+// const getProfileRole = async (
+//   supabase: Awaited<ReturnType<typeof createClient>>,
+//   userId: string,
+// ): Promise<UserRole | null> => {
+//   const { data, error } = await supabase
+//     .from("profiles")
+//     .select("role")
+//     .eq("id", userId)
+//     .maybeSingle();
 
-  if (error || !data) return null;
+//   if (error || !data) return null;
 
-  return data.role as UserRole;
-};
+//   return data.role as UserRole;
+// };
 
 /** Sign out and clear the session cookies (Supabase + preview mock). */
 export const signOut = async () => {

@@ -14,6 +14,7 @@ import {
   useChatMessages,
   useChats,
 } from "@/lib/messages/client-queries";
+import { IncomingCall, useIncomingCall } from "@/lib/video/call-signals";
 
 export { chatIdFromPatient };
 
@@ -22,6 +23,7 @@ function TherapistMessagesContent() {
   const { flash } = useLiveToast();
   const [draft, setDraft] = useState("");
   const [search, setSearch] = useState("");
+  const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const call = useCallSession();
 
   const {
@@ -72,6 +74,10 @@ function TherapistMessagesContent() {
       flash(error instanceof Error ? error.message : "Couldn't send message");
     }
   }
+
+  useIncomingCall(activeChat?.id ?? null, (incoming) => {
+    setIncomingCall(incoming);
+  });
 
   async function handleCallEnded(summary: { kind: string; duration: string }) {
     if (!activeChat) return;
@@ -333,6 +339,30 @@ function TherapistMessagesContent() {
           </div>
         </section>
       </div>
+
+      {incomingCall ? (
+        <div className="fixed inset-x-0 top-4 z-90 mx-auto w-fit rounded-full bg-munity-green px-6 py-3 text-sm font-semibold text-white shadow-xl">
+          {activeChat?.name} is calling ({incomingCall.mode})
+          <button
+            type="button"
+            onClick={async () => {
+              const error = await call.join(incomingCall.mode, activeChat!.id);
+              if (error) flash(error);
+              setIncomingCall(null);
+            }}
+            className="ml-3 underline"
+          >
+            Join
+          </button>
+          <button
+            type="button"
+            onClick={() => setIncomingCall(null)}
+            className="ml-3 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <CallOverlay
         session={call}

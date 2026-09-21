@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, type ElementType } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -13,86 +13,14 @@ import {
   Zap,
 } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
-import { LiveTicker, liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
-import { useMockStore } from "@/lib/mock-store";
+import {
+  LiveTicker,
+  liveFadeUp,
+  liveStagger,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
-
-const kpis: {
-  label: string;
-  value: string;
-  trend: string;
-  trendTone: "up" | "down" | "alert";
-  icon: ElementType;
-  alert?: boolean;
-}[] = [
-  {
-    label: "Total Active Users",
-    value: "24,892",
-    trend: "+12%",
-    trendTone: "up",
-    icon: Users,
-  },
-  {
-    label: "New Signups (7D)",
-    value: "1,402",
-    trend: "+5.2%",
-    trendTone: "up",
-    icon: UserPlus,
-  },
-  {
-    label: "Sessions Booked",
-    value: "3,120",
-    trend: "+8%",
-    trendTone: "up",
-    icon: Calendar,
-  },
-  {
-    label: "Engagement Rate",
-    value: "68.5%",
-    trend: "-1.4%",
-    trendTone: "down",
-    icon: Heart,
-  },
-  {
-    label: "Safety Reports",
-    value: "42",
-    trend: "High Priority",
-    trendTone: "alert",
-    icon: AlertTriangle,
-    alert: true,
-  },
-];
-
-const growthMonthly = [
-  { month: "JAN", growth: 36, retention: 26 },
-  { month: "FEB", growth: 48, retention: 38 },
-  { month: "MAR", growth: 56, retention: 46 },
-  { month: "APR", growth: 66, retention: 52 },
-  { month: "MAY", growth: 80, retention: 72 },
-  { month: "JUN", growth: 92, retention: 78 },
-];
-
-const growthWeekly = [
-  { month: "W1", growth: 40, retention: 30 },
-  { month: "W2", growth: 50, retention: 40 },
-  { month: "W3", growth: 58, retention: 48 },
-  { month: "W4", growth: 68, retention: 54 },
-  { month: "W5", growth: 82, retention: 74 },
-  { month: "W6", growth: 90, retention: 80 },
-];
-
-const sessionTypes = [
-  { label: "Video Call", percent: 45, color: "#3e5219" },
-  { label: "Audio Chat", percent: 30, color: "#56642b" },
-  { label: "Text Message", percent: 25, color: "#bdce89" },
-];
-
-const communities = [
-  { name: "Anxiety Peer Support", members: "8.4k members", width: "95%", color: "#3e5219" },
-  { name: "Depression & Resilience", members: "6.1k members", width: "75%", color: "#b6d088" },
-  { name: "Post-Traumatic Growth", members: "4.8k members", width: "60%", color: "#56642b" },
-  { name: "Mindfulness & Meditators", members: "4.2k members", width: "55%", color: "#bdce89" },
-];
+import { DashboardData } from "@/lib/admin/dashboard-queries";
 
 const alerts = [
   {
@@ -151,14 +79,27 @@ function smoothPath(points: { x: number; y: number }[]) {
   return d;
 }
 
-function GrowthChart({ range }: { range: "Weekly" | "Monthly" }) {
-  const data = range === "Monthly" ? growthMonthly : growthWeekly;
+function GrowthChart({
+  range,
+  data,
+}: {
+  range: "Weekly" | "Monthly";
+  data: DashboardData["growth"];
+}) {
+  const series = range === "Monthly" ? data.monthly : data.weekly;
   const width = 720;
   const height = 260;
   const padX = 8;
   const padY = 16;
-  const growthPts = chartPoints(data, "growth", width, height, padX, padY);
-  const retentionPts = chartPoints(data, "retention", width, height, padX, padY);
+  const growthPts = chartPoints(series, "growth", width, height, padX, padY);
+  const retentionPts = chartPoints(
+    series,
+    "retention",
+    width,
+    height,
+    padX,
+    padY,
+  );
   const growthLine = smoothPath(growthPts);
   const retentionLine = smoothPath(retentionPts);
   const bottom = height - padY;
@@ -197,8 +138,11 @@ function GrowthChart({ range }: { range: "Weekly" | "Monthly" }) {
         </svg>
       </div>
       <div className="mt-3 flex justify-between px-2">
-        {data.map((entry) => (
-          <span key={entry.month} className="text-[10px] font-medium text-[#45483c]">
+        {series.map((entry) => (
+          <span
+            key={entry.month}
+            className="text-[10px] font-medium text-munity-muted"
+          >
             {entry.month}
           </span>
         ))}
@@ -207,7 +151,11 @@ function GrowthChart({ range }: { range: "Weekly" | "Monthly" }) {
   );
 }
 
-function SessionDonut() {
+function SessionDonut({
+  sessionTypes,
+}: {
+  sessionTypes: DashboardData["sessionTypes"];
+}) {
   const size = 160;
   const stroke = 18;
   const radius = (size - stroke) / 2;
@@ -215,13 +163,21 @@ function SessionDonut() {
 
   return (
     <div className="relative size-40 shrink-0">
-      <svg viewBox={`0 0 ${size} ${size}`} className="-rotate-90 size-full" aria-hidden>
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="-rotate-90 size-full"
+        aria-hidden
+      >
         {sessionTypes.map((segment, index) => {
           const length = (segment.percent / 100) * circumference;
           const dash = `${length} ${circumference - length}`;
           const currentOffset = sessionTypes
             .slice(0, index)
-            .reduce((total, previous) => total + (previous.percent / 100) * circumference, 0);
+            .reduce(
+              (total, previous) =>
+                total + (previous.percent / 100) * circumference,
+              0,
+            );
           return (
             <circle
               key={segment.label}
@@ -239,8 +195,10 @@ function SessionDonut() {
         })}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-2xl font-bold leading-none text-[#3e5219]">3.1k</p>
-        <p className="mt-1 text-[10px] font-bold uppercase leading-none text-[#45483c]">
+        <p className="text-2xl font-bold leading-none text-munity-green">
+          3.1k
+        </p>
+        <p className="mt-1 text-[10px] font-bold uppercase leading-none text-munity-muted">
           Total Sessions
         </p>
       </div>
@@ -248,34 +206,73 @@ function SessionDonut() {
   );
 }
 
-function AdminDashboardContent() {
-  const { reports } = useMockStore();
+function AdminDashboardContent({ data }: { data: DashboardData }) {
   const [range, setRange] = useState<"Weekly" | "Monthly">("Monthly");
   const { flash } = useLiveToast();
-  const dashboardKpis = kpis.map((kpi) =>
-    kpi.label === "Safety Reports"
-      ? { ...kpi, value: String(reports.filter((report) => report.status !== "Resolved").length) }
-      : kpi,
-  );
+  const dashboardKpis = [
+    {
+      label: "Total Active Users",
+      value: data.kpis.totalUsers.value.toLocaleString(),
+      trend: data.kpis.totalUsers.trend,
+      trendTone: data.kpis.totalUsers.trend.startsWith("-") ? "down" : "up",
+      icon: Users,
+      alert: false,
+    },
+    {
+      label: "New Signups (7D)",
+      value: data.kpis.newSignups7d.value.toLocaleString(),
+      trend: data.kpis.newSignups7d.trend,
+      trendTone: data.kpis.newSignups7d.trend.startsWith("-") ? "down" : "up",
+      icon: UserPlus,
+      alert: false,
+    },
+    {
+      label: "Sessions Booked",
+      value: data.kpis.sessionsBooked.value.toLocaleString(),
+      trend: data.kpis.sessionsBooked.trend,
+      trendTone: data.kpis.sessionsBooked.trend.startsWith("-") ? "down" : "up",
+      icon: Calendar,
+      alert: false,
+    },
+    {
+      label: "Engagement Rate",
+      value: `${data.kpis.engagementRate.value}%`,
+      trend: data.kpis.engagementRate.trend,
+      trendTone: data.kpis.engagementRate.trend.startsWith("-") ? "down" : "up",
+      icon: Heart,
+      alert: false,
+    },
+    {
+      label: "Safety Reports",
+      value: String(data.kpis.safetyReports.value),
+      trend: data.kpis.safetyReports.hasUrgent
+        ? "Urgent Pending"
+        : "All caught up",
+      trendTone: data.kpis.safetyReports.hasUrgent ? "alert" : "up",
+      icon: AlertTriangle,
+      alert: data.kpis.safetyReports.hasUrgent,
+    },
+  ] as const;
 
   return (
-    <div className="mx-auto flex max-w-[1280px] flex-col gap-6">
-        <LiveTicker
-          items={[
-            "18 members joined community conversations in the last hour.",
-            "Dr. Aris Thorne completed therapist verification.",
-            "Three moderation reports moved into review.",
-            "Session bookings are up 8% from this time last week.",
-          ]}
-        />
-        {/* KPI row */}
-        <motion.section
-          variants={liveStagger}
-          initial="hidden"
-          animate="show"
-          className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5"
-        >
-          {dashboardKpis.map(({ label, value, trend, trendTone, icon: Icon, alert }) => (
+    <div className="mx-auto flex max-w-7xl flex-col gap-6">
+      <LiveTicker
+        items={[
+          "18 members joined community conversations in the last hour.",
+          "Dr. Aris Thorne completed therapist verification.",
+          "Three moderation reports moved into review.",
+          "Session bookings are up 8% from this time last week.",
+        ]}
+      />
+      {/* KPI row */}
+      <motion.section
+        variants={liveStagger}
+        initial="hidden"
+        animate="show"
+        className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5"
+      >
+        {dashboardKpis.map(
+          ({ label, value, trend, trendTone, icon: Icon, alert }) => (
             <motion.article
               key={label}
               variants={liveFadeUp}
@@ -284,13 +281,15 @@ function AdminDashboardContent() {
               className={`rounded-[20px] border p-5 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-sm ${
                 alert
                   ? "border-[rgba(186,26,26,0.2)] bg-[rgba(255,218,214,0.1)]"
-                  : "border-[#e5e5e1] bg-white/70"
+                  : "border-munity-border bg-white/70"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div
                   className={`flex size-10 items-center justify-center rounded-xl ${
-                    alert ? "bg-[#ffdad6] text-[#ba1a1a]" : "bg-munity-lime/60 text-munity-green"
+                    alert
+                      ? "bg-[#ffdad6] text-[#ba1a1a]"
+                      : "bg-munity-lime/60 text-munity-green"
                   }`}
                 >
                   <Icon className="size-5" />
@@ -298,7 +297,7 @@ function AdminDashboardContent() {
                 <span
                   className={`text-xs font-bold ${
                     trendTone === "up"
-                      ? "text-[#56642b]"
+                      ? "text-munity-green-dark"
                       : trendTone === "down" || trendTone === "alert"
                         ? "text-[#ba1a1a]"
                         : "text-munity-muted"
@@ -307,186 +306,227 @@ function AdminDashboardContent() {
                   {trend}
                 </span>
               </div>
-              <p className="mt-3 text-base uppercase tracking-[0.8px] text-munity-muted">{label}</p>
-              <p className="mt-1 text-2xl font-semibold text-munity-text">{value}</p>
+              <p className="mt-3 text-base uppercase tracking-[0.8px] text-munity-muted">
+                {label}
+              </p>
+              <p className="mt-1 text-2xl font-semibold text-munity-text">
+                {value}
+              </p>
             </motion.article>
-          ))}
-        </motion.section>
+          ),
+        )}
+      </motion.section>
 
-        {/* Charts row — matches Figma 20:2340 Main Charts Section */}
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:grid-rows-[400px]">
-          <article className="flex h-auto flex-col rounded-[20px] border border-[#e5e5e1] bg-white/70 p-[25px] shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-[6px] xl:col-span-8 xl:h-[400px]">
-            <div className="mb-6 flex shrink-0 flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-semibold leading-[1.3] text-[#1b1c1c]">
-                  User Growth & Retention
-                </h2>
-                <p className="mt-1 text-base leading-6 text-[#45483c]">
-                  Data visualized over the last 6 months
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {(["Weekly", "Monthly"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    onClick={() => {
-                      setRange(option);
-                      flash(`Growth chart updated to ${option.toLowerCase()} data.`);
-                    }}
-                    className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
-                      range === option
-                        ? "bg-[#3e5219] text-white shadow-sm"
-                        : "bg-[#eae8e7] text-[#1b1c1c] hover:bg-munity-lime/50"
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <GrowthChart range={range} />
-          </article>
-
-          <article className="flex h-auto flex-col rounded-[20px] border border-[#e5e5e1] bg-white/70 p-[25px] shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-[6px] xl:col-span-4 xl:h-[400px]">
-            <h2 className="text-2xl font-semibold leading-[1.3] text-[#1b1c1c]">Session Types</h2>
-            <p className="mt-1 text-base leading-6 text-[#45483c]">Preferred mode of therapy</p>
-            <div className="mt-8 flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
-              <SessionDonut />
-              <div className="flex w-full flex-col gap-2">
-                {sessionTypes.map((type) => (
-                  <div key={type.label} className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-2 text-sm font-semibold tracking-[0.01em] text-[#1b1c1c]">
-                      <span
-                        className="size-3 shrink-0 rounded-full"
-                        style={{ backgroundColor: type.color }}
-                      />
-                      {type.label}
-                    </span>
-                    <span className="text-sm font-semibold tracking-[0.01em] text-[#45483c]">
-                      {type.percent}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </article>
-        </section>
-
-        {/* Bottom row */}
-        <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-          <article className="rounded-[20px] border border-[#e5e5e1] bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-4">
-            <h2 className="text-2xl font-semibold text-munity-text">Platform Health</h2>
-            <div className="mt-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between rounded-2xl bg-[#f5f3f3] p-4">
-                <div className="flex items-center gap-3">
-                  <span className="size-2 rounded-full bg-[#1b5e20]" />
-                  <div>
-                    <p className="text-sm font-semibold tracking-wide text-munity-text">
-                      Server Status
-                    </p>
-                    <p className="text-[10px] text-munity-muted">Global uptime: 99.98%</p>
-                  </div>
-                </div>
-                <p className="text-xs font-bold text-munity-green">Optimal</p>
-              </div>
-
-              <div className="rounded-2xl bg-[#f5f3f3] p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold tracking-wide text-munity-text">
-                    Mod Response Time
-                  </p>
-                  <p className="text-sm font-semibold tracking-wide text-munity-green">12m 4s</p>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
-                  <div className="h-full w-[85%] rounded-full bg-munity-green" />
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-[#f5f3f3] p-4">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold tracking-wide text-munity-text">
-                    Therapist Availability
-                  </p>
-                  <p className="text-sm font-semibold tracking-wide text-[#56642b]">92%</p>
-                </div>
-                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
-                  <div className="h-full w-[92%] rounded-full bg-[#56642b]" />
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-[20px] border border-[#e5e5e1] bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-5">
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="text-2xl font-semibold leading-tight text-munity-text">
-                Most Active Communities
+      {/* Charts row — matches Figma 20:2340 Main Charts Section */}
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:grid-rows-[400px]">
+        <article className="flex h-auto flex-col rounded-[20px] border border-munity-border bg-white/70 p-6.25 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-[6px] xl:col-span-8 xl:h-100">
+          <div className="mb-6 flex shrink-0 flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-semibold leading-[1.3] text-munity-text">
+                User Growth & Retention
               </h2>
-              <Link
-                href={routes.adminCommunities}
-                className="shrink-0 text-sm font-semibold tracking-wide text-munity-green hover:underline"
-              >
-                View All
-              </Link>
+              <p className="mt-1 text-base leading-6 text-munity-muted">
+                Data visualized over the last 6 months
+              </p>
             </div>
-            <div className="mt-6 flex flex-col gap-5">
-              {communities.map((community) => (
-                <div key={community.name}>
-                  <div className="mb-1 flex items-center justify-between gap-3">
-                    <p className="text-xs text-munity-text">{community.name}</p>
-                    <p className="text-xs text-munity-muted">{community.members}</p>
-                  </div>
-                  <div className="h-3 overflow-hidden rounded-full bg-[#efeded]">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: community.width, backgroundColor: community.color }}
+            <div className="flex gap-2">
+              {(["Weekly", "Monthly"] as const).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => {
+                    setRange(option);
+                    flash(
+                      `Growth chart updated to ${option.toLowerCase()} data.`,
+                    );
+                  }}
+                  className={`rounded-lg px-3 py-1 text-xs font-medium transition ${
+                    range === option
+                      ? "bg-munity-green text-white shadow-sm"
+                      : "bg-[#eae8e7] text-munity-text hover:bg-munity-lime/50"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+          <GrowthChart range={range} data={data.growth} />
+        </article>
+
+        <article className="flex h-auto flex-col rounded-[20px] border border-munity-border bg-white/70 p-6.25 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] backdrop-blur-[6px] xl:col-span-4 xl:h-100">
+          <h2 className="text-2xl font-semibold leading-[1.3] text-munity-text">
+            Session Types
+          </h2>
+          <p className="mt-1 text-base leading-6 text-munity-muted">
+            Preferred mode of therapy
+          </p>
+          <div className="mt-8 flex min-h-0 flex-1 flex-col items-center justify-center gap-8">
+            <SessionDonut sessionTypes={data.sessionTypes} />
+            <div className="flex w-full flex-col gap-2">
+              {data.sessionTypes.map((type) => (
+                <div
+                  key={type.label}
+                  className="flex items-center justify-between"
+                >
+                  <span className="inline-flex items-center gap-2 text-sm font-semibold tracking-[0.01em] text-munity-text">
+                    <span
+                      className="size-3 shrink-0 rounded-full"
+                      style={{ backgroundColor: type.color }}
                     />
-                  </div>
+                    {type.label}
+                  </span>
+                  <span className="text-sm font-semibold tracking-[0.01em] text-munity-muted">
+                    {type.percent}%
+                  </span>
                 </div>
               ))}
             </div>
-          </article>
+          </div>
+        </article>
+      </section>
 
-          <article className="rounded-[20px] border border-[#e5e5e1] bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-3">
-            <h2 className="text-2xl font-semibold text-munity-text">Recent Alerts</h2>
-            <div className="mt-4 flex flex-col gap-4">
-              {alerts.map((alert) => {
-                const Icon = alert.icon;
-                return (
-                  <div
-                    key={alert.title}
-                    className="flex gap-3 border-b border-[rgba(197,200,184,0.3)] pb-3 last:border-b-0 last:pb-0"
-                  >
-                    <div
-                      className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full ${
-                        alert.tone === "critical"
-                          ? "bg-[rgba(255,218,214,0.3)] text-[#ba1a1a]"
-                          : alert.tone === "warning"
-                            ? "bg-[#fff3cd] text-[#8a6d00]"
-                            : "bg-munity-lime/50 text-munity-green"
-                      }`}
-                    >
-                      <Icon className="size-3.5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold tracking-wide text-munity-text">{alert.title}</p>
-                      <p className="mt-1 text-[11px] leading-relaxed text-munity-muted">{alert.body}</p>
-                      <p className="mt-1 text-[10px] font-medium text-munity-muted/70">{alert.time}</p>
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Bottom row */}
+      <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-4">
+          <h2 className="text-2xl font-semibold text-munity-text">
+            Platform Health
+          </h2>
+          <div className="mt-6 flex flex-col gap-4">
+            <div className="flex items-center justify-between rounded-2xl bg-munity-sidebar p-4">
+              <div className="flex items-center gap-3">
+                <span className="size-2 rounded-full bg-[#1b5e20]" />
+                <div>
+                  <p className="text-sm font-semibold tracking-wide text-munity-text">
+                    Server Status
+                  </p>
+                  <p className="text-[10px] text-munity-muted">
+                    Global uptime: 99.98%
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs font-bold text-munity-green">Optimal</p>
             </div>
-          </article>
-        </section>
+
+            <div className="rounded-2xl bg-munity-sidebar p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold tracking-wide text-munity-text">
+                  Mod Response Time
+                </p>
+                <p className="text-sm font-semibold tracking-wide text-munity-green">
+                  12m 4s
+                </p>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
+                <div className="h-full w-[85%] rounded-full bg-munity-green" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-munity-sidebar p-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold tracking-wide text-munity-text">
+                  Therapist Availability
+                </p>
+                <p className="text-sm font-semibold tracking-wide text-munity-green-dark">
+                  92%
+                </p>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
+                <div className="h-full w-[92%] rounded-full bg-munity-green-dark" />
+              </div>
+            </div>
+          </div>
+        </article>
+
+        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-5">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-2xl font-semibold leading-tight text-munity-text">
+              Most Active Communities
+            </h2>
+            <Link
+              href={routes.adminCommunities}
+              className="shrink-0 text-sm font-semibold tracking-wide text-munity-green hover:underline"
+            >
+              View All
+            </Link>
+          </div>
+          <div className="mt-6 flex flex-col gap-5">
+            {data.communities.map((community) => (
+              <div key={community.name}>
+                <div className="mb-1 flex items-center justify-between gap-3">
+                  <p className="text-xs text-munity-text">{community.name}</p>
+                  <p className="text-xs text-munity-muted">
+                    {community.membersLabel}
+                  </p>
+                </div>
+                <div className="h-3 overflow-hidden rounded-full bg-[#efeded]">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: community.width,
+                      backgroundColor: community.color,
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </article>
+
+        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-3">
+          <h2 className="text-2xl font-semibold text-munity-text">
+            Recent Alerts
+          </h2>
+          <div className="mt-4 flex flex-col gap-4">
+            {alerts.map((alert) => {
+              const Icon = alert.icon;
+              return (
+                <div
+                  key={alert.title}
+                  className="flex gap-3 border-b border-[rgba(197,200,184,0.3)] pb-3 last:border-b-0 last:pb-0"
+                >
+                  <div
+                    className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full ${
+                      alert.tone === "critical"
+                        ? "bg-[rgba(255,218,214,0.3)] text-[#ba1a1a]"
+                        : alert.tone === "warning"
+                          ? "bg-[#fff3cd] text-[#8a6d00]"
+                          : "bg-munity-lime/50 text-munity-green"
+                    }`}
+                  >
+                    <Icon className="size-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold tracking-wide text-munity-text">
+                      {alert.title}
+                    </p>
+                    <p className="mt-1 text-[11px] leading-relaxed text-munity-muted">
+                      {alert.body}
+                    </p>
+                    <p className="mt-1 text-[10px] font-medium text-munity-muted/70">
+                      {alert.time}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </article>
+      </section>
     </div>
   );
 }
 
-export function AdminDashboardView({ adminName }: { adminName: string }) {
+export function AdminDashboardView({
+  adminName,
+  data,
+}: {
+  adminName: string;
+  data: DashboardData;
+}) {
   return (
     <AdminAppShell adminName={adminName}>
-      <AdminDashboardContent />
+      <AdminDashboardContent data={data} />
     </AdminAppShell>
   );
 }

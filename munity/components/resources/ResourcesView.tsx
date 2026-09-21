@@ -34,31 +34,33 @@ import {
   liveStagger,
   useLiveToast,
 } from "@/components/live/LiveFeedback";
-import {
-  captionsToPlainText,
-  captionsToVtt,
-  downloadTextFile,
-  getReadableBody,
-  getResourceExperience,
-  getVideoCaptions,
-  PREVIEW_VIDEO_SRC,
-} from "@/lib/resource-content";
+import { getVideoCaptions } from "@/lib/resource-content";
 import { startResourceSessionAudio } from "@/lib/resource-session-audio";
 import { routes } from "@/lib/routes";
-import {
-  findCatalogResource,
-  getResourceCatalog,
-  resourceCategoriesById,
-  resourceIdFromTitle,
-  type CatalogResource,
-  type ResourceCategory,
-} from "@/lib/resource-categories";
 import {
   toggleResourceCompletion,
   toggleSavedResource,
   useCompletedResourceIds,
   useSavedResourceIds,
 } from "@/lib/resources/actions";
+import { DbResource } from "@/lib/resources/queries";
+import { trackResourceView } from "@/lib/resources/view-tracking";
+
+type ResourceCategory =
+  | "Anxiety"
+  | "Depression"
+  | "Stress"
+  | "Grief"
+  | "Relationships"
+  | "Addiction";
+
+type ResourceExperience = "article" | "video" | "guide";
+
+type CaptionCue = {
+  start: number;
+  end: number;
+  text: string;
+};
 
 const categories: { label: ResourceCategory; icon: typeof Wind }[] = [
   { label: "Anxiety", icon: Wind },
@@ -69,21 +71,92 @@ const categories: { label: ResourceCategory; icon: typeof Wind }[] = [
   { label: "Addiction", icon: LifeBuoy },
 ];
 
+function getResourceExperience(type: DbResource["type"]): ResourceExperience {
+  if (type === "Video") return "video";
+  if (type === "Guide" || type === "Exercise") return "guide";
+  return "article";
+}
+
+function formatClock(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${mins}:${secs}`;
+}
+
+function formatVttTime(seconds: number) {
+  const hours = Math.floor(seconds / 3600)
+    .toString()
+    .padStart(2, "0");
+  const mins = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
+  const secs = Math.floor(seconds % 60)
+    .toString()
+    .padStart(2, "0");
+  return `${hours}:${mins}:${secs}.000`;
+}
+
+function captionsToVtt(resource: DbResource, cues: CaptionCue[]) {
+  const lines = ["WEBVTT", ""];
+  cues.forEach((cue, index) => {
+    lines.push(String(index + 1));
+    lines.push(`${formatVttTime(cue.start)} --> ${formatVttTime(cue.end)}`);
+    lines.push(cue.text);
+    lines.push("");
+  });
+  lines.push(`NOTE Generated for ${resource.title} · Munity`);
+  return `${lines.join("\n")}\n`;
+}
+
+function captionsToPlainText(resource: DbResource, cues: CaptionCue[]) {
+  const body = cues
+    .map((cue) => `[${formatClock(cue.start)}] ${cue.text}`)
+    .join("\n\n");
+  return `${resource.title}\n${resource.duration}\n\n${resource.description}\n\n--- Captions ---\n\n${body}\n`;
+}
+
+function downloadTextFile(filename: string, contents: string, mime: string) {
+  const blob = new Blob([contents], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function ResourcesView({
   isLoggedIn = false,
+  resources,
 }: {
   isLoggedIn?: boolean;
+  resources: DbResource[];
 }) {
   const router = useRouter();
   const { flash } = useLiveToast();
-  const [activeCategory, setActiveCategory] =
-    useState<ResourceCategory>("Anxiety");
+
+  const availableCategories = useMemo(
+    () =>
+      Array.from(
+        new Set(resources.map((r) => r.category)),
+      ).sort() as ResourceCategory[],
+    [resources],
+  );
+
+  const [activeCategory, setActiveCategory] = useState<ResourceCategory>(
+    () => (availableCategories[0] as ResourceCategory) ?? "Anxiety",
+  );
+
   const [query, setQuery] = useState("");
   const [showAllLatest, setShowAllLatest] = useState(false);
   const [showAllSaved, setShowAllSaved] = useState(false);
-  const [activeResource, setActiveResource] = useState<CatalogResource | null>(
-    null,
-  );
+  const [activeResource, setActiveResource] = useState<DbResource | null>(null);
   const [progress, setProgress] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [listenMode, setListenMode] = useState(false);
@@ -94,36 +167,41 @@ export function ResourcesView({
   );
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  const catalog = useMemo(() => getResourceCatalog(), []);
-  const categoryContent = resourceCategoriesById[activeCategory];
-  const search = query.trim().toLowerCase();
-
   const { ids: savedResourceIds, refresh: refreshSaved } =
     useSavedResourceIds(flash);
   const { ids: completedIds, refresh: refreshCompleted } =
     useCompletedResourceIds(flash);
 
+  const visibleCategoryButtons = categories.filter((c) =>
+    availableCategories.includes(c.label),
+  );
+
+  // const catalog = useMemo(() => getResourceCatalog(), []);
+  // const categoryContent = resourceCategoriesById[activeCategory];
+  const search = query.trim().toLowerCase();
+
+  const categoryResources = useMemo(
+    () => resources.filter((r) => r.category === activeCategory),
+    [resources, activeCategory],
+  );
+
+  const featuredResource =
+    categoryResources.find((r) => r.isFeatured) ?? categoryResources[0] ?? null;
+
   const latestPool = useMemo(() => {
-    if (showAllLatest) {
-      return catalog.filter(
-        (item) =>
-          item.type !== "Trending" &&
-          !item.badge &&
-          item.category === activeCategory,
-      );
-    }
-    return categoryContent.latest.map((item) => ({
-      id: resourceIdFromTitle(item.title),
-      title: item.title,
-      description: item.excerpt,
-      duration: item.duration,
-      image: item.image,
-      cta: item.cta,
-      type: item.type,
-      category: activeCategory,
-      video: item.video,
-    })) satisfies CatalogResource[];
-  }, [activeCategory, catalog, categoryContent.latest, showAllLatest]);
+    const nonFeatured = categoryResources.filter(
+      (r) => r.id !== featuredResource?.id,
+    );
+    return showAllLatest ? nonFeatured : nonFeatured.slice(0, 3);
+  }, [categoryResources, featuredResource, showAllLatest]);
+
+  const trendingList = useMemo(
+    () =>
+      [...categoryResources]
+        .sort((a, b) => b.viewCount - a.viewCount)
+        .slice(0, 3),
+    [categoryResources],
+  );
 
   const filteredLatest = search
     ? latestPool.filter(
@@ -134,34 +212,19 @@ export function ResourcesView({
       )
     : latestPool;
 
-  const featuredResource =
-    findCatalogResource(categoryContent.featured.title) ??
-    ({
-      id: resourceIdFromTitle(categoryContent.featured.title),
-      title: categoryContent.featured.title,
-      description: categoryContent.featured.description,
-      duration: categoryContent.featured.duration,
-      image: categoryContent.featured.image,
-      cta: categoryContent.featured.cta,
-      type: "Guide" as const,
-      category: activeCategory,
-      video: false,
-      badge: categoryContent.featured.badge,
-    } satisfies CatalogResource);
-
   const savedResources = savedResourceIds
-    .map((id) => findCatalogResource(id))
-    .filter((item): item is CatalogResource => Boolean(item));
+    .map((id) => resources.find((r) => r.id === id))
+    .filter((item): item is DbResource => Boolean(item));
 
   const visibleSaved = showAllSaved
     ? savedResources
     : savedResources.slice(0, 3);
 
-  const experience = activeResource
+  const experience: ResourceExperience | null = activeResource
     ? getResourceExperience(activeResource.type)
     : null;
-  const readableBody = activeResource ? getReadableBody(activeResource) : [];
-  const captionCues = activeResource ? getVideoCaptions(activeResource) : [];
+  const readableBody = activeResource?.bodyParagraphs ?? [];
+  const captionCues: CaptionCue[] = activeResource?.captions ?? [];
   const activeCaption =
     experience === "video"
       ? (captionCues.find((cue) => {
@@ -253,7 +316,7 @@ export function ResourcesView({
     return false;
   }
 
-  function openResource(resource: CatalogResource) {
+  function openResource(resource: DbResource) {
     setActiveResource(resource);
     setProgress(completedIds.includes(resource.id) ? 100 : 0);
     setPlaying(false);
@@ -262,6 +325,7 @@ export function ResourcesView({
     finishedToastFor.current = completedIds.includes(resource.id)
       ? resource.id
       : null;
+    void trackResourceView(resource.id);
     flash(`Opened ${resource.type.toLowerCase()} · ${resource.title}`);
   }
 
@@ -279,7 +343,7 @@ export function ResourcesView({
     }
   }
 
-  async function toggleComplete(resource: CatalogResource) {
+  async function toggleComplete(resource: DbResource) {
     const isComplete = completedIds.includes(resource.id);
     try {
       await toggleResourceCompletion(resource.id, isComplete);
@@ -323,7 +387,7 @@ export function ResourcesView({
     flash("Caption transcript downloaded (.txt)");
   }
 
-  async function toggleSave(resource: CatalogResource) {
+  async function toggleSave(resource: DbResource) {
     if (!requireLogin()) return;
     const saved = savedResourceIds.includes(resource.id);
     try {
@@ -337,24 +401,34 @@ export function ResourcesView({
     }
   }
 
-  function openTrending(title: string) {
-    const resource = findCatalogResource(title);
-    if (resource) {
-      openResource(resource);
-      return;
-    }
-    openResource({
-      id: resourceIdFromTitle(title),
-      title,
-      description: `A trending ${activeCategory.toLowerCase()} resource from the hub preview.`,
-      duration: "6 min read",
-      image: "/images/resources/side1.png",
-      cta: "Read More",
-      type: "Trending",
-      category: activeCategory,
-      video: false,
-    });
+  if (!featuredResource) {
+    return (
+      <MemberAppShell isLoggedIn={isLoggedIn}>
+        <div className="mx-auto max-w-3xl rounded-[20px] border border-munity-border bg-white p-8 text-center">
+          <p className="text-munity-muted">No resources are published yet.</p>
+        </div>
+      </MemberAppShell>
+    );
   }
+
+  // function openTrending(title: string) {
+  //   const resource = findCatalogResource(title);
+  //   if (resource) {
+  //     openResource(resource);
+  //     return;
+  //   }
+  //   openResource({
+  //     id: resourceIdFromTitle(title),
+  //     title,
+  //     description: `A trending ${activeCategory.toLowerCase()} resource from the hub preview.`,
+  //     duration: "6 min read",
+  //     image: "/images/resources/side1.png",
+  //     cta: "Read More",
+  //     type: "Trending",
+  //     category: activeCategory,
+  //     video: false,
+  //   });
+  // }
 
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>
@@ -366,7 +440,7 @@ export function ResourcesView({
                 Resource Hub
               </h1>
               <p className="mt-2 text-lg leading-relaxed text-munity-muted">
-                {categoryContent.blurb}
+                Guides, videos, and exercises curated for your wellness journey.
               </p>
             </div>
             <div className="relative w-full max-w-sm">
@@ -382,7 +456,7 @@ export function ResourcesView({
           </div>
 
           <div className="flex flex-wrap gap-4">
-            {categories.map(({ label, icon: Icon }) => {
+            {visibleCategoryButtons.map(({ label, icon: Icon }) => {
               const active = activeCategory === label;
               return (
                 <button
@@ -411,8 +485,8 @@ export function ResourcesView({
         </section>
 
         <LiveTicker
-          items={categoryContent.trending.map(
-            (item) => `${item.title} is trending with ${item.reads}.`,
+          items={trendingList.map(
+            (item) => `${item.title} has ${item.viewCount} views this month.`,
           )}
         />
 
@@ -426,30 +500,32 @@ export function ResourcesView({
                   className="relative h-64 w-full md:min-h-90 md:w-1/2"
                 >
                   <Image
-                    src={categoryContent.featured.image}
-                    alt={categoryContent.featured.title}
+                    src={featuredResource.imageUrl ?? ""}
+                    alt={featuredResource.title}
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"
                     priority
                   />
-                  <span className="absolute left-4 top-4 rounded-full bg-munity-green px-3 py-1 text-xs font-medium uppercase tracking-[0.6px] text-white">
-                    {categoryContent.featured.badge}
-                  </span>
+                  {featuredResource.featuredBadge ? (
+                    <span className="absolute left-4 top-4 rounded-full bg-munity-green px-3 py-1 text-xs font-medium uppercase tracking-[0.6px] text-white">
+                      {featuredResource.featuredBadge}
+                    </span>
+                  ) : null}
                 </button>
                 <div className="flex w-full flex-col justify-center p-8 md:w-1/2">
                   <div className="flex items-center gap-2 text-xs font-medium text-munity-green">
                     <Clock className="size-3" />
-                    {categoryContent.featured.duration}
+                    {featuredResource.duration}
                   </div>
                   <p className="mt-2 text-xs font-bold uppercase tracking-wide text-munity-muted">
                     {activeCategory}
                   </p>
                   <h2 className="mt-2 text-3xl font-bold leading-tight text-munity-text">
-                    {categoryContent.featured.title}
+                    {featuredResource.title}
                   </h2>
                   <p className="mt-4 text-base leading-relaxed text-munity-muted">
-                    {categoryContent.featured.description}
+                    {featuredResource.description}
                   </p>
                   <div className="mt-6 flex items-center justify-between gap-3">
                     <button
@@ -457,12 +533,12 @@ export function ResourcesView({
                       onClick={() => openResource(featuredResource)}
                       className="rounded-xl bg-munity-green px-6 py-3 text-base text-white transition hover:bg-munity-green-dark"
                     >
-                      {categoryContent.featured.cta}
+                      {featuredResource.cta}
                     </button>
                     {isLoggedIn ? (
                       <button
                         type="button"
-                        onClick={() => toggleSave(featuredResource)}
+                        onClick={() => void toggleSave(featuredResource)}
                         className="rounded-full p-2 text-munity-muted hover:bg-munity-bg hover:text-munity-green"
                         aria-label="Save for later"
                       >
@@ -527,13 +603,13 @@ export function ResourcesView({
                           className="relative h-48 w-full"
                         >
                           <Image
-                            src={item.image}
+                            src={item.imageUrl ?? ""}
                             alt={item.title}
                             fill
                             sizes="(max-width: 768px) 100vw, 33vw"
                             className="object-cover"
                           />
-                          {item.video ? (
+                          {item.type === "Video" ? (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/20">
                               <span className="flex size-10 items-center justify-center rounded-full bg-white/90 text-munity-green">
                                 <Play className="size-4 fill-current" />
@@ -576,7 +652,7 @@ export function ResourcesView({
                             {isLoggedIn ? (
                               <button
                                 type="button"
-                                onClick={() => toggleSave(item)}
+                                onClick={() => void toggleSave(item)}
                                 className="rounded-full p-1.5 text-munity-muted hover:bg-munity-bg hover:text-munity-green"
                                 aria-label={
                                   saved ? "Unsave resource" : "Save resource"
@@ -624,7 +700,7 @@ export function ResourcesView({
                         >
                           <div className="relative size-14 shrink-0 overflow-hidden rounded-xl">
                             <Image
-                              src={item.image}
+                              src={item.imageUrl ?? ""}
                               alt={item.title}
                               fill
                               sizes="56px"
@@ -637,7 +713,7 @@ export function ResourcesView({
                         </button>
                         <button
                           type="button"
-                          onClick={() => toggleSave(item)}
+                          onClick={() => void toggleSave(item)}
                           className="rounded-full p-1.5 text-munity-green hover:bg-munity-bg"
                           aria-label="Remove from saved"
                         >
@@ -679,26 +755,32 @@ export function ResourcesView({
                 Trending in {activeCategory}
               </h3>
               <div className="flex flex-col gap-5">
-                {categoryContent.trending.map((item) => (
-                  <button
-                    key={item.rank}
-                    type="button"
-                    onClick={() => openTrending(item.title)}
-                    className="flex gap-3 rounded-xl text-left transition hover:bg-munity-bg/70"
-                  >
-                    <span className="text-2xl font-bold text-munity-lime">
-                      {item.rank}
-                    </span>
-                    <div>
-                      <p className="text-sm font-semibold leading-snug text-munity-text">
-                        {item.title}
-                      </p>
-                      <p className="mt-1 text-xs text-munity-muted">
-                        {item.reads}
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                {trendingList.length === 0 ? (
+                  <p className="text-sm text-munity-muted">
+                    No views yet in this category.
+                  </p>
+                ) : (
+                  trendingList.map((item, index) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => openResource(item)}
+                      className="flex gap-3 rounded-xl text-left transition hover:bg-munity-bg/70"
+                    >
+                      <span className="text-2xl font-bold text-munity-lime">
+                        {String(index + 1).padStart(2, "0")}
+                      </span>
+                      <div>
+                        <p className="text-sm font-semibold leading-snug text-munity-text">
+                          {item.title}
+                        </p>
+                        <p className="mt-1 text-xs text-munity-muted">
+                          {item.viewCount} views
+                        </p>
+                      </div>
+                    </button>
+                  ))
+                )}
               </div>
             </section>
 
@@ -758,7 +840,7 @@ export function ResourcesView({
                       key={activeResource.id}
                       ref={videoRef}
                       className="aspect-video w-full object-cover"
-                      poster={activeResource.image}
+                      poster={activeResource.imageUrl ?? ""}
                       preload="metadata"
                       playsInline
                       onPlay={() => setPlaying(true)}
@@ -773,7 +855,10 @@ export function ResourcesView({
                         setPlaying(false);
                       }}
                     >
-                      <source src={PREVIEW_VIDEO_SRC} type="video/mp4" />
+                      <source
+                        src={activeResource.videoUrl ?? ""}
+                        type="video/mp4"
+                      />
                     </video>
                     {showCaptions && activeCaption ? (
                       <div className="pointer-events-none absolute inset-x-4 bottom-4 rounded-xl bg-black/70 px-4 py-3 text-center text-sm leading-relaxed text-white">
@@ -784,7 +869,7 @@ export function ResourcesView({
                 ) : (
                   <div className="relative h-44 w-full bg-munity-sidebar sm:h-52">
                     <Image
-                      src={activeResource.image}
+                      src={activeResource.imageUrl ?? ""}
                       alt={activeResource.title}
                       fill
                       className="object-cover"

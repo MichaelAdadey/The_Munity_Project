@@ -8,11 +8,11 @@ export type CreateBookingInput = {
   sessionType?: "video" | "chat";
 };
 
-export const createBooking = async ({
+export async function createBooking({
   therapistId,
   scheduledAt,
   sessionType = "video",
-}: CreateBookingInput): Promise<void> => {
+}: CreateBookingInput): Promise<void> {
   const supabase = createClient();
   const {
     data: { user },
@@ -31,20 +31,21 @@ export const createBooking = async ({
 
   if (error) throw new Error(error.message);
 
-  const when = new Date(scheduledAt).toLocaleString([], {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  // Best-effort — a failed notification shouldn't undo an already-successful booking.
+  const { data: patientProfile } = await supabase
+    .from("profiles")
+    .select("first_name, last_name")
+    .eq("id", user.id)
+    .maybeSingle();
+  const patientName = patientProfile
+    ? `${patientProfile.first_name} ${patientProfile.last_name}`.trim()
+    : "A patient";
 
-  // Best-effort — a failed notification insert shouldn't fail the booking itself.
   await supabase.from("notifications").insert({
     recipient_id: therapistId,
     type: "booking_request",
-    title: "New session request",
-    body: `A patient requested a ${sessionType === "chat" ? "text" : "video"} session for ${when}.`,
+    title: "New booking",
+    body: `${patientName} booked a session with you.`,
     href: "/therapistappointments",
   });
-};
+}

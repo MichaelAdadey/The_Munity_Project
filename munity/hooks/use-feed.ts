@@ -31,7 +31,11 @@ type PostRow = {
   mood: PostMood;
   is_anonymous: boolean;
   created_at: string;
-  profiles: { first_name: string; last_name: string; avatar_url: string | null } | null;
+  profiles: {
+    first_name: string;
+    last_name: string;
+    avatar_url: string | null;
+  } | null;
   post_supports: { user_id: string }[] | null;
   post_comments:
     | {
@@ -44,6 +48,8 @@ type PostRow = {
       }[]
     | null;
   saved_posts: { user_id: string }[] | null;
+  community_id: string | null;
+  communities: { name: string; slug: string } | null;
 };
 
 type FeedPayload = {
@@ -79,7 +85,8 @@ const fetchFeed = async (): Promise<FeedPayload> => {
           created_at,
           profiles!post_comments_author_id_fkey ( first_name, last_name )
         ),
-        saved_posts ( user_id )`,
+        saved_posts ( user_id ),
+      communities ( name, slug )`,
     )
     .order("created_at", { ascending: false });
 
@@ -97,6 +104,10 @@ const fetchFeed = async (): Promise<FeedPayload> => {
       const supports = row.post_supports ?? [];
       const comments = row.post_comments ?? [];
       const saves = row.saved_posts ?? [];
+      const community = row.communities as unknown as {
+        name: string;
+        slug: string;
+      } | null;
 
       commentsByPost[row.id] = comments
         .slice()
@@ -134,6 +145,9 @@ const fetchFeed = async (): Promise<FeedPayload> => {
         // saved_posts RLS only returns *my* rows, so any row means saved
         savedByMe: saves.length > 0,
         isMine: me === row.author_id,
+        communityId: row.community_id,
+        communityName: community?.name ?? null,
+        communitySlug: community?.slug ?? null,
       };
     },
   );
@@ -176,7 +190,7 @@ export const useFeed = (): FeedState => {
 
   useEffect(() => {
     load();
-  }, [load])
+  }, [load]);
 
   useEffect(() => {
     let cancelled = false;

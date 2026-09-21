@@ -16,11 +16,16 @@ export async function requireRole(allowedRoles: string[], loginPath: string) {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, first_name, last_name, avatar_url, created_at")
+    .select("role, first_name, last_name, avatar_url, created_at, is_suspended")
     .eq("id", user.id)
     .single();
 
   if (!profile || !allowedRoles.includes(profile.role)) {
+    redirect(loginPath);
+  }
+
+  if (profile.is_suspended) {
+    await supabase.auth.signOut();
     redirect(loginPath);
   }
 

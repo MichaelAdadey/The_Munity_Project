@@ -28,7 +28,7 @@ import {
 
 export type { NotificationRole };
 
-const REAL_DATA_ROLES: NotificationRole[] = ["therapist"];
+const REAL_DATA_ROLES: NotificationRole[] = ["therapist", "admin", "member"];
 const POLL_INTERVAL_MS = 30_000;
 
 export function NotificationsMenu({ role }: { role: NotificationRole }) {
@@ -69,9 +69,15 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
     if (isReal) {
       try {
         await markAllNotificationsRead();
-        setRealItems((current) => current.map((item) => ({ ...item, unread: false })));
+        setRealItems((current) =>
+          current.map((item) => ({ ...item, unread: false })),
+        );
       } catch (error) {
-        flash(error instanceof Error ? error.message : "Couldn't mark notifications read");
+        flash(
+          error instanceof Error
+            ? error.message
+            : "Couldn't mark notifications read",
+        );
         return;
       }
     }
@@ -83,7 +89,9 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
       try {
         await markNotificationRead(item.id);
         setRealItems((current) =>
-          current.map((row) => (row.id === item.id ? { ...row, unread: false } : row)),
+          current.map((row) =>
+            row.id === item.id ? { ...row, unread: false } : row,
+          ),
         );
       } catch {
         // Non-blocking — navigation still proceeds even if the read-receipt write fails.
@@ -112,7 +120,9 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
       >
         <div className="flex items-center justify-between border-b border-munity-border px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-munity-text">Notifications</p>
+            <p className="text-sm font-semibold text-munity-text">
+              Notifications
+            </p>
             <p className="text-xs text-munity-muted">
               {unreadCount ? `${unreadCount} unread` : "You're all caught up"}
             </p>
@@ -140,13 +150,17 @@ export function NotificationsMenu({ role }: { role: NotificationRole }) {
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-semibold text-munity-text">{item.title}</span>
-                    <span className="shrink-0 text-[11px] text-munity-muted">{item.time}</span>
+                    <span className="text-sm font-semibold text-munity-text">
+                      {item.title}
+                    </span>
+                    <span className="shrink-0 text-[11px] text-munity-muted">
+                      {item.time}
+                    </span>
                   </span>
                   <span className="mt-0.5 block text-xs leading-relaxed text-munity-muted">
                     {item.detail}
                   </span>
-                  <span className="mt-1 inline-flex rounded-full bg-[#f5f3f3] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-munity-muted">
+                  <span className="mt-1 inline-flex rounded-full bg-munity-sidebar px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-munity-muted">
                     {item.category}
                   </span>
                 </span>

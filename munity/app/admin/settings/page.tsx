@@ -1,10 +1,16 @@
-import { redirect } from "next/navigation";
-import { AdminSubpageView } from "@/components/admin/AdminSubpageView";
-import { getMockSession } from "@/lib/mock-session";
+import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
+import { AdminSettingsView } from "@/components/admin/AdminSettingsView";
+import { getPlatformSettings } from "@/lib/admin/settings-queries";
 
 export default async function AdminSettingsPage() {
-  const session = await getMockSession();
-  if (!session || session.role !== "admin") redirect(routes.adminLogin);
-  return <AdminSubpageView adminName={session.name} section="settings" />;
+  const { profile } = await requireRole(["admin"], routes.adminLogin);
+  const settings = await getPlatformSettings();
+
+  return (
+    <AdminSettingsView
+      adminName={`${profile.first_name} ${profile.last_name}`.trim()}
+      settings={settings}
+    />
+  );
 }

@@ -29,6 +29,7 @@ import {
   useChats,
 } from "@/lib/messages/client-queries";
 import { useCallSession } from "@/hooks/useCallSession";
+import { IncomingCall, useIncomingCall } from "@/lib/video/call-signals";
 
 type ChatFilter = "All" | "Therapists" | "Groups";
 
@@ -47,6 +48,7 @@ export function MessagesView() {
 
   const [filter, setFilter] = useState<ChatFilter>("All");
   const [draft, setDraft] = useState("");
+  const [incomingCall, setIncomingCall] = useState<IncomingCall | null>(null);
   const [search, setSearch] = useState("");
   const call = useCallSession();
 
@@ -86,6 +88,10 @@ export function MessagesView() {
   });
 
   const activeChat = chats.find((chat) => chat.id === activeChatId) ?? chats[0];
+
+  useIncomingCall(activeChat?.id ?? null, (incoming) => {
+    setIncomingCall(incoming);
+  });
 
   if (chatsLoading) {
     return (
@@ -543,6 +549,30 @@ export function MessagesView() {
           </aside>
         ) : null}
       </div>
+
+      {incomingCall ? (
+        <div className="fixed inset-x-0 top-4 z-90 mx-auto w-fit rounded-full bg-munity-green px-6 py-3 text-sm font-semibold text-white shadow-xl">
+          {activeChat?.name} is calling ({incomingCall.mode})
+          <button
+            type="button"
+            onClick={async () => {
+              const error = await call.join(incomingCall.mode, activeChat!.id);
+              if (error) flash(error);
+              setIncomingCall(null);
+            }}
+            className="ml-3 underline"
+          >
+            Join
+          </button>
+          <button
+            type="button"
+            onClick={() => setIncomingCall(null)}
+            className="ml-3 underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <CallOverlay
         session={call}
