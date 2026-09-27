@@ -65,7 +65,7 @@ function LiveToastHost() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 12 }}
-          className="pointer-events-none fixed bottom-6 left-1/2 z-[80] -translate-x-1/2 rounded-full bg-munity-green px-5 py-3 text-sm font-semibold text-white shadow-lg"
+          className="pointer-events-none fixed bottom-6 left-1/2 z-80 -translate-x-1/2 rounded-full bg-munity-green px-5 py-3 text-sm font-semibold text-white shadow-lg"
         >
           {toast}
         </motion.div>
@@ -133,7 +133,10 @@ export function LiveTicker({
   }, [items, intervalMs]);
 
   useEffect(() => {
-    if (items.length > 0 && index >= items.length) setIndex(0);
+    const timer = window.setTimeout(() => {
+      if (items.length > 0 && index >= items.length) setIndex(0);
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [index, items.length]);
 
   if (!items.length) return null;

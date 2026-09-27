@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
+  Maximize,
   Mic,
   MicOff,
+  Minimize,
   Minimize2,
   Maximize2,
   PhoneOff,
@@ -50,6 +53,17 @@ export function CallOverlay({
   const muted = !media.micEnabled;
   const cameraOff = !media.cameraEnabled || !media.hasCameraTrack;
 
+  const [fullscreen, setFullscreen] = useState(false);
+
+  // A fresh call (or the previous one ending) always starts windowed —
+  // fullscreen is a per-call display choice, not something to carry over.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      if (!callMode) setFullscreen(false);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [callMode]);
+
   function handleEndCall() {
     if (!callMode) return;
     onEnd?.(end());
@@ -75,6 +89,12 @@ export function CallOverlay({
     flash(willBeOff ? "Camera off" : "Camera on");
   }
 
+  function handleMinimize() {
+    setFullscreen(false); // restoring from PiP always lands windowed, not full screen
+    setMinimized(true);
+    flash("Call minimized — keep chatting while you stay on the line");
+  }
+
   return (
     <>
       <AnimatePresence>
@@ -84,23 +104,36 @@ export function CallOverlay({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-80 flex items-center justify-center bg-[#1a1f14]/88 p-4 backdrop-blur-md"
+            className={`fixed inset-0 z-80 flex items-center justify-center bg-[#1a1f14]/88 backdrop-blur-md ${
+              fullscreen ? "p-0" : "p-4"
+            }`}
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              className="relative flex w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/15 bg-[#24301c] text-white shadow-2xl"
+              className={
+                fullscreen
+                  ? "relative flex h-full w-full flex-col overflow-hidden bg-[#24301c] text-white"
+                  : "relative flex w-full max-w-lg flex-col overflow-hidden rounded-[28px] border border-white/15 bg-[#24301c] text-white shadow-2xl"
+              }
             >
               <div className="absolute right-3 top-3 z-10 flex gap-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setMinimized(true);
-                    flash(
-                      "Call minimized — keep chatting while you stay on the line",
-                    );
-                  }}
+                  onClick={() => setFullscreen((prev) => !prev)}
+                  className="flex size-9 items-center justify-center rounded-full bg-black/35 text-white transition hover:bg-black/50"
+                  aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+                >
+                  {fullscreen ? (
+                    <Minimize className="size-4" />
+                  ) : (
+                    <Maximize className="size-4" />
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMinimize}
                   className="flex size-9 items-center justify-center rounded-full bg-black/35 text-white transition hover:bg-black/50"
                   aria-label="Minimize call"
                 >
@@ -109,7 +142,13 @@ export function CallOverlay({
               </div>
 
               {callMode === "video" ? (
-                <div className="relative h-90 w-full bg-[#1a2214]">
+                <div
+                  className={
+                    fullscreen
+                      ? "relative w-full flex-1 bg-[#1a2214]"
+                      : "relative h-90 w-full bg-[#1a2214]"
+                  }
+                >
                   {callPhase === "connecting" ? (
                     <>
                       <Image

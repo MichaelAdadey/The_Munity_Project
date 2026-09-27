@@ -13,7 +13,6 @@ import {
   MessageCircle,
   PanelLeft,
   PanelLeftClose,
-  Search,
   Settings,
   Stethoscope,
   Users,
@@ -21,10 +20,14 @@ import {
 import { MemberAvatarMenu } from "@/components/memberlayout/MemberAvatarMenu";
 import { NotificationsMenu } from "@/components/live/NotificationsMenu";
 import { LiveToastProvider } from "@/components/live/LiveFeedback";
-import { SidebarProvider, useSidebar } from "@/components/therapistlayout/SidebarContext";
+import {
+  SidebarProvider,
+  useSidebar,
+} from "@/components/therapistlayout/SidebarContext";
 import { routes } from "@/lib/routes";
 import { mockStore } from "@/lib/mock-store";
 import { createClient } from "@/lib/supabase/client";
+import { GlobalSearchBar } from "./GlobalSearchBar";
 
 export type MemberNavItem =
   | "Home"
@@ -71,7 +74,10 @@ interface MemberAppShellProps {
   flush?: boolean;
 }
 
-export function MemberAppShell({ isLoggedIn = true, ...rest }: MemberAppShellProps) {
+export function MemberAppShell({
+  isLoggedIn = true,
+  ...rest
+}: MemberAppShellProps) {
   if (!isLoggedIn) {
     return <GuestShell>{rest.children}</GuestShell>;
   }
@@ -89,7 +95,10 @@ function GuestShell({ children }: { children: ReactNode }) {
       <div className="min-h-screen bg-munity-bg">
         <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
           <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
-            <Link href={routes.home} className="text-2xl font-bold text-munity-green">
+            <Link
+              href={routes.home}
+              className="text-2xl font-bold text-munity-green"
+            >
               Munity
             </Link>
             <div className="flex items-center gap-2">
@@ -154,92 +163,95 @@ function LoggedInShell({
 
   return (
     <LiveToastProvider>
-    <div className="min-h-screen bg-munity-bg">
-      <aside
-        className={`fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-munity-border/30 bg-munity-sidebar px-4 py-4 transition-transform duration-300 ease-in-out lg:flex ${
-          open ? "lg:translate-x-0" : "lg:-translate-x-full"
-        }`}
-      >
-        <Link href={routes.memberHome} className="mb-8 block px-4 pt-2">
-          <p className="text-2xl font-bold leading-tight text-munity-green">Munity</p>
-          <p className="text-xs font-medium text-munity-muted">Nurtured Stability</p>
-        </Link>
-
-        <nav className="flex flex-1 flex-col gap-1">
-          {memberNavItems.map(({ label, href, icon: Icon }) => {
-            const active = isNavActive(pathname, href);
-            return (
-              <Link
-                key={label}
-                href={href}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition ${
-                  active
-                    ? "bg-munity-lime text-munity-olive-text"
-                    : "text-munity-muted hover:bg-white/70"
-                }`}
-              >
-                <Icon className="size-[18px]" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <Link
-          href={routes.emergency}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffdad6] py-3 text-sm font-semibold text-[#93000a] transition hover:brightness-95"
+      <div className="min-h-screen bg-munity-bg">
+        <aside
+          className={`fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-munity-border/30 bg-munity-sidebar px-4 py-4 transition-transform duration-300 ease-in-out lg:flex ${
+            open ? "lg:translate-x-0" : "lg:-translate-x-full"
+          }`}
         >
-          <LifeBuoy className="size-3.5" />
-          Emergency Support
-        </Link>
-      </aside>
+          <Link href={routes.memberHome} className="mb-8 block px-4 pt-2">
+            <p className="text-2xl font-bold leading-tight text-munity-green">
+              Munity
+            </p>
+            <p className="text-xs font-medium text-munity-muted">
+              Nurtured Stability
+            </p>
+          </Link>
 
-      <header
-        className={`fixed inset-x-0 top-0 z-50 border-b border-munity-border/20 bg-munity-bg/80 shadow-sm backdrop-blur-md transition-[left] duration-300 ease-in-out ${
-          open ? "lg:left-64" : "lg:left-0"
-        }`}
-      >
-        <div className="flex h-16 items-center gap-4 px-6 lg:px-10">
-          <button
-            type="button"
-            onClick={toggle}
-            aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
-            aria-expanded={open}
-            className="hidden rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-green lg:inline-flex"
+          <nav className="flex flex-1 flex-col gap-1">
+            {memberNavItems.map(({ label, href, icon: Icon }) => {
+              const active = isNavActive(pathname, href);
+              return (
+                <Link
+                  key={label}
+                  href={href}
+                  className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition ${
+                    active
+                      ? "bg-munity-lime text-munity-olive-text"
+                      : "text-munity-muted hover:bg-white/70"
+                  }`}
+                >
+                  <Icon className="size-[18px]" />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <Link
+            href={routes.emergency}
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-[#ffdad6] py-3 text-sm font-semibold text-[#93000a] transition hover:brightness-95"
           >
-            {open ? (
-              <PanelLeftClose className="size-5" />
-            ) : (
-              <PanelLeft className="size-5" />
-            )}
-          </button>
-          {showSearch ? (
-            <div className="relative mr-auto hidden sm:block">
-              <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
-              <input
-                type="search"
-                value={searchValue}
-                onChange={(event) => onSearchChange?.(event.target.value)}
-                placeholder={searchPlaceholder}
-                className="h-9 w-64 rounded-full bg-munity-sidebar py-2 pl-10 pr-4 text-xs font-medium text-munity-text outline-none placeholder:text-munity-gray"
-              />
-            </div>
-          ) : null}
-          <div className="ml-auto flex items-center gap-4">
-            <NotificationsMenu role="member" />
-            <MemberAvatarMenu />
-          </div>
-        </div>
-      </header>
+            <LifeBuoy className="size-3.5" />
+            Emergency Support
+          </Link>
+        </aside>
 
-      <div
-        className={`pt-16 transition-[padding-left] duration-300 ease-in-out ${
-          open ? "lg:pl-64" : "lg:pl-0"
-        }`}
-      >
-        {flush ? children : <div className="px-6 py-8 lg:px-10">{children}</div>}
+        <header
+          className={`fixed inset-x-0 top-0 z-50 border-b border-munity-border/20 bg-munity-bg/80 shadow-sm backdrop-blur-md transition-[left] duration-300 ease-in-out ${
+            open ? "lg:left-64" : "lg:left-0"
+          }`}
+        >
+          <div className="flex h-16 items-center gap-4 px-6 lg:px-10">
+            <button
+              type="button"
+              onClick={toggle}
+              aria-label={open ? "Collapse sidebar" : "Expand sidebar"}
+              aria-expanded={open}
+              className="hidden rounded-full p-2 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-green lg:inline-flex"
+            >
+              {open ? (
+                <PanelLeftClose className="size-5" />
+              ) : (
+                <PanelLeft className="size-5" />
+              )}
+            </button>
+            {showSearch ? (
+              <GlobalSearchBar
+                value={searchValue}
+                onChange={onSearchChange}
+                placeholder={searchPlaceholder}
+              />
+            ) : null}
+            <div className="ml-auto flex items-center gap-4">
+              <NotificationsMenu role="member" />
+              <MemberAvatarMenu />
+            </div>
+          </div>
+        </header>
+
+        <div
+          className={`pt-16 transition-[padding-left] duration-300 ease-in-out ${
+            open ? "lg:pl-64" : "lg:pl-0"
+          }`}
+        >
+          {flush ? (
+            children
+          ) : (
+            <div className="px-6 py-8 lg:px-10">{children}</div>
+          )}
+        </div>
       </div>
-    </div>
     </LiveToastProvider>
   );
 }
