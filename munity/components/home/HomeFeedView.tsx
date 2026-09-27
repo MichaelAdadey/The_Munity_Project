@@ -51,6 +51,7 @@ import { joinCommunity } from "@/lib/communities/membership-actions";
 import { ReportDialog } from "../reports/ReportDialog";
 import { ImageLightbox } from "../ui/image-lightbox";
 import { EditPostDialog } from "./EditPostDialog";
+import { useSearchParams } from "next/navigation";
 
 const demoPhotoLibrary = [
   {
@@ -177,6 +178,22 @@ export function HomeFeedView() {
   const greeting = greetingForHour(hour);
   const firstName = profile?.firstName ?? "there";
   const fullName = profile?.fullName ?? "Member";
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const postId = searchParams.get("post");
+    if (!postId || posts.length === 0) return;
+    const el = document.getElementById(`post-${postId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-munity-green/40");
+      window.setTimeout(
+        () => el.classList.remove("ring-2", "ring-munity-green/40"),
+        2000,
+      );
+    }
+  }, [searchParams, posts]);
 
   const {
     joined: joinedCommunities,
@@ -883,6 +900,7 @@ export function HomeFeedView() {
               return (
                 <motion.article
                   key={post.id}
+                  id={`post-${post.id}`}
                   layout
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
