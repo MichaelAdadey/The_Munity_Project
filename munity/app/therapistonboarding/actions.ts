@@ -63,6 +63,7 @@ export async function submitTherapistOnboarding(payload: {
       professional_title: basicInfo.professionalTitle,
       phone: basicInfo.phone,
       practice_location: basicInfo.practiceLocation,
+      exact_practice_location: basicInfo.exactPracticeLocation,
       licensing_body: credentials.licensingBody,
       license_type: credentials.licenseType,
       license_number: credentials.registrationNumber,

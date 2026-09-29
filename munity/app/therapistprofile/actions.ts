@@ -43,6 +43,7 @@ export async function updateTherapistProfile(
       professional_title: profile.professionalTitle,
       phone: profile.phone,
       practice_location: profile.practiceLocation,
+      exact_practice_location: profile.exactPracticeLocation || null,
       bio: profile.bio,
       licensing_body: profile.licensingBody,
       license_type: profile.licenseType,

@@ -10,6 +10,7 @@ export type TherapyListItem = {
   bio: string;
   rate: number | null;
   location: string | null;
+  exactLocation: string | null;
   verificationStatus: string | null;
   avatarUrl: string | null;
 };
@@ -27,6 +28,7 @@ export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
      review_count,
      specialties,
      practice_location,
+     exact_practice_location,
      verification_status,
      profiles!therapist_details_profile_id_fkey ( first_name, last_name, avatar_url )`,
   );
@@ -58,6 +60,7 @@ export const getTherapistDirectory = async (): Promise<TherapyListItem[]> => {
       bio: (row.bio as string | null) ?? "",
       rate: (row.rate as number | null) ?? null,
       location: (row.practice_location as string | null) ?? null,
+      exactLocation: (row.exact_practice_location as string | null) ?? null,
       verificationStatus: (row.verification_status as string | null) ?? null,
       avatarUrl: profile?.avatar_url ?? null,
     };
@@ -81,6 +84,7 @@ export const getTherapistById = async (
        review_count,
        specialties,
        practice_location,
+       exact_practice_location,
        verification_status,
        profiles!therapist_details_profile_id_fkey ( first_name, last_name, avatar_url )`,
     )
@@ -111,6 +115,7 @@ export const getTherapistById = async (
     bio: (row.bio as string | null) ?? "",
     rate: (row.rate as number | null) ?? null,
     location: (row.practice_location as string | null) ?? null,
+    exactLocation: (row.exact_practice_location as string | null) ?? null,
     verificationStatus: (row.verification_status as string | null) ?? null,
     avatarUrl: profile?.avatar_url ?? null,
   };

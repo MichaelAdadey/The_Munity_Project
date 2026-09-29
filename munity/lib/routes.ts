@@ -1,6 +1,8 @@
 export const routes = {
   home: "/",
   memberHome: "/home",
+  /** Shared community feed — members land here by default; therapists reach it via the sidebar. */
+  feedCommunity: "/home",
   memberDashboard: "/dashboard",
   login: "/login",
   therapistLogin: "/therapistlogin",

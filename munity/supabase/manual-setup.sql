@@ -46,6 +46,12 @@ create policy "Therapists manage their own credential documents"
   );
 
 -- ─────────────────────────────────────────────────────────────
+-- 4. Exact practice location (Therapist onboarding → Basic Info step)
+--    Shown on the therapist profile next to the practice region.
+-- ─────────────────────────────────────────────────────────────
+alter table therapist_details add column if not exists exact_practice_location text;
+
+-- ─────────────────────────────────────────────────────────────
 -- 3. Mood check-ins (Patient home → daily mood check-in)
 --    Feeds the therapist crisis-alert banner, the Analysis mood summaries,
 --    and the patient-overview Mood Trends chart.

@@ -11,6 +11,8 @@ export type BasicInfoData = {
   professionalTitle: string;
   phone: string;
   practiceLocation: string;
+  /** Exact practice address (e.g. "12 Ring Road East, Osu, Accra"). */
+  exactPracticeLocation: string;
   email: string;
 };
 
@@ -73,6 +75,7 @@ export function isOnboardingStepFilled(
         hasText(d.professionalTitle) &&
         hasText(d.phone) &&
         hasText(d.practiceLocation) &&
+        hasText(d.exactPracticeLocation) &&
         hasText(d.email)
       );
     }
