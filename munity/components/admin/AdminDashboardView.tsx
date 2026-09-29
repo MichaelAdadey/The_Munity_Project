@@ -3,48 +3,40 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  AlertTriangle,
-  Calendar,
-  CheckCircle2,
-  Heart,
-  UserPlus,
-  Users,
-  Zap,
-} from "lucide-react";
+import { AlertTriangle, Calendar, Heart, UserPlus, Users } from "lucide-react";
 import { AdminAppShell } from "@/components/admin/AdminAppShell";
 import {
-  LiveTicker,
   liveFadeUp,
   liveStagger,
+  LiveTicker,
   useLiveToast,
 } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 import { DashboardData } from "@/lib/admin/dashboard-queries";
 
-const alerts = [
-  {
-    title: "Critical Flag: User #829",
-    body: "Potential high-risk trigger detected in 'Depression' community.",
-    time: "12m ago",
-    tone: "critical" as const,
-    icon: AlertTriangle,
-  },
-  {
-    title: "API Usage Spike",
-    body: "System performance remains stable at 90% load.",
-    time: "45m ago",
-    tone: "warning" as const,
-    icon: Zap,
-  },
-  {
-    title: "New Therapist Verified",
-    body: "Dr. Aris Thorne has completed credential review.",
-    time: "2h ago",
-    tone: "success" as const,
-    icon: CheckCircle2,
-  },
-];
+// const alerts = [
+//   {
+//     title: "Critical Flag: User #829",
+//     body: "Potential high-risk trigger detected in 'Depression' community.",
+//     time: "12m ago",
+//     tone: "critical" as const,
+//     icon: AlertTriangle,
+//   },
+//   {
+//     title: "API Usage Spike",
+//     body: "System performance remains stable at 90% load.",
+//     time: "45m ago",
+//     tone: "warning" as const,
+//     icon: Zap,
+//   },
+//   {
+//     title: "New Therapist Verified",
+//     body: "Dr. Aris Thorne has completed credential review.",
+//     time: "2h ago",
+//     tone: "success" as const,
+//     icon: CheckCircle2,
+//   },
+// ];
 
 function chartPoints(
   data: { growth: number; retention: number }[],
@@ -256,14 +248,7 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-6">
-      <LiveTicker
-        items={[
-          "18 members joined community conversations in the last hour.",
-          "Dr. Aris Thorne completed therapist verification.",
-          "Three moderation reports moved into review.",
-          "Session bookings are up 8% from this time last week.",
-        ]}
-      />
+      <LiveTicker items={data.tickerItems} />
       {/* KPI row */}
       <motion.section
         variants={liveStagger}
@@ -388,7 +373,7 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
 
       {/* Bottom row */}
       <section className="grid grid-cols-1 gap-6 xl:grid-cols-12">
-        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-4">
+        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-6">
           <h2 className="text-2xl font-semibold text-munity-text">
             Platform Health
           </h2>
@@ -396,16 +381,13 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
             <div className="flex items-center justify-between rounded-2xl bg-munity-sidebar p-4">
               <div className="flex items-center gap-3">
                 <span className="size-2 rounded-full bg-[#1b5e20]" />
-                <div>
-                  <p className="text-sm font-semibold tracking-wide text-munity-text">
-                    Server Status
-                  </p>
-                  <p className="text-[10px] text-munity-muted">
-                    Global uptime: 99.98%
-                  </p>
-                </div>
+                <p className="text-sm font-semibold tracking-wide text-munity-text">
+                  Server Status
+                </p>
               </div>
-              <p className="text-xs font-bold text-munity-green">Optimal</p>
+              <p className="text-xs font-bold text-munity-green">
+                System nominal
+              </p>
             </div>
 
             <div className="rounded-2xl bg-munity-sidebar p-4">
@@ -414,12 +396,21 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
                   Mod Response Time
                 </p>
                 <p className="text-sm font-semibold tracking-wide text-munity-green">
-                  12m 4s
+                  {data.platformHealth.modResponseMins !== null
+                    ? `${data.platformHealth.modResponseMins}m`
+                    : "No resolved reports yet"}
                 </p>
               </div>
-              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
-                <div className="h-full w-[85%] rounded-full bg-munity-green" />
-              </div>
+              {data.platformHealth.modResponseMins !== null ? (
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
+                  <div
+                    className="h-full rounded-full bg-munity-green"
+                    style={{
+                      width: `${Math.min(100, Math.max(4, 100 - data.platformHealth.modResponseMins))}%`,
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
 
             <div className="rounded-2xl bg-munity-sidebar p-4">
@@ -428,17 +419,22 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
                   Therapist Availability
                 </p>
                 <p className="text-sm font-semibold tracking-wide text-munity-green-dark">
-                  92%
+                  {data.platformHealth.therapistAvailabilityPercent}%
                 </p>
               </div>
               <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[#efeded]">
-                <div className="h-full w-[92%] rounded-full bg-munity-green-dark" />
+                <div
+                  className="h-full rounded-full bg-munity-green-dark"
+                  style={{
+                    width: `${data.platformHealth.therapistAvailabilityPercent}%`,
+                  }}
+                />
               </div>
             </div>
           </div>
         </article>
 
-        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-5">
+        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-6">
           <div className="flex items-start justify-between gap-3">
             <h2 className="text-2xl font-semibold leading-tight text-munity-text">
               Most Active Communities
@@ -473,7 +469,7 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
           </div>
         </article>
 
-        <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-3">
+        {/* <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-3">
           <h2 className="text-2xl font-semibold text-munity-text">
             Recent Alerts
           </h2>
@@ -511,7 +507,7 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
               );
             })}
           </div>
-        </article>
+        </article> */}
       </section>
     </div>
   );

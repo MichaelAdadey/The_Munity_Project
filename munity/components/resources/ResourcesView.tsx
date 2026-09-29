@@ -45,6 +45,7 @@ import {
 } from "@/lib/resources/actions";
 import { DbResource } from "@/lib/resources/queries";
 import { trackResourceView } from "@/lib/resources/view-tracking";
+import { useSearchParams } from "next/navigation";
 
 type ResourceCategory =
   | "Anxiety"
@@ -233,6 +234,21 @@ export function ResourcesView({
           return progress >= startPct && progress < endPct;
         }) ?? captionCues[0])
       : null;
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const resourceId = searchParams.get("resource");
+    if (!resourceId) return;
+    const match = resources.find((r) => r.id === resourceId);
+    if (match) {
+      const timer = window.setTimeout(() => {
+        setActiveCategory(match.category as ResourceCategory);
+        openResource(match);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, resources]);
 
   useEffect(() => {
     const shouldPlayAudio =

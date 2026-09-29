@@ -158,6 +158,8 @@ export function AdminCommunitiesView({
                 </div>
                 <Link
                   href={communityPath(community.slug)}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="shrink-0 rounded-lg bg-munity-lime/60 px-3 py-1.5 text-xs font-semibold text-munity-olive-text transition hover:bg-munity-lime"
                 >
                   View
