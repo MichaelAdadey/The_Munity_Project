@@ -25,6 +25,11 @@ export type DashboardData = {
     width: string;
     color: string;
   }[];
+  platformHealth: {
+    modResponseMins: number | null;
+    therapistAvailabilityPercent: number;
+  };
+  tickerItems: string[];
 };
 
 const RETENTION_MONTHLY = [26, 38, 46, 52, 72, 78]; // still estimated — no activity-history table yet
@@ -238,6 +243,86 @@ export async function getDashboardData(): Promise<DashboardData> {
       ? (activePrev / totalPatientsForEngagement) * 100
       : 0;
 
+  const [
+    { data: resolvedReports },
+    { data: verifiedTherapists },
+    { data: availabilityRows },
+    newSignupsToday,
+    { count: communitiesThisWeek },
+    { count: reportsResolvedToday },
+  ] = await Promise.all([
+    supabase
+      .from("reports")
+      .select("created_at, resolved_at")
+      .not("resolved_at", "is", null),
+    supabase
+      .from("therapist_details")
+      .select("profile_id")
+      .eq("verification_status", "verified"),
+    supabase
+      .from("availability_slots")
+      .select("therapist_id")
+      .eq("is_active", true),
+    countPatients(
+      supabase,
+      new Date(now.getFullYear(), now.getMonth(), now.getDate()),
+    ),
+    supabase
+      .from("communities")
+      .select("id", { count: "exact", head: true })
+      .gte(
+        "created_at",
+        (() => {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          return weekAgo.toISOString();
+        })(),
+      ),
+    supabase
+      .from("reports")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "resolved")
+      .gte(
+        "resolved_at",
+        new Date(
+          now.getFullYear(),
+          now.getMonth(),
+          now.getDate(),
+        ).toISOString(),
+      ),
+  ]);
+
+  const modResponseMins = (() => {
+    if (!resolvedReports || resolvedReports.length === 0) return null;
+    const totalMins = resolvedReports.reduce((sum, r) => {
+      const mins =
+        (new Date(r.resolved_at!).getTime() -
+          new Date(r.created_at).getTime()) /
+        60000;
+      return sum + Math.max(0, mins);
+    }, 0);
+    return Math.round(totalMins / resolvedReports.length);
+  })();
+
+  const verifiedIds = new Set(
+    (verifiedTherapists ?? []).map((t) => t.profile_id as string),
+  );
+  const availableTherapistIds = new Set(
+    (availabilityRows ?? [])
+      .map((r) => r.therapist_id as string)
+      .filter((id) => verifiedIds.has(id)),
+  );
+  const therapistAvailabilityPercent =
+    verifiedIds.size > 0
+      ? Math.round((availableTherapistIds.size / verifiedIds.size) * 100)
+      : 0;
+
+  const tickerItems = [
+    `${newSignupsToday} new signup${newSignupsToday === 1 ? "" : "s"} today.`,
+    `${communitiesThisWeek ?? 0} ${communitiesThisWeek === 1 ? "community was" : "communities were"} created this week.`,
+    `${reportsResolvedToday ?? 0} moderation report${reportsResolvedToday === 1 ? "" : "s"} resolved today.`,
+  ];
+
   return {
     kpis: {
       totalUsers: {
@@ -264,5 +349,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     growth: { monthly, weekly },
     sessionTypes,
     communities,
+    platformHealth: { modResponseMins, therapistAvailabilityPercent },
+    tickerItems,
   };
 }
