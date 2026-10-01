@@ -4,7 +4,10 @@ import { routes } from "@/lib/routes";
 import { TherapistDashboardView } from "@/components/therapistdashboard/TherapistDashboardView";
 
 export default async function DashboardPage() {
-  const { user, profile } = await requireRole(["therapist"], routes.therapistLogin);
+  const { user, profile } = await requireRole(
+    ["therapist"],
+    routes.therapistLogin,
+  );
   const supabase = await createClient();
 
   const startOfToday = new Date();
@@ -40,7 +43,11 @@ export default async function DashboardPage() {
       .eq("therapist_id", user.id)
       .eq("status", "completed")
       .gte("scheduled_at", startOfWeek.toISOString()),
-    supabase.from("therapist_details").select("rating").eq("profile_id", user.id).single(),
+    supabase
+      .from("therapist_details")
+      .select("rating, practice_location")
+      .eq("profile_id", user.id)
+      .single(),
     supabase
       .from("bookings")
       .select("id, scheduled_at, status, session_type, patient_id")
@@ -55,6 +62,9 @@ export default async function DashboardPage() {
       .order("scheduled_at", { ascending: false })
       .limit(20),
   ]);
+
+  const myPracticeLocation =
+    (therapistDetails?.practice_location as string | null) ?? null;
 
   // Look up patient names in one extra query rather than a fragile embedded join.
   const patientIds = Array.from(
@@ -71,12 +81,24 @@ export default async function DashboardPage() {
           .from("profiles")
           .select("id, first_name, last_name, avatar_url")
           .in("id", patientIds)
-      : { data: [] as { id: string; first_name: string; last_name: string; avatar_url: string | null }[] };
+      : {
+          data: [] as {
+            id: string;
+            first_name: string;
+            last_name: string;
+            avatar_url: string | null;
+          }[],
+        };
 
   const nameById = new Map(
-    (patientProfiles ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`.trim()]),
+    (patientProfiles ?? []).map((p) => [
+      p.id,
+      `${p.first_name} ${p.last_name}`.trim(),
+    ]),
   );
-  const avatarById = new Map((patientProfiles ?? []).map((p) => [p.id, p.avatar_url]));
+  const avatarById = new Map(
+    (patientProfiles ?? []).map((p) => [p.id, p.avatar_url]),
+  );
   const FALLBACK_AVATAR = "/images/profile/avatar.jpg";
 
   const todaysSchedule = (todaysBookingsRaw ?? []).map((booking) => ({
@@ -84,16 +106,22 @@ export default async function DashboardPage() {
     name: nameById.get(booking.patient_id as string) ?? "Unknown Patient",
     patientId: booking.patient_id as string,
     avatar: avatarById.get(booking.patient_id as string) || FALLBACK_AVATAR,
-    type: (booking.session_type ?? "video") as "video" | "chat",
+    type: (booking.session_type ?? "video") as "video" | "chat" | "in_person",
     time: new Date(booking.scheduled_at as string).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     }),
+    location: myPracticeLocation,
   }));
 
   // Dedupe to the 3 most recently-booked distinct patients.
   const seen = new Set<string>();
-  const recentPatients: { patientId: string; name: string; avatar: string; lastSession: string }[] = [];
+  const recentPatients: {
+    patientId: string;
+    name: string;
+    avatar: string;
+    lastSession: string;
+  }[] = [];
   for (const booking of recentBookingsRaw ?? []) {
     const pid = booking.patient_id as string | null;
     if (!pid || seen.has(pid)) continue;
@@ -102,14 +130,18 @@ export default async function DashboardPage() {
       patientId: pid,
       name: nameById.get(pid) ?? "Unknown Patient",
       avatar: avatarById.get(pid) || FALLBACK_AVATAR,
-      lastSession: new Date(booking.scheduled_at as string).toLocaleDateString(),
+      lastSession: new Date(
+        booking.scheduled_at as string,
+      ).toLocaleDateString(),
     });
     if (recentPatients.length >= 3) break;
   }
 
   return (
     <TherapistDashboardView
-      therapistName={`${profile.first_name} ${profile.last_name}`.trim() || "Therapist"}
+      therapistName={
+        `${profile.first_name} ${profile.last_name}`.trim() || "Therapist"
+      }
       stats={{
         upcomingSessions: upcomingSessions ?? 0,
         pendingRequests: pendingRequests ?? 0,

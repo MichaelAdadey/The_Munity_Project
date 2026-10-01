@@ -5,7 +5,7 @@ import { createClient } from "../supabase/client";
 export type CreateBookingInput = {
   therapistId: string;
   scheduledAt: string;
-  sessionType?: "video" | "chat";
+  sessionType?: "video" | "chat" | "in_person";
 };
 
 export async function createBooking({

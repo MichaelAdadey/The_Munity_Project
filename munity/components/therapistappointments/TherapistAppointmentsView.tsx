@@ -10,6 +10,7 @@ import {
   Check,
   Clock,
   List,
+  MapPin,
   MessageSquare,
   Search,
   Video,
@@ -86,16 +87,28 @@ function AppointmentRow({
   onReschedule: (item: AppointmentItem) => void;
   onJoin: (item: AppointmentItem) => void;
 }) {
-  const TypeIcon = item.type === "video" ? Video : MessageSquare;
+  const TypeIcon =
+    item.type === "video"
+      ? Video
+      : item.type === "chat"
+        ? MessageSquare
+        : MapPin;
 
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:gap-6">
       <div className="flex min-w-50 items-center gap-4">
         <div className="relative size-12 shrink-0 overflow-hidden rounded-full">
-          <Image src={item.avatar} alt={item.name} fill className="object-cover" />
+          <Image
+            src={item.avatar}
+            alt={item.name}
+            fill
+            className="object-cover"
+          />
         </div>
         <div>
-          <p className="text-sm font-semibold tracking-wide text-munity-text">{item.name}</p>
+          <p className="text-sm font-semibold tracking-wide text-munity-text">
+            {item.name}
+          </p>
           <p className="text-xs font-medium text-munity-muted">
             Patient ID: #{item.patientId.slice(0, 6).toUpperCase()}
           </p>
@@ -106,12 +119,18 @@ function AppointmentRow({
         <div className="flex items-center gap-2 text-munity-muted">
           <TypeIcon className="size-3.5 shrink-0" />
           <span className="text-xs font-medium leading-snug">
-            {item.type === "video" ? "Video Session" : "Text Consultation"}
+            {item.type === "video"
+              ? "Video Session"
+              : item.type === "chat"
+                ? "Text Consultation"
+                : "Face-to-Face"}
           </span>
         </div>
         <div className="flex items-center gap-2">
           <Clock className="size-3.5 shrink-0 text-munity-muted" />
-          <span className="text-sm font-semibold tracking-wide text-munity-text">{item.time}</span>
+          <span className="text-sm font-semibold tracking-wide text-munity-text">
+            {item.time}
+          </span>
         </div>
         <span
           className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
@@ -234,10 +253,14 @@ export function TherapistAppointmentsView({
   const router = useRouter();
   const { flash } = useLiveToast();
   const [view, setView] = useState<ViewMode>("list");
-  const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
-  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
+  const [activePatient, setActivePatient] =
+    useState<TherapistSessionPatient | null>(null);
+  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(
+    null,
+  );
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [rescheduleTarget, setRescheduleTarget] = useState<AppointmentItem | null>(null);
+  const [rescheduleTarget, setRescheduleTarget] =
+    useState<AppointmentItem | null>(null);
   const [rescheduleValue, setRescheduleValue] = useState("");
 
   const [monthCursor, setMonthCursor] = useState(() => {
@@ -249,15 +272,32 @@ export function TherapistAppointmentsView({
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const loadCalendar = useCallback(() => {
-    const rangeStart = new Date(monthCursor.getFullYear(), monthCursor.getMonth(), 1);
-    const rangeEnd = new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 0, 23, 59, 59, 999);
+    const rangeStart = new Date(
+      monthCursor.getFullYear(),
+      monthCursor.getMonth(),
+      1,
+    );
+    const rangeEnd = new Date(
+      monthCursor.getFullYear(),
+      monthCursor.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
     setCalendarLoading(true);
     void (async () => {
       try {
-        const data = await fetchAppointmentsForRange(rangeStart.toISOString(), rangeEnd.toISOString());
+        const data = await fetchAppointmentsForRange(
+          rangeStart.toISOString(),
+          rangeEnd.toISOString(),
+        );
         setCalendarItems(data);
       } catch (error) {
-        flash(error instanceof Error ? error.message : "Couldn't load the calendar");
+        flash(
+          error instanceof Error ? error.message : "Couldn't load the calendar",
+        );
       } finally {
         setCalendarLoading(false);
       }
@@ -281,7 +321,7 @@ export function TherapistAppointmentsView({
       time: item.time,
       type: item.type === "video" ? "Video Session" : "Text Consultation",
     });
-    setActiveKind(item.type);
+    setActiveKind(item.type as "video" | "chat");
     flash(
       item.type === "video"
         ? `Joining video session with ${item.name}`
@@ -301,7 +341,9 @@ export function TherapistAppointmentsView({
       flash(`Accepted ${item.name}'s session request`);
       refreshAfterMutation();
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't accept that request");
+      flash(
+        error instanceof Error ? error.message : "Couldn't accept that request",
+      );
     } finally {
       setBusyId(null);
     }
@@ -316,7 +358,9 @@ export function TherapistAppointmentsView({
       flash(`Session with ${item.name} ${verb.toLowerCase()}d`);
       refreshAfterMutation();
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't cancel that session");
+      flash(
+        error instanceof Error ? error.message : "Couldn't cancel that session",
+      );
     } finally {
       setBusyId(null);
     }
@@ -329,7 +373,11 @@ export function TherapistAppointmentsView({
       flash(`Session with ${item.name} marked complete`);
       refreshAfterMutation();
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't mark that session complete");
+      flash(
+        error instanceof Error
+          ? error.message
+          : "Couldn't mark that session complete",
+      );
     } finally {
       setBusyId(null);
     }
@@ -345,12 +393,19 @@ export function TherapistAppointmentsView({
     const target = rescheduleTarget;
     setBusyId(target.bookingId);
     try {
-      await rescheduleBooking(target.bookingId, new Date(rescheduleValue).toISOString());
+      await rescheduleBooking(
+        target.bookingId,
+        new Date(rescheduleValue).toISOString(),
+      );
       flash(`Session with ${target.name} rescheduled`);
       setRescheduleTarget(null);
       refreshAfterMutation();
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't reschedule that session");
+      flash(
+        error instanceof Error
+          ? error.message
+          : "Couldn't reschedule that session",
+      );
     } finally {
       setBusyId(null);
     }
@@ -360,7 +415,11 @@ export function TherapistAppointmentsView({
 
   // Calendar grid math
   const monthStart = monthCursor;
-  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(
+    monthStart.getFullYear(),
+    monthStart.getMonth() + 1,
+    0,
+  ).getDate();
   const leadingBlanks = monthStart.getDay();
   const itemsByDay = new Map<string, AppointmentItem[]>();
   for (const item of calendarItems) {
@@ -368,8 +427,15 @@ export function TherapistAppointmentsView({
     if (!itemsByDay.has(key)) itemsByDay.set(key, []);
     itemsByDay.get(key)!.push(item);
   }
-  const statusPriority: AppointmentItem["status"][] = ["pending", "confirmed", "completed", "cancelled"];
-  const selectedDayItems = selectedDay ? (itemsByDay.get(selectedDay) ?? []) : [];
+  const statusPriority: AppointmentItem["status"][] = [
+    "pending",
+    "confirmed",
+    "completed",
+    "cancelled",
+  ];
+  const selectedDayItems = selectedDay
+    ? (itemsByDay.get(selectedDay) ?? [])
+    : [];
 
   return (
     <TherapistAppShell
@@ -391,7 +457,9 @@ export function TherapistAppointmentsView({
               type="button"
               onClick={() => setView("list")}
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                view === "list" ? "bg-munity-green text-white" : "text-munity-muted hover:text-munity-text"
+                view === "list"
+                  ? "bg-munity-green text-white"
+                  : "text-munity-muted hover:text-munity-text"
               }`}
             >
               <List className="size-3.5" />
@@ -401,7 +469,9 @@ export function TherapistAppointmentsView({
               type="button"
               onClick={() => setView("calendar")}
               className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                view === "calendar" ? "bg-munity-green text-white" : "text-munity-muted hover:text-munity-text"
+                view === "calendar"
+                  ? "bg-munity-green text-white"
+                  : "text-munity-muted hover:text-munity-text"
               }`}
             >
               <CalendarDays className="size-3.5" />
@@ -413,7 +483,9 @@ export function TherapistAppointmentsView({
     >
       {view === "list" ? (
         <>
-          <LiveTicker items={[`${totalCount} upcoming appointments on your calendar.`]} />
+          <LiveTicker
+            items={[`${totalCount} upcoming appointments on your calendar.`]}
+          />
 
           {groups.length === 0 ? (
             <div className="rounded-[20px] border border-munity-input-border bg-white p-10 text-center text-sm text-munity-muted shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
@@ -428,7 +500,9 @@ export function TherapistAppointmentsView({
                 >
                   <div className="border-b border-munity-input-border px-6 py-5">
                     <div className="flex items-center gap-3">
-                      <h2 className="text-xl font-semibold text-munity-text">{group.day}</h2>
+                      <h2 className="text-xl font-semibold text-munity-text">
+                        {group.day}
+                      </h2>
                       <LivePulse label={`${group.items.length} sessions`} />
                     </div>
                   </div>
@@ -463,14 +537,20 @@ export function TherapistAppointmentsView({
           <section className="rounded-[20px] border border-munity-input-border bg-white p-6 shadow-[0_4px_20px_rgba(85,107,47,0.05)]">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold text-munity-text">
-                {monthStart.toLocaleDateString([], { month: "long", year: "numeric" })}
+                {monthStart.toLocaleDateString([], {
+                  month: "long",
+                  year: "numeric",
+                })}
               </h2>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => {
                     setSelectedDay(null);
-                    setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+                    setMonthCursor(
+                      (prev) =>
+                        new Date(prev.getFullYear(), prev.getMonth() - 1, 1),
+                    );
                   }}
                   className="rounded-lg border border-munity-input-border px-3 py-1.5 text-sm font-semibold text-munity-text transition hover:border-munity-green/40"
                 >
@@ -493,7 +573,10 @@ export function TherapistAppointmentsView({
                   type="button"
                   onClick={() => {
                     setSelectedDay(null);
-                    setMonthCursor((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+                    setMonthCursor(
+                      (prev) =>
+                        new Date(prev.getFullYear(), prev.getMonth() + 1, 1),
+                    );
                   }}
                   className="rounded-lg border border-munity-input-border px-3 py-1.5 text-sm font-semibold text-munity-text transition hover:border-munity-green/40"
                 >
@@ -503,23 +586,33 @@ export function TherapistAppointmentsView({
             </div>
 
             <div className="grid grid-cols-7 gap-2 text-center text-xs font-semibold text-munity-muted">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((label) => (
-                <div key={label} className="py-1">
-                  {label}
-                </div>
-              ))}
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+                (label) => (
+                  <div key={label} className="py-1">
+                    {label}
+                  </div>
+                ),
+              )}
             </div>
 
-            <div className={`mt-2 grid grid-cols-7 gap-2 ${calendarLoading ? "opacity-50" : ""}`}>
+            <div
+              className={`mt-2 grid grid-cols-7 gap-2 ${calendarLoading ? "opacity-50" : ""}`}
+            >
               {Array.from({ length: leadingBlanks }).map((_, i) => (
                 <div key={`blank-${i}`} />
               ))}
               {Array.from({ length: daysInMonth }).map((_, i) => {
                 const dayNum = i + 1;
-                const cellDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), dayNum);
+                const cellDate = new Date(
+                  monthStart.getFullYear(),
+                  monthStart.getMonth(),
+                  dayNum,
+                );
                 const key = dateKey(cellDate.toISOString());
                 const dayItems = itemsByDay.get(key) ?? [];
-                const dominant = statusPriority.find((s) => dayItems.some((it) => it.status === s));
+                const dominant = statusPriority.find((s) =>
+                  dayItems.some((it) => it.status === s),
+                );
                 const isToday = key === dateKey(new Date().toISOString());
                 return (
                   <button
@@ -537,7 +630,9 @@ export function TherapistAppointmentsView({
                     <span>{dayNum}</span>
                     {dayItems.length > 0 ? (
                       <span className="flex items-center gap-1 text-[10px] font-medium text-munity-muted">
-                        <span className={`size-1.5 rounded-full ${dominant ? statusDotClass[dominant] : ""}`} />
+                        <span
+                          className={`size-1.5 rounded-full ${dominant ? statusDotClass[dominant] : ""}`}
+                        />
                         {dayItems.length}
                       </span>
                     ) : null}
@@ -558,11 +653,16 @@ export function TherapistAppointmentsView({
                 : "Select a day to view its appointments"}
             </h3>
             {selectedDay && selectedDayItems.length === 0 ? (
-              <p className="text-sm text-munity-muted">No appointments on this day.</p>
+              <p className="text-sm text-munity-muted">
+                No appointments on this day.
+              </p>
             ) : (
               <div className="flex flex-col divide-y divide-munity-input-border">
                 {selectedDayItems.map((item) => (
-                  <div key={item.bookingId} className="py-4 first:pt-0 last:pb-0">
+                  <div
+                    key={item.bookingId}
+                    className="py-4 first:pt-0 last:pb-0"
+                  >
                     <AppointmentRow
                       item={item}
                       busy={busyId === item.bookingId}
@@ -590,7 +690,9 @@ export function TherapistAppointmentsView({
           <DialogHeader>
             <DialogTitle>Reschedule session</DialogTitle>
             <DialogDescription>
-              {rescheduleTarget ? `Pick a new time for ${rescheduleTarget.name}'s session.` : ""}
+              {rescheduleTarget
+                ? `Pick a new time for ${rescheduleTarget.name}'s session.`
+                : ""}
             </DialogDescription>
           </DialogHeader>
           <input
@@ -612,7 +714,9 @@ export function TherapistAppointmentsView({
             </DialogClose>
             <button
               type="button"
-              disabled={!rescheduleValue || busyId === rescheduleTarget?.bookingId}
+              disabled={
+                !rescheduleValue || busyId === rescheduleTarget?.bookingId
+              }
               onClick={() => void submitReschedule()}
               className="inline-flex items-center justify-center rounded-xl bg-munity-green px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-munity-green-dark disabled:cursor-not-allowed disabled:opacity-60"
             >

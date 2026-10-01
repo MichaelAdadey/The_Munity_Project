@@ -1,19 +1,24 @@
 import { createClient } from "../supabase/server";
 
-export type AppointmentStatus = "pending" | "confirmed" | "completed" | "cancelled";
+export type AppointmentStatus =
+  | "pending"
+  | "confirmed"
+  | "completed"
+  | "cancelled";
 
 export type AppointmentItem = {
   bookingId: string;
   name: string;
   patientId: string;
   avatar: string;
-  type: "video" | "chat";
+  type: "video" | "chat" | "in_person";
   status: AppointmentStatus;
   /** Raw timestamp — feeds the reschedule input and calendar-day grouping. */
   scheduledAt: string;
   time: string;
   isToday: boolean;
   isPast: boolean;
+  location: string | null;
 };
 
 export type AppointmentGroup = {
@@ -30,7 +35,12 @@ type BookingRow = {
   session_type: string | null;
   patient_id: string | null;
 };
-type ProfileRow = { id: string; first_name: string; last_name: string; avatar_url: string | null };
+type ProfileRow = {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url: string | null;
+};
 
 const dayLabel = (date: Date, today: Date, tomorrow: Date) => {
   if (date.toDateString() === today.toDateString()) return "Today";
@@ -47,18 +57,28 @@ async function attachPatientNames(
   bookings: BookingRow[],
 ) {
   const patientIds = Array.from(
-    new Set(bookings.map((b) => b.patient_id).filter((id): id is string => !!id)),
+    new Set(
+      bookings.map((b) => b.patient_id).filter((id): id is string => !!id),
+    ),
   );
 
   const { data: patientProfiles } =
     patientIds.length > 0
-      ? await supabase.from("profiles").select("id, first_name, last_name, avatar_url").in("id", patientIds)
+      ? await supabase
+          .from("profiles")
+          .select("id, first_name, last_name, avatar_url")
+          .in("id", patientIds)
       : { data: [] as ProfileRow[] };
 
   const nameById = new Map(
-    (patientProfiles ?? []).map((p) => [p.id, `${p.first_name} ${p.last_name}`.trim()]),
+    (patientProfiles ?? []).map((p) => [
+      p.id,
+      `${p.first_name} ${p.last_name}`.trim(),
+    ]),
   );
-  const avatarById = new Map((patientProfiles ?? []).map((p) => [p.id, p.avatar_url]));
+  const avatarById = new Map(
+    (patientProfiles ?? []).map((p) => [p.id, p.avatar_url]),
+  );
 
   return { nameById, avatarById };
 }
@@ -68,6 +88,7 @@ function toAppointmentItem(
   nameById: Map<string, string>,
   avatarById: Map<string, string | null>,
   now: Date,
+  practiceLocation: string | null,
 ): AppointmentItem {
   const scheduledAt = new Date(booking.scheduled_at);
   return {
@@ -78,14 +99,20 @@ function toAppointmentItem(
     type: (booking.session_type ?? "video") as "video" | "chat",
     status: booking.status as AppointmentStatus,
     scheduledAt: booking.scheduled_at,
-    time: scheduledAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    time: scheduledAt.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
     isToday: scheduledAt.toDateString() === now.toDateString(),
     isPast: scheduledAt.getTime() < now.getTime(),
+    location: practiceLocation,
   };
 }
 
 /** Pending + confirmed bookings over the next 14 days, grouped by day — feeds the list view. */
-export const getAppointmentGroups = async (userId: string): Promise<AppointmentGroup[]> => {
+export const getAppointmentGroups = async (
+  userId: string,
+): Promise<AppointmentGroup[]> => {
   const supabase = await createClient();
 
   const today = new Date();
@@ -95,16 +122,28 @@ export const getAppointmentGroups = async (userId: string): Promise<AppointmentG
   const rangeEnd = new Date(today);
   rangeEnd.setDate(rangeEnd.getDate() + 14);
 
-  const { data: bookingsRaw, error } = await supabase
-    .from("bookings")
-    .select("id, scheduled_at, status, session_type, patient_id")
-    .eq("therapist_id", userId)
-    .in("status", ["confirmed", "pending"])
-    .gte("scheduled_at", today.toISOString())
-    .lte("scheduled_at", rangeEnd.toISOString())
-    .order("scheduled_at", { ascending: true });
+  const [{ data: bookingsRaw, error }, { data: myDetails }] = await Promise.all(
+    [
+      supabase
+        .from("bookings")
+        .select("id, scheduled_at, status, session_type, patient_id")
+        .eq("therapist_id", userId)
+        .in("status", ["confirmed", "pending"])
+        .gte("scheduled_at", today.toISOString())
+        .lte("scheduled_at", rangeEnd.toISOString())
+        .order("scheduled_at", { ascending: true }),
+      supabase
+        .from("therapist_details")
+        .select("practice_location")
+        .eq("profile_id", userId)
+        .maybeSingle(),
+    ],
+  );
 
   if (error) throw new Error(error.message);
+
+  const myPracticeLocation =
+    (myDetails?.practice_location as string | null) ?? null;
 
   const bookings = (bookingsRaw ?? []) as BookingRow[];
   const { nameById, avatarById } = await attachPatientNames(supabase, bookings);
@@ -113,10 +152,19 @@ export const getAppointmentGroups = async (userId: string): Promise<AppointmentG
   const groupsMap = new Map<string, AppointmentItem[]>();
   for (const booking of bookings) {
     const label = dayLabel(new Date(booking.scheduled_at), today, tomorrow);
-    const item = toAppointmentItem(booking, nameById, avatarById, now);
+    const item = toAppointmentItem(
+      booking,
+      nameById,
+      avatarById,
+      now,
+      myPracticeLocation,
+    );
     if (!groupsMap.has(label)) groupsMap.set(label, []);
     groupsMap.get(label)!.push(item);
   }
 
-  return Array.from(groupsMap.entries()).map(([day, items]) => ({ day, items }));
+  return Array.from(groupsMap.entries()).map(([day, items]) => ({
+    day,
+    items,
+  }));
 };
