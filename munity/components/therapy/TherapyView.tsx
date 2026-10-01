@@ -378,7 +378,10 @@ export function TherapyView({
                     <div className="flex gap-4">
                       <div className="relative size-24 shrink-0 overflow-hidden rounded-2xl bg-[#efeded]">
                         <Image
-                          src={therapist.avatarUrl ?? "/images/avatar-placeholder.png"}
+                          src={
+                            therapist.avatarUrl ??
+                            "/images/avatar-placeholder.png"
+                          }
                           alt={therapist.name}
                           fill
                           className="object-cover"
@@ -572,13 +575,15 @@ export function TherapyView({
                 )
               : null
           }
-          onConfirm={async ({ when, scheduledAt }) => {
+          practiceLocation={bookingTherapist.location}
+          onConfirm={async ({ when, scheduledAt, sessionType }) => {
             if (!bookingTherapist) return;
             setBookingInFlight(true);
             try {
               await createBooking({
                 therapistId: bookingTherapist.id,
                 scheduledAt,
+                sessionType,
               });
               flash(`Session booked with ${bookingTherapist.name} · ${when}`);
               refreshBookings();

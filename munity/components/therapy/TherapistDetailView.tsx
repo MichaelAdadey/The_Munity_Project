@@ -178,10 +178,15 @@ export function TherapistDetailView({
             : null
         }
         submitting={bookingInFlight}
-        onConfirm={async ({ when, scheduledAt }) => {
+        practiceLocation={therapist.location}
+        onConfirm={async ({ when, scheduledAt, sessionType }) => {
           setBookingInFlight(true);
           try {
-            await createBooking({ therapistId: therapist.id, scheduledAt });
+            await createBooking({
+              therapistId: therapist.id,
+              scheduledAt,
+              sessionType,
+            });
             flash(`Session booked with ${therapist.name} · ${when}`);
             refreshBookings();
             setSheetOpen(false);

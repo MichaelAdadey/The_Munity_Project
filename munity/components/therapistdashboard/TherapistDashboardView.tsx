@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   ClipboardList,
   Clock,
+  MapPin,
   MessageSquare,
   MoreVertical,
   Star,
@@ -22,7 +23,11 @@ import {
   type TherapistSessionPatient,
 } from "@/components/therapist/TherapistSessionOverlays";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
-import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
+import {
+  LivePulse,
+  LiveTicker,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { patientRoutes, routes } from "@/lib/routes";
 import type { DistressAlert } from "@/lib/mood/mood-queries";
 import { MOOD_LABELS } from "@/lib/mood/mood-scale";
@@ -39,8 +44,9 @@ export type ScheduleItem = {
   name: string;
   patientId: string;
   avatar: string;
-  type: "video" | "chat";
+  type: "video" | "chat" | "in_person";
   time: string;
+  location: string | null;
 };
 
 export type RecentPatientItem = {
@@ -66,8 +72,11 @@ export function TherapistDashboardView({
   distressAlerts = [],
 }: TherapistDashboardViewProps) {
   const { flash } = useLiveToast();
-  const [activePatient, setActivePatient] = useState<TherapistSessionPatient | null>(null);
-  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(null);
+  const [activePatient, setActivePatient] =
+    useState<TherapistSessionPatient | null>(null);
+  const [activeKind, setActiveKind] = useState<TherapistSessionKind | null>(
+    null,
+  );
 
   const statCards = [
     {
@@ -113,7 +122,7 @@ export function TherapistDashboardView({
       time: session.time,
       type: session.type === "video" ? "Video Session" : "Text Consultation",
     });
-    setActiveKind(session.type);
+    setActiveKind(session.type as "video" | "chat");
     flash(
       session.type === "video"
         ? `Joining video session with ${session.name}`
@@ -177,15 +186,21 @@ export function TherapistDashboardView({
               className="rounded-[20px] border border-munity-input-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
             >
               <div className="flex items-center justify-between">
-                <div className={`flex size-9 items-center justify-center rounded-xl ${stat.iconWrap}`}>
+                <div
+                  className={`flex size-9 items-center justify-center rounded-xl ${stat.iconWrap}`}
+                >
                   <Icon className="size-4" />
                 </div>
-                <span className={`text-xs font-medium ${stat.metaClass}`}>{stat.meta}</span>
+                <span className={`text-xs font-medium ${stat.metaClass}`}>
+                  {stat.meta}
+                </span>
               </div>
               <p className="mt-3 text-sm font-semibold tracking-wide text-munity-muted">
                 {stat.label}
               </p>
-              <p className="mt-1 text-2xl font-semibold text-munity-text">{stat.value}</p>
+              <p className="mt-1 text-2xl font-semibold text-munity-text">
+                {stat.value}
+              </p>
             </motion.article>
           );
         })}
@@ -195,7 +210,9 @@ export function TherapistDashboardView({
         <section className="overflow-hidden rounded-[20px] border border-munity-input-border bg-white shadow-[0_4px_20px_rgba(85,107,47,0.05)] xl:col-span-2">
           <div className="flex items-center justify-between border-b border-munity-input-border px-6 py-6">
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-semibold text-munity-text">Today&apos;s Schedule</h2>
+              <h2 className="text-2xl font-semibold text-munity-text">
+                Today&apos;s Schedule
+              </h2>
               <LivePulse label={`${todaysSchedule.length} today`} />
             </div>
             <Link
@@ -208,10 +225,17 @@ export function TherapistDashboardView({
 
           <div>
             {todaysSchedule.length === 0 ? (
-              <p className="p-6 text-sm text-munity-muted">No sessions scheduled for today.</p>
+              <p className="p-6 text-sm text-munity-muted">
+                No sessions scheduled for today.
+              </p>
             ) : (
               todaysSchedule.map((session, index) => {
-                const TypeIcon = session.type === "video" ? Video : MessageSquare;
+                const TypeIcon =
+                  session.type === "video"
+                    ? Video
+                    : session.type === "chat"
+                      ? MessageSquare
+                      : MapPin;
                 return (
                   <motion.div
                     key={session.bookingId}
@@ -236,7 +260,8 @@ export function TherapistDashboardView({
                           {session.name}
                         </p>
                         <p className="text-xs font-medium text-munity-muted">
-                          Patient ID: #{session.patientId.slice(0, 6).toUpperCase()}
+                          Patient ID: #
+                          {session.patientId.slice(0, 6).toUpperCase()}
                         </p>
                       </div>
                     </div>
@@ -245,7 +270,9 @@ export function TherapistDashboardView({
                       <div className="flex items-center gap-2 text-munity-muted">
                         <TypeIcon className="size-3.5 shrink-0" />
                         <span className="text-xs font-medium leading-snug">
-                          {session.type === "video" ? "Video Session" : "Text Consultation"}
+                          {session.type === "video"
+                            ? "Video Session"
+                            : "Text Consultation"}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -280,7 +307,10 @@ export function TherapistDashboardView({
                 <p className="text-sm text-munity-muted">No patients yet.</p>
               ) : (
                 recentPatients.map((patient) => (
-                  <div key={patient.patientId} className="flex items-center justify-between gap-3">
+                  <div
+                    key={patient.patientId}
+                    className="flex items-center justify-between gap-3"
+                  >
                     <Link
                       href={patientRoutes(patient.patientId).overview}
                       className="flex min-w-0 items-center gap-3"
@@ -326,9 +356,12 @@ export function TherapistDashboardView({
 
           {/* NOTE: still placeholder — AI-generated weekly summaries aren't built yet. */}
           <section className="rounded-[20px] bg-munity-lime/35 p-6">
-            <h2 className="text-base font-semibold text-munity-text">Weekly Summary Report</h2>
+            <h2 className="text-base font-semibold text-munity-text">
+              Weekly Summary Report
+            </h2>
             <p className="mt-2 text-sm leading-relaxed text-munity-muted">
-              AI-assisted progress summaries are a planned feature — not connected yet.
+              AI-assisted progress summaries are a planned feature — not
+              connected yet.
             </p>
             <Link
               href={routes.therapistAnalytics}

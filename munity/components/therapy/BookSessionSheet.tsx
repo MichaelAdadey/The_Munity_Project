@@ -18,9 +18,11 @@ type BookSessionSheetProps = {
   alreadyBooked: boolean;
   latestBookingWhen?: string | null;
   submitting: boolean;
+  practiceLocation?: string | null;
   onConfirm: (booking: {
     when: string;
     scheduledAt: string;
+    sessionType: "video" | "chat" | "in_person";
   }) => void | Promise<void>;
 };
 
@@ -33,6 +35,7 @@ export function BookSessionSheet({
   alreadyBooked,
   latestBookingWhen,
   submitting = false,
+  practiceLocation,
   onConfirm,
 }: BookSessionSheetProps) {
   const {
@@ -44,11 +47,15 @@ export function BookSessionSheet({
     refreshDays,
   } = useBookableDays(therapistId, open);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
+  const [sessionType, setSessionType] = useState<
+    "video" | "chat" | "in_person"
+  >("video");
 
   useEffect(() => {
     if (!open) return;
     const timer = window.setTimeout(() => {
       setSelectedTime(null);
+      setSessionType("video");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [open, therapistId]);
@@ -72,6 +79,7 @@ export function BookSessionSheet({
     await onConfirm({
       when: formatBookingWhen(selectedDay.label, selectedTime),
       scheduledAt: bookingScheduledAt(selectedDay.date, selectedTime),
+      sessionType,
     });
   }
 
@@ -145,6 +153,39 @@ export function BookSessionSheet({
                   </div>
                 </div>
               ) : null}
+
+              <div className="px-5 pt-2">
+                <p className="mb-2 text-sm font-semibold text-munity-text">
+                  Session type
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { value: "video" as const, label: "Video call" },
+                    { value: "chat" as const, label: "Text chat" },
+                    ...(practiceLocation
+                      ? [{ value: "in_person" as const, label: "Face-to-face" }]
+                      : []),
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setSessionType(option.value)}
+                      className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                        sessionType === option.value
+                          ? "border-munity-green bg-munity-green text-white"
+                          : "border-munity-border bg-white text-munity-text hover:border-munity-green/50"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+                {sessionType === "in_person" && practiceLocation ? (
+                  <p className="mt-2 text-xs text-munity-muted">
+                    Location: {practiceLocation}
+                  </p>
+                ) : null}
+              </div>
 
               {loading ? (
                 <div className="rounded-2xl border border-munity-border bg-munity-sidebar px-4 py-8 text-center">
