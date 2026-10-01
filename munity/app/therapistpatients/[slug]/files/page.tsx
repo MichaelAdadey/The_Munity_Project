@@ -3,6 +3,7 @@ import { PatientFilesView } from "@/components/therapistpatients/PatientFilesVie
 import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
 import { getTherapistPatientById } from "@/lib/therapist/patients-queries";
+import { getSessionNotesForPatient } from "@/lib/therapist/session-notes-queries";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -17,5 +18,7 @@ export default async function PatientFilesPage({ params }: PageProps) {
     notFound();
   }
 
-  return <PatientFilesView patient={patient} />;
+  const notes = await getSessionNotesForPatient(user.id, patient.id);
+
+  return <PatientFilesView patient={patient} notes={notes} />;
 }

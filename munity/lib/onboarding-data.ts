@@ -11,6 +11,8 @@ export type BasicInfoData = {
   professionalTitle: string;
   phone: string;
   practiceLocation: string;
+  /** Exact practice address (e.g. "12 Ring Road East, Osu, Accra"). */
+  exactPracticeLocation: string;
   email: string;
 };
 
@@ -20,7 +22,10 @@ export type CredentialsData = {
   licensingBody: string;
   regionOfIssue: string;
   yearsOfExperience: number;
+  /** Original filename, for display only. */
   documentName: string;
+  /** Storage path of the uploaded document — the actual proof of upload. */
+  documentPath: string;
 };
 
 export type SpecialtiesData = {
@@ -70,6 +75,7 @@ export function isOnboardingStepFilled(
         hasText(d.professionalTitle) &&
         hasText(d.phone) &&
         hasText(d.practiceLocation) &&
+        hasText(d.exactPracticeLocation) &&
         hasText(d.email)
       );
     }
@@ -80,7 +86,7 @@ export function isOnboardingStepFilled(
         hasText(d.registrationNumber) &&
         hasText(d.licensingBody) &&
         hasText(d.regionOfIssue) &&
-        hasText(d.documentName) &&
+        hasText(d.documentPath) &&
         Number.isFinite(d.yearsOfExperience)
       );
     }

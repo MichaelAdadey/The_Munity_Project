@@ -22,6 +22,7 @@ export default async function TherapistProfilePage() {
     professionalTitle: details?.professional_title ?? "",
     phone: details?.phone ?? "",
     practiceLocation: details?.practice_location ?? "",
+    exactPracticeLocation: details?.exact_practice_location ?? "",
     email: user.email ?? "",
     bio: details?.bio ?? "",
     licensingBody: details?.licensing_body ?? "",

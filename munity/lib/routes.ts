@@ -1,6 +1,8 @@
 export const routes = {
   home: "/",
   memberHome: "/home",
+  /** Shared community feed — members land here by default; therapists reach it via the sidebar. */
+  feedCommunity: "/home",
   memberDashboard: "/dashboard",
   login: "/login",
   therapistLogin: "/therapistlogin",
@@ -16,7 +18,6 @@ export const routes = {
   therapistSettings: "/therapistsettings",
   therapistAnalytics: "/therapistanalytics",
   therapistFiles: "/therapistfiles",
-  therapistCarePlan: "/therapistcareplan",
   therapistCredentialAuth: "/therapistcredentialauth",
   resources: "/resources",
   messages: "/messages",
@@ -141,7 +142,6 @@ export function patientRoutes(slug: PatientSlug) {
     newSessionNote: `/therapistpatients/${slug}/clinical-notes/new`,
     progress: `/therapistpatients/${slug}/progress`,
     files: `/therapistpatients/${slug}/files`,
-    carePlan: `/therapistpatients/${slug}/care-plan`,
   };
 }
 
@@ -149,8 +149,7 @@ export type PatientNavSection =
   | "Overview"
   | "Clinical Notes"
   | "Progress"
-  | "Files"
-  | "Care Plan";
+  | "Files";
 
 export function patientNavHref(
   slug: PatientSlug,
@@ -166,7 +165,5 @@ export function patientNavHref(
       return paths.progress;
     case "Files":
       return paths.files;
-    case "Care Plan":
-      return paths.carePlan;
   }
 }

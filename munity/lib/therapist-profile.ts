@@ -8,6 +8,7 @@ export type TherapistProfile = {
   professionalTitle: string;
   phone: string;
   practiceLocation: string;
+  exactPracticeLocation: string;
   email: string;
   bio: string;
   licensingBody: string;
@@ -36,6 +37,7 @@ export const currentTherapistProfile: TherapistProfile = {
   professionalTitle: "Registered Clinical Psychologist",
   phone: "+233 24 123 4567",
   practiceLocation: "Greater Accra",
+  exactPracticeLocation: "12 Ring Road East, Osu, Accra",
   email: "elena.aris@munity.app",
   bio: "Clinical psychologist with 8 years of experience supporting adults through anxiety, depression, and life transitions. Based in Accra, offering video and in-person sessions.",
   licensingBody: "Ghana Psychology Council (GPC)",

@@ -1,9 +1,52 @@
 "use client";
 
 import { createClient } from "../supabase/client";
+import { routes } from "../routes";
 import type { AppointmentItem } from "./appointments-queries";
 
 const FALLBACK_AVATAR = "/images/profile/avatar.jpg";
+
+/** Therapist books a session directly with one of their own patients (skips the request/accept step). */
+export const createAppointmentForPatient = async (input: {
+  patientId: string;
+  scheduledAt: string;
+  sessionType?: "video" | "chat";
+}): Promise<void> => {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("You must be signed in to book a session");
+
+  const sessionType = input.sessionType ?? "video";
+
+  const { error } = await supabase.from("bookings").insert({
+    patient_id: input.patientId,
+    therapist_id: user.id,
+    scheduled_at: input.scheduledAt,
+    session_type: sessionType,
+    status: "confirmed",
+  });
+
+  if (error) throw new Error(error.message);
+
+  const when = new Date(input.scheduledAt).toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+
+  // Best-effort — a failed notification insert shouldn't fail the booking itself.
+  await supabase.from("notifications").insert({
+    recipient_id: input.patientId,
+    type: "booking_request",
+    title: "Session scheduled",
+    body: `Your therapist scheduled a ${sessionType === "chat" ? "text" : "video"} session for ${when}.`,
+    href: routes.sessions,
+  });
+};
 
 /** Therapist accepts a pending booking request. */
 export const acceptBooking = async (bookingId: string): Promise<void> => {

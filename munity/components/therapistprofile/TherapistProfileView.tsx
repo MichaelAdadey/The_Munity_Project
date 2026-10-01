@@ -233,6 +233,8 @@ export function TherapistProfileView({
       phone: draft.phone.trim() || profile.phone,
       email: draft.email.trim() || profile.email,
       practiceLocation: draft.practiceLocation.trim() || profile.practiceLocation,
+      exactPracticeLocation:
+        draft.exactPracticeLocation.trim() || profile.exactPracticeLocation,
       bio: draft.bio.trim() || profile.bio,
       specialties: draft.specialties.length ? draft.specialties : profile.specialties,
       payoutMethods: draft.payoutMethods.length ? draft.payoutMethods : profile.payoutMethods,
@@ -339,6 +341,12 @@ export function TherapistProfileView({
                   <MapPin className="size-4 text-munity-green" />
                   {profile.practiceLocation}, Ghana
                 </span>
+                {profile.exactPracticeLocation ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin className="size-4 text-munity-green" />
+                    {profile.exactPracticeLocation}
+                  </span>
+                ) : null}
                 <span className="inline-flex items-center gap-1.5">
                   <Briefcase className="size-4 text-munity-green" />
                   Member since {profile.memberSince}
@@ -375,7 +383,11 @@ export function TherapistProfileView({
             <DetailRow label="Professional Title" value={profile.professionalTitle} />
             <DetailRow label="Phone" value={profile.phone} />
             <DetailRow label="Email" value={profile.email} />
-            <DetailRow label="Practice Location" value={profile.practiceLocation} />
+            <DetailRow label="Practice Location (Region)" value={profile.practiceLocation} />
+            <DetailRow
+              label="Exact Practice Location"
+              value={profile.exactPracticeLocation || "Not provided"}
+            />
           </dl>
         </ProfileSection>
 
@@ -551,10 +563,17 @@ export function TherapistProfileView({
                 onChange={(value) => setDraft((prev) => ({ ...prev, email: value }))}
               />
               <Field
-                label="Practice location"
+                label="Practice location (region)"
                 value={draft.practiceLocation}
                 onChange={(value) =>
                   setDraft((prev) => ({ ...prev, practiceLocation: value }))
+                }
+              />
+              <Field
+                label="Exact practice location"
+                value={draft.exactPracticeLocation}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, exactPracticeLocation: value }))
                 }
               />
               {editSection === "profile" ? (

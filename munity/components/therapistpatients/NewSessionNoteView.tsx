@@ -400,7 +400,9 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                     {homework.map((task, index) => (
                       <div key={index} className="flex items-center gap-2">
                             <input
-                              ref={(el) => (inputsRef.current[index] = el)}
+                              ref={(el) => {
+                                inputsRef.current[index] = el;
+                              }}
                               type="text"
                               value={task}
                               onChange={(event) => updateHomework(index, event.target.value)}
