@@ -8,9 +8,9 @@ import { signInWithGoogle } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
+// import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
-import { getMockAccountByRole } from "@/lib/mock-credentials";
+// import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
 import { signIn, type AuthActionState  } from "@/lib/auth/actions";
 
@@ -115,7 +115,7 @@ function AuthField({
 export function LoginView() {
   const [showPassword, setShowPassword] = useState(false);
   const [state, formAction] = useActionState(signIn, initialState);
-  const demoUser = getMockAccountByRole("user");
+  // const demoUser = getMockAccountByRole("user");
 
   return (
     <AuthShell
@@ -151,7 +151,7 @@ export function LoginView() {
           subtitle="Continue your journey with Munity"
         />
 
-        <MockCredentialsHint role="user" />
+        {/* <MockCredentialsHint role="user" /> */}
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10.25 pb-10.25 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
@@ -170,7 +170,7 @@ export function LoginView() {
               placeholder="name@example.com"
               icon={Mail}
               autoComplete="email"
-              defaultValue={demoUser.email}
+              // defaultValue={demoUser.email}
             />
 
             <div className="flex flex-col gap-2">
@@ -196,7 +196,7 @@ export function LoginView() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  defaultValue={demoUser.password}
+                  // defaultValue={demoUser.password}
                   required
                   className="auth-input pr-12"
                 />

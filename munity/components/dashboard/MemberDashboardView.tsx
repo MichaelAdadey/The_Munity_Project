@@ -9,7 +9,6 @@ import {
   BookOpen,
   Calendar,
   CheckCircle2,
-  Flame,
   MessageCircle,
   Stethoscope,
   TrendingUp,
@@ -94,12 +93,12 @@ export function MemberDashboardView({
   const { joined: joinedCommunities } = useMyCommunities(flash);
 
   const stats = [
-    {
-      label: "Day streak",
-      value: String(store.profile.dayStreak),
-      detail: "Keep going — you’re on a roll",
-      icon: Flame,
-    },
+    // {
+    //   label: "Day streak",
+    //   value: String(store.profile.dayStreak),
+    //   detail: "Keep going — you’re on a roll",
+    //   icon: Flame,
+    // },
     {
       label: "Mood average",
       value: store.moodToday ? "8.0" : "7.4",

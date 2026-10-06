@@ -6,7 +6,7 @@ import { useFormStatus } from "react-dom";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
+// import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
 import { routes } from "@/lib/routes";
 import { signInAdmin, type AuthActionState } from "@/lib/auth/actions";
@@ -58,7 +58,7 @@ export function AdminLoginView() {
           subtitle="Sign in to manage the Munity platform"
         />
 
-        <MockCredentialsHint role="admin" />
+        {/* <MockCredentialsHint role="admin" /> */}
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10 py-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
@@ -82,7 +82,7 @@ export function AdminLoginView() {
                   id="email"
                   name="email"
                   type="email"
-                  defaultValue="admin@munity.app"
+                  // defaultValue="admin@munity.app"
                   placeholder="admin@munity.app"
                   autoComplete="email"
                   required
@@ -104,7 +104,7 @@ export function AdminLoginView() {
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
-                  defaultValue="Admin1234!"
+                  // defaultValue="Admin1234!"
                   placeholder="••••••••"
                   autoComplete="current-password"
                   required
@@ -124,7 +124,7 @@ export function AdminLoginView() {
                 </button>
               </div>
             </div>
-{state.error ? <p>{state.error}</p> : null}
+            {state.error ? <p>{state.error}</p> : null}
             <LoginButton />
           </form>
         </div>

@@ -30,7 +30,7 @@ import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
 import { MunitySunIcon } from "@/components/icons/MunityIcons";
 // import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { startCalmAmbient } from "@/lib/calm-ambient";
-import { useMockStore } from "@/lib/mock-store";
+// import { useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import { formatRelativeTime, useFeed } from "@/hooks/use-feed";
@@ -134,7 +134,7 @@ export function HomeFeedView() {
     refresh,
   } = useFeed();
 
-  const store = useMockStore();
+  // const store = useMockStore();
   const [showMoods, setShowMoods] = useState(true);
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
   const [composerText, setComposerText] = useState("");
@@ -511,14 +511,14 @@ export function HomeFeedView() {
                 </motion.p>
               ) : null}
               <div className="mt-5 flex w-full gap-2">
-                <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
+                {/* <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
                   <p className="text-base font-bold text-munity-green">
                     {store.profile.dayStreak}
                   </p>
                   <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
                     Day Streak
                   </p>
-                </div>
+                </div> */}
                 <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
                   <p className="text-base font-bold text-munity-green">
                     {joinedCommunities.length}
