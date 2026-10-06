@@ -14,24 +14,17 @@ import {
   MoreHorizontal,
   Pencil,
   Plus,
-  Smile,
+  Search,
   Trash2,
   UserRound,
-  Volume2,
-  VolumeX,
   Wind,
   X,
 } from "lucide-react";
-import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
-import { DailyMoodCheckin } from "@/components/home/DailyMoodCheckin";
-// import { EditPostDialog } from "@/components/home/EditPostDialog";
+import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
-// import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
-import { MunitySunIcon } from "@/components/icons/MunityIcons";
-// import { ImageLightbox } from "@/components/ui/image-lightbox";
-import { startCalmAmbient } from "@/lib/calm-ambient";
-// import { useMockStore } from "@/lib/mock-store";
-import { communityPath, routes, therapyPath } from "@/lib/routes";
+import { EditPostDialog } from "@/components/home/EditPostDialog";
+import { ReportDialog } from "@/components/reports/ReportDialog";
+import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import { formatRelativeTime, useFeed } from "@/hooks/use-feed";
 import { uploadPostImage } from "@/lib/feed/upload-image";
@@ -43,41 +36,9 @@ import {
   toggleSupport,
 } from "@/lib/feed/actions";
 import { MOOD_LABEL_TO_DB, type FeedPost } from "@/types/feed";
-import {
-  useCommunityOptions,
-  useMyCommunities,
-} from "@/lib/communities/client-queries";
-import { useVerifiedTherapists } from "@/lib/therapy/client-queries";
-import { joinCommunity } from "@/lib/communities/membership-actions";
-import { ReportDialog } from "../reports/ReportDialog";
-import { ImageLightbox } from "../ui/image-lightbox";
-import { EditPostDialog } from "./EditPostDialog";
-import { useSearchParams } from "next/navigation";
-
-const demoPhotoLibrary = [
-  {
-    id: "forest",
-    src: "/images/home-feed/forest-walk.png",
-    label: "Forest walk",
-  },
-  {
-    id: "stones",
-    src: "/images/messages/media-stones.jpg",
-    label: "Calm stones",
-  },
-  {
-    id: "coffee",
-    src: "/images/messages/media-coffee.jpg",
-    label: "Quiet coffee",
-  },
-  { id: "brain", src: "/images/messages/media-brain.jpg", label: "Mind map" },
-  { id: "safe", src: "/images/messages/shared-safe.png", label: "Safe space" },
-  {
-    id: "mindfulness",
-    src: "/images/messages/mindfulness.jpg",
-    label: "Mindfulness",
-  },
-];
+import { useCommunityOptions } from "@/lib/communities/client-queries";
+import { communityPath, routes } from "@/lib/routes";
+import { useLiveToast } from "@/components/live/LiveFeedback";
 
 const moods: { label: MoodLabel; bg: string }[] = [
   { label: "Happy", bg: "bg-[#f4f7e8]" },
@@ -94,22 +55,6 @@ const mindfulMoments = [
   "Unclench your jaw. Drop your shoulders. Soften your gaze for ten seconds.",
 ];
 
-// const liveActivitySeed = [
-//   {
-//     who: "Jordan",
-//     action: "supported a post in Mindful Paths",
-//     tone: "support",
-//   },
-//   { who: "Priya", action: "joined Grief Garden", tone: "join" },
-//   { who: "Marcus", action: "shared a calm check-in", tone: "post" },
-//   {
-//     who: "Elena A.",
-//     action: "is available for sessions today",
-//     tone: "therapy",
-//   },
-//   { who: "Campus Calm", action: "started a live peer circle", tone: "live" },
-// ];
-
 const cardClass =
   "rounded-[20px] border border-munity-border bg-white shadow-[0_4px_10px_rgba(85,107,47,0.05)]";
 
@@ -124,8 +69,9 @@ function greetingForHour(hour: number) {
   return "Good evening";
 }
 
-export function HomeFeedView() {
+export function TherapistFeedView() {
   const { profile, loading: profileLoading } = useCurrentProfile();
+  const { flash } = useLiveToast();
   const {
     posts,
     commentsByPost,
@@ -134,8 +80,6 @@ export function HomeFeedView() {
     refresh,
   } = useFeed();
 
-  // const store = useMockStore();
-  const [showMoods, setShowMoods] = useState(true);
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
   const [composerText, setComposerText] = useState("");
   const [anonymous, setAnonymous] = useState(false);
@@ -146,168 +90,45 @@ export function HomeFeedView() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   /** Device file waiting to upload on Post (not a data: URL in the DB) */
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [showPhotoPicker, setShowPhotoPicker] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
-  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
-    {},
-  );
-  const [toast, setToast] = useState<string | null>(null);
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
   const [posting, setPosting] = useState(false);
-  const [breathing, setBreathing] = useState(false);
-  const [breathPhase, setBreathPhase] = useState("Inhale");
-  const [breathCount, setBreathCount] = useState(4);
-  const [audioMuted, setAudioMuted] = useState(false);
-  const ambientRef = useRef<ReturnType<typeof startCalmAmbient>>(null);
-  const [momentIndex, setMomentIndex] = useState(0);
-  // const [activityIndex, setActivityIndex] = useState(0);
-  // const [onlineNow, setOnlineNow] = useState(128);
-  const [justSupported, setJustSupported] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [momentIndex, setMomentIndex] = useState(0);
   const [openPostMenu, setOpenPostMenu] = useState<string | null>(null);
   const [lightboxPost, setLightboxPost] = useState<FeedPost | null>(null);
   const [reportTarget, setReportTarget] = useState<{
     type: "post" | "comment";
     id: string;
   } | null>(null);
-  // NOTE: no trigger sets this yet (no "Edit" option in the post menu below), and
-  // EditPostDialog still targets the old mock-store post shape rather than the real
-  // Supabase-backed feed from useFeed() — editing isn't wired up end-to-end.
   const [editingPost, setEditingPost] = useState<FeedPost | null>(null);
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
   const firstName = profile?.firstName ?? "there";
-  const fullName = profile?.fullName ?? "Member";
-
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const postId = searchParams.get("post");
-    if (!postId || posts.length === 0) return;
-    const el = document.getElementById(`post-${postId}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.classList.add("ring-2", "ring-munity-green/40");
-      window.setTimeout(
-        () => el.classList.remove("ring-2", "ring-munity-green/40"),
-        2000,
-      );
-    }
-  }, [searchParams, posts]);
-
-  const {
-    joined: joinedCommunities,
-    suggested: allSuggested,
-    refresh: refreshCommunities,
-  } = useMyCommunities(flash);
-  const suggestedGroups = allSuggested.slice(0, 2);
-  const { therapists: allTherapists } = useVerifiedTherapists(flash);
-  const therapists = allTherapists.slice(0, 2);
+  const fullName = profile?.fullName ?? "Therapist";
 
   const visiblePosts = useMemo(() => {
-    // const activePosts = store.posts.filter((post) => !post.archived);
     const query = search.trim().toLowerCase();
     if (!query) return posts;
     return posts.filter(
       (post) =>
         post.content.toLowerCase().includes(query) ||
         post.author.toLowerCase().includes(query) ||
-        post.feeling.toLowerCase().includes(query),
-      // (post.communityName?.toLowerCase().includes(query) ?? false),
+        post.feeling.toLowerCase().includes(query) ||
+        (post.communityName?.toLowerCase().includes(query) ?? false),
     );
   }, [search, posts]);
 
-  // const liveActivity = useMemo(() => {
-  //   const recentPost = store.posts[0];
-  //   const dynamic = recentPost
-  //     ? [
-  //         {
-  //           who: recentPost.anonymous
-  //             ? "Someone"
-  //             : recentPost.author.split(" ")[0],
-  //           action: `posted in ${recentPost.communityName ?? "the feed"}`,
-  //           tone: "post",
-  //         },
-  //         ...liveActivitySeed,
-  //       ]
-  //     : liveActivitySeed;
-  //   return dynamic;
-  // }, [store.posts]);
-
   useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 2400);
-    return () => window.clearTimeout(timer);
-  }, [toast]);
-
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setMomentIndex((value) => (value + 1) % mindfulMoments.length);
-    }, 8000);
-    return () => window.clearInterval(timer);
-  }, []);
-
-  // useEffect(() => {
-  //   const timer = window.setInterval(() => {
-  //     setActivityIndex((value) => (value + 1) % liveActivity.length);
-  //     setOnlineNow((value) => value + (Math.random() > 0.5 ? 1 : -1));
-  //   }, 4200);
-  //   return () => window.clearInterval(timer);
-  // }, [liveActivity.length]);
-
-  const startBreathing = () => {
-    setBreathing(true);
-    setBreathPhase("Inhale");
-    setBreathCount(4);
-  };
-
-  const stopBreathing = () => {
-    setBreathing(false);
-  };
-
-  useEffect(() => {
-    if (!breathing) {
-      ambientRef.current?.stop();
-      ambientRef.current = null;
-      return;
+    function closeMenus(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (!target.closest("[data-post-menu]")) setOpenPostMenu(null);
     }
-
-    ambientRef.current = startCalmAmbient();
-    ambientRef.current?.setMuted(audioMuted);
-    ambientRef.current?.setBreathGain("Inhale");
-
-    const phases = ["Inhale", "Hold", "Exhale", "Hold"] as const;
-    let phase = 0;
-    let count = 4;
-
-    const timer = window.setInterval(() => {
-      count -= 1;
-      if (count <= 0) {
-        phase = (phase + 1) % phases.length;
-        count = 4;
-        setBreathPhase(phases[phase]);
-        ambientRef.current?.setBreathGain(phases[phase]);
-      }
-      setBreathCount(count);
-    }, 1000);
-
-    return () => {
-      window.clearInterval(timer);
-      ambientRef.current?.stop();
-      ambientRef.current = null;
-    };
-    // audioMuted is applied separately so toggling mute doesn't restart the pad
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [breathing]);
-
-  useEffect(() => {
-    ambientRef.current?.setMuted(audioMuted);
-  }, [audioMuted]);
-
-  function flash(message: string) {
-    setToast(message);
-  }
+    window.addEventListener("click", closeMenus);
+    return () => window.removeEventListener("click", closeMenus);
+  }, []);
 
   function selectMood(mood: MoodLabel) {
     setSelectedMood(mood);
@@ -318,13 +139,6 @@ export function HomeFeedView() {
     setPhotoPreview(null);
     setPendingFile(null);
   };
-
-  function attachDemoPhoto(src: string) {
-    setPendingFile(null);
-    setPhotoPreview(src);
-    setShowPhotoPicker(false);
-    flash("Photo attached — add a caption or post");
-  }
 
   function onPickDevicePhoto(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -338,17 +152,7 @@ export function HomeFeedView() {
     setPendingFile(file);
     const objectUrl = URL.createObjectURL(file);
     setPhotoPreview(objectUrl);
-    setShowPhotoPicker(false);
-    flash("Photo ready - add a caption or post");
-    // const reader = new FileReader();
-    // reader.onload = () => {
-    //   const result = typeof reader.result === "string" ? reader.result : null;
-    //   if (!result) return;
-    //   setPhotoPreview(result);
-    //   setShowPhotoPicker(false);
-    //   flash("Photo ready — add a caption or post");
-    // };
-    // reader.readAsDataURL(file);
+    flash("Photo ready — add a caption or post");
   }
 
   async function supportPost(postId: string) {
@@ -357,8 +161,6 @@ export function HomeFeedView() {
       flash(result.error);
       return;
     }
-    setJustSupported(postId);
-    window.setTimeout(() => setJustSupported(null), 500);
     refresh();
   }
 
@@ -389,7 +191,6 @@ export function HomeFeedView() {
     if (!composerText.trim() && !photoPreview && !pendingFile) return;
     if (!selectedMood) {
       flash("Pick a mood before posting");
-      setShowMoods(true);
       return;
     }
 
@@ -405,7 +206,6 @@ export function HomeFeedView() {
         }
         imageUrl = uploaded.url;
       } else if (photoPreview && !photoPreview.startsWith("data:")) {
-        // Demo library path or already-uploaded URL
         imageUrl = photoPreview;
       }
 
@@ -424,14 +224,12 @@ export function HomeFeedView() {
 
       setComposerText("");
       setSelectedCommunityId(null);
+      setAnonymous(false);
       clearPhoto();
-      setShowPhotoPicker(false);
       flash(
         anonymous
           ? "Posted anonymously"
-          : imageUrl
-            ? "Photo shared with your communities"
-            : "Shared with your communities",
+          : "Shared with the community",
       );
       refresh();
     } finally {
@@ -451,175 +249,26 @@ export function HomeFeedView() {
   };
 
   return (
-    <MemberAppShell
-      showSearch
-      searchPlaceholder="Search posts, people, communities..."
-      searchValue={search}
-      onSearchChange={setSearch}
+    <TherapistAppShell
+      active="Community Feed"
+      title="Community Feed"
+      subtitle="Connect with members and share support in the community."
+      actions={
+        <div className="relative hidden sm:block">
+          <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-munity-gray" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search posts..."
+            className="w-48 rounded-full border border-munity-input-border bg-white py-2 pl-9 pr-4 text-sm outline-none transition focus:border-munity-green lg:w-64"
+            aria-label="Search posts"
+          />
+        </div>
+      }
     >
-      {" "}
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-6">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-6 h-40 rounded-4xl bg-[radial-gradient(circle_at_top,rgba(214,231,161,0.35),transparent_70%)]"
-        />
-
-        {/* Left sidebar */}
-        <motion.aside
-          className="relative flex flex-col gap-5 lg:col-span-3"
-          variants={fadeUp}
-          initial="hidden"
-          animate="show"
-          transition={{ duration: 0.35 }}
-        >
-          <section className={`${cardClass} overflow-hidden p-6`}>
-            <div className="flex flex-col items-center text-center">
-              <motion.div
-                className="rounded-full border-4 border-munity-lime/80 p-1.5 shadow-sm"
-                animate={{
-                  boxShadow: [
-                    "0 0 0 0 rgba(214,231,161,0.5)",
-                    "0 0 0 10px rgba(214,231,161,0)",
-                  ],
-                }}
-                transition={{ duration: 2.4, repeat: Infinity }}
-              >
-                <div className="relative size-16 overflow-hidden rounded-full">
-                  <Image
-                    src={profile?.avatarUrl ?? "/images/profile/avatar.jpg"}
-                    alt={firstName}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              </motion.div>
-              <h2 className="mt-4 text-xl font-semibold tracking-tight text-munity-text">
-                {profileLoading ? "..." : fullName}
-              </h2>
-              {profile?.username ? (
-                <p className="mt-1 text-xs font-medium text-munity-muted">
-                  @{profile.username}
-                </p>
-              ) : null}
-              {selectedMood ? (
-                <motion.p
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-3 rounded-full bg-munity-lime/50 px-3 py-1 text-[11px] font-semibold text-munity-olive-text"
-                >
-                  Feeling {selectedMood} today
-                </motion.p>
-              ) : null}
-              <div className="mt-5 flex w-full gap-2">
-                {/* <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
-                  <p className="text-base font-bold text-munity-green">
-                    {store.profile.dayStreak}
-                  </p>
-                  <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
-                    Day Streak
-                  </p>
-                </div> */}
-                <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
-                  <p className="text-base font-bold text-munity-green">
-                    {joinedCommunities.length}
-                  </p>
-                  <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
-                    Group
-                    {joinedCommunities.length === 1 ? "" : "s"}
-                  </p>
-                </div>
-              </div>
-              <Link
-                href={routes.profile}
-                className="mt-4 text-xs font-semibold text-munity-green hover:underline"
-              >
-                View profile
-              </Link>
-            </div>
-          </section>
-
-          {/* <section className={`${cardClass} p-4`}>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-munity-muted">
-                Live now
-              </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f7e4] px-2 py-1 text-[11px] font-semibold text-[#2f6b3a]">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#22c55e] opacity-60" />
-                  <span className="relative inline-flex size-2 rounded-full bg-[#22c55e]" />
-                </span>
-                {Math.max(96, onlineNow)} online
-              </span>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={activityIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.28 }}
-                className="mt-3 text-sm leading-relaxed text-munity-text"
-              >
-                <span className="font-semibold text-munity-green">
-                  {liveActivity[activityIndex]?.who}
-                </span>{" "}
-                {liveActivity[activityIndex]?.action}
-              </motion.p>
-            </AnimatePresence>
-          </section> */}
-
-          <section className={`${cardClass} p-5`}>
-            <div className="mb-3 flex items-center justify-between">
-              <h3 className="text-sm font-semibold tracking-wide text-munity-text">
-                Your Communities
-              </h3>
-              <Link
-                href={routes.communities}
-                className="rounded-full p-1.5 text-munity-green transition hover:bg-munity-lime/40"
-                aria-label="Browse communities"
-              >
-                <Plus className="size-4" />
-              </Link>
-            </div>
-            <div className="flex flex-col gap-1">
-              {joinedCommunities.map((community, index) => (
-                <motion.div
-                  key={community.id}
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                >
-                  <Link
-                    href={communityPath(community.slug)}
-                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left transition hover:bg-munity-sidebar"
-                  >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-munity-lime text-sm font-bold text-munity-olive-text">
-                      {community.name.charAt(0)}
-                    </span>
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-semibold text-munity-text">
-                        {community.name}
-                      </span>
-                      <span className="block text-xs text-munity-muted">
-                        {community.membersLabel}
-                      </span>
-                    </span>
-                  </Link>
-                </motion.div>
-              ))}
-            </div>
-            <Link
-              href={routes.communities}
-              className="mt-3 block rounded-xl py-2 text-center text-xs font-semibold text-munity-green transition hover:bg-munity-lime/30"
-            >
-              View all communities
-            </Link>
-          </section>
-        </motion.aside>
-
+      <div className="relative mx-auto grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Center feed */}
-        <section className="relative flex flex-col gap-5 lg:col-span-6">
-          <DailyMoodCheckin />
+        <section className="flex flex-col gap-5 lg:col-span-8">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -630,12 +279,11 @@ export function HomeFeedView() {
                 <p className="text-xs font-semibold uppercase tracking-[0.12em] text-munity-muted">
                   {greeting}
                 </p>
-                <h1 className="mt-1 text-2xl font-bold tracking-tight text-munity-green">
-                  {profileLoading ? "..." : firstName}, how are you arriving
-                  today?
-                </h1>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-munity-green">
+                  {profileLoading ? "..." : `${fullName}, share with the community`}
+                </h2>
               </div>
-              <MunitySunIcon className="size-5 shrink-0 text-munity-green/70" />
+              <Lightbulb className="size-5 shrink-0 text-munity-green/70" />
             </div>
 
             <div className="flex gap-3 sm:gap-4">
@@ -650,7 +298,7 @@ export function HomeFeedView() {
               <textarea
                 value={composerText}
                 onChange={(event) => setComposerText(event.target.value)}
-                placeholder={`What's on your mind, ${firstName}?`}
+                placeholder={`What would you like to share, ${firstName}?`}
                 className="min-h-24 w-full resize-none rounded-2xl border border-transparent bg-munity-sidebar px-4 py-3.5 text-base text-munity-text outline-none transition placeholder:text-munity-muted/55 focus:border-munity-green/20 focus:bg-white focus:ring-2 focus:ring-munity-green/10"
               />
             </div>
@@ -698,21 +346,9 @@ export function HomeFeedView() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setShowMoods((value) => !value)}
+                  onClick={() => photoInputRef.current?.click()}
                   className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
-                    showMoods || selectedMood
-                      ? "bg-munity-lime/60 text-munity-olive-text"
-                      : "bg-munity-sidebar text-munity-muted hover:bg-munity-lime/40"
-                  }`}
-                >
-                  <Smile className="size-3.5" />
-                  Mood{selectedMood ? ` · ${selectedMood}` : ""}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowPhotoPicker((value) => !value)}
-                  className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
-                    showPhotoPicker || photoPreview
+                    photoPreview
                       ? "bg-munity-lime/60 text-munity-olive-text"
                       : "bg-munity-sidebar text-munity-muted hover:bg-munity-lime/40"
                   }`}
@@ -732,6 +368,41 @@ export function HomeFeedView() {
                   <UserRound className="size-3.5" />
                   {anonymous ? "Anonymous ✓" : "Anonymous"}
                 </button>
+                <select
+                  value={selectedMood ?? ""}
+                  onChange={(event) => {
+                    const value = event.target.value as MoodLabel;
+                    if (value) selectMood(value);
+                  }}
+                  className={`rounded-full px-3.5 py-2 text-xs font-semibold outline-none transition ${
+                    selectedMood
+                      ? "bg-munity-lime/60 text-munity-olive-text"
+                      : "bg-munity-sidebar text-munity-muted hover:bg-munity-lime/40"
+                  }`}
+                  aria-label="Select your mood"
+                >
+                  <option value="" disabled>
+                    Mood
+                  </option>
+                  {moods.map((mood) => (
+                    <option key={mood.label} value={mood.label}>
+                      {mood.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedCommunityId ?? ""}
+                  onChange={(e) => setSelectedCommunityId(e.target.value || null)}
+                  className="rounded-full bg-munity-sidebar px-3.5 py-2 text-xs font-semibold text-munity-muted outline-none transition hover:bg-munity-lime/40"
+                  aria-label="Choose post audience"
+                >
+                  <option value="">Post to: My Feed</option>
+                  {communityOptions.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      Post to: {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <motion.button
                 type="button"
@@ -745,106 +416,34 @@ export function HomeFeedView() {
               >
                 {posting ? "Posting..." : "Post"}
               </motion.button>
-
-              <select
-                value={selectedCommunityId ?? ""}
-                onChange={(e) => setSelectedCommunityId(e.target.value || null)}
-                className="rounded-full bg-munity-sidebar px-3.5 py-2 text-xs font-semibold text-munity-muted outline-none transition hover:bg-munity-lime/40"
-              >
-                <option value="">Post to: My Feed</option>
-                {communityOptions.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    Post to: {c.name}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <AnimatePresence>
-              {showPhotoPicker ? (
+              {selectedMood ? (
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: "auto" }}
                   exit={{ opacity: 0, height: 0 }}
                   className="overflow-hidden"
                 >
-                  <div className="mt-4 rounded-2xl bg-munity-sidebar p-4">
-                    <div className="mb-3 flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-munity-text">
-                        Add a photo to your post
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => photoInputRef.current?.click()}
-                        className="rounded-full bg-munity-green px-3.5 py-1.5 text-xs font-semibold text-white"
-                      >
-                        Upload from device
-                      </button>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                      {demoPhotoLibrary.map((photo) => (
-                        <button
-                          key={photo.id}
-                          type="button"
-                          onClick={() => attachDemoPhoto(photo.src)}
-                          className="group relative aspect-square overflow-hidden rounded-xl border border-munity-border bg-white"
-                          aria-label={`Attach ${photo.label}`}
-                        >
-                          <Image
-                            src={photo.src}
-                            alt={photo.label}
-                            fill
-                            className="object-cover transition group-hover:scale-105"
-                            sizes="96px"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {showMoods ? (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="overflow-hidden"
-                >
-                  <div className="mt-4 grid grid-cols-5 gap-2 rounded-2xl bg-munity-sidebar p-3 sm:gap-3 sm:p-4">
-                    {moods.map((mood) => {
-                      const active = selectedMood === mood.label;
-                      const Icon = moodIcons[mood.label];
-                      return (
-                        <motion.button
-                          key={mood.label}
-                          type="button"
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.94 }}
-                          onClick={() => selectMood(mood.label)}
-                          className={`flex flex-col items-center gap-1.5 rounded-xl px-1 py-2 transition ${
-                            active
-                              ? "bg-white shadow-sm ring-2 ring-munity-green/25"
-                              : "hover:bg-white/70"
-                          }`}
-                        >
-                          <span
-                            className={`flex size-10 items-center justify-center rounded-full ${mood.bg}`}
-                          >
-                            <Icon className="size-9" />
-                          </span>
-                          <span
-                            className={`text-[11px] font-medium ${
-                              active ? "text-munity-green" : "text-munity-muted"
-                            }`}
-                          >
-                            {mood.label}
-                          </span>
-                        </motion.button>
-                      );
-                    })}
+                  <div className="mt-4 flex items-center gap-3 rounded-2xl bg-munity-sidebar p-3">
+                    <span className="flex size-10 items-center justify-center rounded-full bg-white shadow-sm">
+                      {(() => {
+                        const Icon = moodIcons[selectedMood];
+                        return <Icon className="size-9" />;
+                      })()}
+                    </span>
+                    <p className="text-sm font-medium text-munity-text">
+                      Feeling {selectedMood} today
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMood(null)}
+                      className="ml-auto rounded-full p-1.5 text-munity-muted transition hover:bg-white"
+                      aria-label="Clear mood"
+                    >
+                      <X className="size-4" />
+                    </button>
                   </div>
                 </motion.div>
               ) : null}
@@ -879,7 +478,7 @@ export function HomeFeedView() {
                 <p className="text-sm text-munity-muted">
                   {search.trim()
                     ? `No posts match “${search.trim()}”.`
-                    : "No posts yet — share how you’re arriving today."}
+                    : "No posts yet — share something supportive with the community."}
                 </p>
                 {search.trim() ? (
                   <button
@@ -902,7 +501,6 @@ export function HomeFeedView() {
               return (
                 <motion.article
                   key={post.id}
-                  id={`post-${post.id}`}
                   layout
                   initial={{ opacity: 0, y: 18 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -911,7 +509,7 @@ export function HomeFeedView() {
                     delay: Math.min(index * 0.04, 0.2),
                     duration: 0.3,
                   }}
-                  className={`${cardClass} p-5 sm:p-6`} //${post.accent ? "border-l-4 border-l-munity-green" : ""}
+                  className={`${cardClass} p-5 sm:p-6`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
@@ -922,9 +520,7 @@ export function HomeFeedView() {
                       ) : (
                         <div className="relative size-10 overflow-hidden rounded-full">
                           <Image
-                            src={
-                              post.avatarUrl ?? "/images/home-feed/sarah.jpg"
-                            }
+                            src={post.avatarUrl ?? "/images/home-feed/sarah.jpg"}
                             alt={post.author}
                             fill
                             className="object-cover"
@@ -956,7 +552,7 @@ export function HomeFeedView() {
                       </div>
                     </div>
 
-                    <div className="relative">
+                    <div className="relative" data-post-menu>
                       <button
                         type="button"
                         className="rounded-full p-1.5 text-munity-muted transition hover:bg-munity-sidebar hover:text-munity-text"
@@ -1059,18 +655,9 @@ export function HomeFeedView() {
                           : "text-munity-muted"
                       }`}
                     >
-                      <motion.span
-                        animate={
-                          justSupported === post.id
-                            ? { scale: [1, 1.35, 1] }
-                            : { scale: 1 }
-                        }
-                        transition={{ duration: 0.35 }}
-                      >
-                        <Heart
-                          className={`size-4 ${supported ? "fill-current" : ""}`}
-                        />
-                      </motion.span>
+                      <Heart
+                        className={`size-4 ${supported ? "fill-current" : ""}`}
+                      />
                       Support · {post.supportCount}
                     </motion.button>
                     <button
@@ -1189,10 +776,11 @@ export function HomeFeedView() {
 
         {/* Right sidebar */}
         <motion.aside
-          className="relative flex flex-col gap-5 lg:col-span-3"
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.35 }}
+          className="flex flex-col gap-5 lg:col-span-4"
+          variants={fadeUp}
+          initial="hidden"
+          animate="show"
+          transition={{ duration: 0.35 }}
         >
           <section className="relative overflow-hidden rounded-[20px] bg-munity-olive p-5 shadow-[0_4px_10px_rgba(85,107,47,0.08)]">
             <div className="pointer-events-none absolute -bottom-10 -right-10 size-36 rounded-full bg-munity-lime-light/15 blur-2xl" />
@@ -1216,205 +804,61 @@ export function HomeFeedView() {
               </AnimatePresence>
               <button
                 type="button"
-                onClick={() => startBreathing}
+                onClick={() => setMomentIndex((value) => (value + 1) % mindfulMoments.length)}
                 className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-munity-lime-light underline underline-offset-4 transition hover:opacity-80"
               >
                 <Wind className="size-3.5" />
-                Try it now
+                Another one
               </button>
-            </div>
-          </section>
-
-          <section className={`${cardClass} p-5`}>
-            <h3 className="text-sm font-semibold tracking-wide text-munity-text">
-              Suggested Groups
-            </h3>
-            <div className="mt-4 flex flex-col gap-3">
-              {suggestedGroups.map((group) => (
-                <div
-                  key={group.id}
-                  className="flex items-center justify-between gap-3"
-                >
-                  <Link
-                    href={communityPath(group.slug)}
-                    className="flex min-w-0 items-center gap-3"
-                  >
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#d9eaa3] text-sm font-bold text-[#161f00]">
-                      {group.name.charAt(0)}
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-munity-text">
-                        {group.name}
-                      </p>
-                      <p className="text-[11px] text-munity-muted">
-                        {group.membersLabel}
-                      </p>
-                    </div>
-                  </Link>
-                  <motion.button
-                    type="button"
-                    whileTap={{ scale: 0.94 }}
-                    onClick={async () => {
-                      try {
-                        await joinCommunity(group.id);
-                        flash(`Joined ${group.name}`);
-                        refreshCommunities();
-                      } catch (error) {
-                        flash(
-                          error instanceof Error
-                            ? error.message
-                            : "Couldn't join community",
-                        );
-                      }
-                    }}
-                    className="shrink-0 rounded-full border border-munity-green/70 px-3 py-1.5 text-xs font-semibold text-munity-green transition hover:bg-munity-lime/40"
-                  >
-                    Join
-                  </motion.button>
-                </div>
-              ))}
             </div>
           </section>
 
           <section className={`${cardClass} p-5`}>
             <div className="flex items-center justify-between gap-2">
               <h3 className="text-sm font-semibold tracking-wide text-munity-text">
-                Available Therapists
+                Communities
               </h3>
               <Link
-                href={routes.therapy}
-                className="text-[11px] font-semibold text-munity-green hover:underline"
+                href={routes.communities}
+                className="rounded-full p-1.5 text-munity-green transition hover:bg-munity-lime/40"
+                aria-label="Browse communities"
               >
-                See all
+                <Plus className="size-4" />
               </Link>
             </div>
             <div className="mt-3 flex flex-col gap-1">
-              {therapists.map((therapist, index) => (
+              {communityOptions.slice(0, 5).map((community) => (
                 <Link
-                  key={therapist.id}
-                  href={therapyPath(therapist.id)}
+                  key={community.id}
+                  href={communityPath(community.slug)}
                   className="flex items-center gap-3 rounded-xl px-2 py-2.5 transition hover:bg-munity-sidebar"
                 >
-                  <div className="relative size-10 shrink-0 overflow-hidden rounded-full">
-                    <Image
-                      src={
-                        therapist.avatarUrl ?? "/images/avatar-placeholder.png"
-                      }
-                      alt={therapist.name}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-munity-text">
-                      {therapist.name}
-                    </p>
-                    <p className="text-[11px] text-munity-muted">
-                      {therapist.specialties[0] ?? therapist.credentials}
-                    </p>
-                  </div>
-                  <span
-                    className={`size-2.5 shrink-0 rounded-full ring-2 ring-white ${
-                      index === 0 ? "bg-[#22c55e]" : "bg-[#fb923c]"
-                    }`}
-                    aria-label={index === 0 ? "online" : "away"}
-                  />
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-munity-lime text-sm font-bold text-munity-olive-text">
+                    {community.name.charAt(0)}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-munity-text">
+                      {community.name}
+                    </span>
+                  </span>
                 </Link>
               ))}
             </div>
           </section>
+
+          <section className={`${cardClass} p-5`}>
+            <h3 className="text-sm font-semibold tracking-wide text-munity-text">
+              Guidelines
+            </h3>
+            <p className="mt-2 text-[13px] leading-relaxed text-munity-muted">
+              This is a shared peer-support space. Posts are member-initiated —
+              as a therapist, keep replies general and supportive. For clinical
+              guidance, invite members to book a session through Appointments.
+            </p>
+          </section>
         </motion.aside>
       </div>
-      <AnimatePresence>
-        {toast ? (
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-full bg-munity-green px-5 py-3 text-sm font-semibold text-white shadow-lg"
-          >
-            {toast}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-      <AnimatePresence>
-        {breathing ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
-          >
-            <motion.div
-              initial={{ scale: 0.92, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.96, opacity: 0 }}
-              className="relative w-full max-w-sm rounded-[28px] bg-munity-bg p-8 text-center shadow-2xl"
-            >
-              <button
-                type="button"
-                onClick={() => stopBreathing}
-                className="absolute right-4 top-4 rounded-full p-2 text-munity-muted hover:bg-white"
-                aria-label="Close breathing exercise"
-              >
-                <X className="size-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setAudioMuted((value) => !value)}
-                className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-2 text-xs font-semibold text-munity-green shadow-sm"
-                aria-label={
-                  audioMuted ? "Unmute calm audio" : "Mute calm audio"
-                }
-              >
-                {audioMuted ? (
-                  <VolumeX className="size-3.5" />
-                ) : (
-                  <Volume2 className="size-3.5" />
-                )}
-                {audioMuted ? "Muted" : "Sound on"}
-              </button>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-munity-muted">
-                Box breathing
-              </p>
-              <motion.div
-                className="mx-auto mt-8 flex size-36 items-center justify-center rounded-full bg-munity-lime/50"
-                animate={{
-                  scale:
-                    breathPhase === "Inhale"
-                      ? 1.15
-                      : breathPhase === "Exhale"
-                        ? 0.88
-                        : 1,
-                }}
-                transition={{ duration: 0.9, ease: "easeInOut" }}
-              >
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-munity-green">
-                    {breathPhase}
-                  </p>
-                  <p className="mt-1 text-4xl font-bold text-munity-olive-text">
-                    {breathCount}
-                  </p>
-                </div>
-              </motion.div>
-              <p className="mt-6 text-sm text-munity-muted">
-                Follow the circle. Soft ambient audio swells with your breath.
-              </p>
-              <button
-                type="button"
-                onClick={() => {
-                  stopBreathing();
-                  flash("Nice — breathe breaks help reset your day");
-                }}
-                className="mt-6 rounded-full bg-munity-green px-6 py-2.5 text-sm font-semibold text-white"
-              >
-                Done
-              </button>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
+
       <ReportDialog
         open={reportTarget !== null}
         onClose={() => setReportTarget(null)}
@@ -1442,6 +886,6 @@ export function HomeFeedView() {
         flash={flash}
         onSaved={refresh}
       />
-    </MemberAppShell>
+    </TherapistAppShell>
   );
 }

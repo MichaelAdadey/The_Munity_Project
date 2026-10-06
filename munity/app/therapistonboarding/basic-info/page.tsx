@@ -15,6 +15,7 @@ export default function BasicInfoPage() {
   const [title, setTitle] = useState("");
   const [gender, setGender] = useState("");
   const [practiceLocation, setPracticeLocation] = useState("");
+  const [exactPracticeLocation, setExactPracticeLocation] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [professionalTitle, setProfessionalTitle] = useState("");
@@ -30,6 +31,7 @@ export default function BasicInfoPage() {
       setTitle(saved.title);
       setGender(saved.gender);
       setPracticeLocation(saved.practiceLocation);
+      setExactPracticeLocation(saved.exactPracticeLocation ?? "");
       setFirstName(saved.firstName);
       setLastName(saved.lastName);
       setProfessionalTitle(saved.professionalTitle);
@@ -45,6 +47,7 @@ export default function BasicInfoPage() {
       title,
       gender,
       practiceLocation,
+      exactPracticeLocation,
       firstName,
       lastName,
       professionalTitle,
@@ -57,6 +60,7 @@ export default function BasicInfoPage() {
     title,
     gender,
     practiceLocation,
+    exactPracticeLocation,
     firstName,
     lastName,
     professionalTitle,
@@ -88,6 +92,10 @@ export default function BasicInfoPage() {
         }
         if (!practiceLocation) {
           window.alert("Please select your practice location.");
+          return false;
+        }
+        if (!exactPracticeLocation.trim()) {
+          window.alert("Please enter the exact location of your practice.");
           return false;
         }
         return true;
@@ -143,6 +151,7 @@ export default function BasicInfoPage() {
           title,
           gender,
           practiceLocation,
+          exactPracticeLocation: exactPracticeLocation.trim(),
           firstName: String(formData.get("firstName") || "").trim(),
           lastName: String(formData.get("lastName") || "").trim(),
           professionalTitle: String(formData.get("professionalTitle") || "").trim(),
@@ -228,18 +237,30 @@ export default function BasicInfoPage() {
             required
           />
         </Field>
-        <div className="md:col-span-2">
-          <Select
-            label="Practice Location"
-            placeholder="Select region"
-            options={[...ghanaRegions]}
-            value={practiceLocation}
-            onChange={(value) => {
+        <Select
+          label="Practice Location (Region)"
+          placeholder="Select region"
+          options={[...ghanaRegions]}
+          value={practiceLocation}
+          onChange={(value) => {
+            setDirty(true);
+            setPracticeLocation(value);
+          }}
+        />
+        <Field label="Exact Practice Location">
+          <input
+            type="text"
+            name="exactPracticeLocation"
+            placeholder="e.g. 12 Ring Road East, Osu, Accra"
+            className="input-field"
+            value={exactPracticeLocation}
+            onChange={(e) => {
               setDirty(true);
-              setPracticeLocation(value);
+              setExactPracticeLocation(e.target.value);
             }}
+            required
           />
-        </div>
+        </Field>
       </div>
 
       <div className="mt-10 border-t border-munity-border/60 pt-8">

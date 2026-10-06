@@ -191,14 +191,14 @@ Join → Onboarding (4 steps) → Review screen → Clinical app
 | 4️⃣ Payout | `/therapistonboarding/payout` |
 | ✅ Review | `/therapistcredentialauth` |
 | 🏥 Dashboard | `/therapistdashboard` |
-| 👥 Patients | `/therapistpatients` (+ per-patient notes, progress, files, care plan) |
+| 👥 Patients | `/therapistpatients` (+ per-patient notes, progress, files) |
 | 📝 Clinical notes | `/therapistclinicalnotes` |
 | 📅 Appointments | `/therapistappointments` (live session overlays) |
 | 💬 Messages | `/therapistmessages` |
 | 📊 Analytics | `/therapistanalytics` |
 | 👤 Profile | `/therapistprofile` (editable) |
 | 🔔 Notifications | `/therapistnotifications` |
-| ⚙️ Settings · files · care plan · availability | Matching `/therapist*` routes |
+| ⚙️ Settings · files · availability | Matching `/therapist*` routes |
 
 Onboarding drafts persist in `localStorage` with validation across steps; read-only previews on the review screen.
 

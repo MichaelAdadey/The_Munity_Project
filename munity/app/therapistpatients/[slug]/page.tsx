@@ -3,6 +3,8 @@ import { PatientOverviewView } from "@/components/therapistpatients/PatientOverv
 import { requireRole } from "@/lib/require-role";
 import { routes } from "@/lib/routes";
 import { getTherapistPatientById } from "@/lib/therapist/patients-queries";
+import { getClinicianNoteForPatient } from "@/lib/therapist/clinician-notes-queries";
+import { getMoodEntriesForPatient } from "@/lib/mood/mood-queries";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -17,5 +19,17 @@ export default async function PatientOverviewPage({ params }: PageProps) {
     notFound();
   }
 
-  return <PatientOverviewView patient={patient} />;
+  const [clinicianNote, moodEntries] = await Promise.all([
+    getClinicianNoteForPatient(user.id, patient.id),
+    getMoodEntriesForPatient(patient.id, 30),
+  ]);
+
+  return (
+    <PatientOverviewView
+      patient={patient}
+      therapistId={user.id}
+      initialClinicianNote={clinicianNote?.body ?? ""}
+      moodEntries={moodEntries}
+    />
+  );
 }

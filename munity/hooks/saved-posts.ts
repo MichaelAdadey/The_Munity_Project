@@ -42,6 +42,8 @@ type SavedPostRow = {
           profiles: { first_name: string; last_name: string } | null;
         }[]
       | null;
+    community_id: string | null;
+    communities: { name: string; slug: string } | null;
   } | null;
 };
 
@@ -83,7 +85,9 @@ const fetchSavedPosts = async (): Promise<FeedPayLoad> => {
             content,
             created_at,
             profiles!post_comments_author_id_fkey ( first_name, last_name )
-          )
+          ),
+          community_id,
+          communities ( name, slug )
         )`,
     )
     .eq("user_id", user.id)
@@ -142,6 +146,9 @@ const fetchSavedPosts = async (): Promise<FeedPayLoad> => {
         supportedByMe: supports.some((s) => s.user_id === me),
         savedByMe: true, // it's in this list, so it's saved
         isMine: me === post.author_id,
+        communityId: post.community_id ?? null,
+        communityName: post.communities?.name ?? null,
+        communitySlug: post.communities?.slug ?? null,
       };
     });
 

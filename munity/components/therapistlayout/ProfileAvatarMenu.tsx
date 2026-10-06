@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, LogOut, Palette, User } from "lucide-react";
+import { Calendar, LogOut, Newspaper, Palette, User } from "lucide-react";
 // import { signOut } from "@/app/(auth)/actions";
 import { ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
@@ -20,6 +20,11 @@ import { useCurrentProfile } from "@/hooks/use-current-profile";
 
 const profileMenuItems = [
   { label: "My Profile", href: routes.therapistProfile, icon: User },
+  {
+    label: "Community Feed",
+    href: routes.feedCommunity,
+    icon: Newspaper,
+  },
   {
     label: "My Appointments",
     href: routes.therapistAppointments,

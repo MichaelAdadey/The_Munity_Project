@@ -104,6 +104,12 @@ export function TherapistDetailView({
                   {therapist.location}
                 </p>
               ) : null}
+              {therapist.exactLocation ? (
+                <p className="mt-1.5 inline-flex items-center gap-2 text-sm text-munity-muted">
+                  <MapPin className="size-4" />
+                  {therapist.exactLocation}
+                </p>
+              ) : null}
               <div className="mt-5 flex flex-wrap gap-2">
                 {therapist.specialties.map((tag) => (
                   <span

@@ -7,7 +7,6 @@ import {
   FileText,
   TrendingUp,
   FolderOpen,
-  Briefcase,
   Users,
   Calendar,
   Clock,
@@ -16,6 +15,7 @@ import {
   NotebookPen,
   ChartColumn,
   MessageCircle,
+  Newspaper,
 } from "lucide-react";
 import type { OnboardingStepId, PatientNavSection, PatientSlug } from "@/lib/routes";
 import { onboardingSteps, patientNavHref, patientRoutes, routes } from "@/lib/routes";
@@ -25,8 +25,7 @@ export type PatientNavItem =
   | "Overview"
   | "Clinical Notes"
   | "Progress"
-  | "Files"
-  | "Care Plan";
+  | "Files";
 
 interface PatientSidebarProps {
   active: PatientNavItem;
@@ -44,7 +43,6 @@ const navItems: { label: PatientNavItem; section: PatientNavSection; icon: React
   { label: "Clinical Notes", section: "Clinical Notes", icon: FileText },
   { label: "Progress", section: "Progress", icon: TrendingUp },
   { label: "Files", section: "Files", icon: FolderOpen },
-  { label: "Care Plan", section: "Care Plan", icon: Briefcase },
 ];
 
 export function PatientSidebar({
@@ -208,13 +206,13 @@ export function OnboardingSidebar({
 
 export type TherapistNavItem =
   | "Dashboard"
+  | "Community Feed"
   | "Appointments"
   | "Messages"
   | "Patients"
   | "Sessions"
   | "Analysis"
   | "Files"
-  | "Care Plan"
   | "Availability"
   | "Profile"
   | "Settings";
@@ -229,6 +227,7 @@ const therapistNavItems: {
   icon: React.ElementType;
 }[] = [
   { label: "Dashboard", href: routes.therapistDashboard, icon: LayoutGrid },
+  { label: "Community Feed", href: routes.feedCommunity, icon: Newspaper },
   { label: "Appointments", href: routes.therapistAppointments, icon: Calendar },
   { label: "Messages", href: routes.therapistMessages, icon: MessageCircle },
   { label: "Patients", href: routes.therapistPatients, icon: Users },

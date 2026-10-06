@@ -166,6 +166,7 @@ function BasicInfoPreview({ data }: { data: OnboardingStepDataMap["basic-info"] 
     data.professionalTitle,
     data.phone,
     optionLabel(ghanaRegions, data.practiceLocation),
+    data.exactPracticeLocation,
     data.email,
   ];
   const complete = fields.filter((value) => isFilled(value)).length;
@@ -182,8 +183,14 @@ function BasicInfoPreview({ data }: { data: OnboardingStepDataMap["basic-info"] 
         <PreviewField label="Phone Number" value={data.phone} />
         <div className="md:col-span-2">
           <PreviewField
-            label="Practice Location"
+            label="Practice Location (Region)"
             value={optionLabel(ghanaRegions, data.practiceLocation)}
+          />
+        </div>
+        <div className="md:col-span-2">
+          <PreviewField
+            label="Exact Practice Location"
+            value={data.exactPracticeLocation}
           />
         </div>
         <PreviewField label="Email Address" value={data.email} />

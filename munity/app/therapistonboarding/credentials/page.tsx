@@ -14,6 +14,10 @@ import {
 } from "@/lib/ghana-therapist";
 import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
 import { routes } from "@/lib/routes";
+import {
+  removeCredentialDocument,
+  uploadCredentialDocument,
+} from "@/lib/therapist/credential-document-upload";
 
 export default function CredentialsPage() {
   const [licenseType, setLicenseType] = useState("");
@@ -22,6 +26,7 @@ export default function CredentialsPage() {
   const [registrationNumber, setRegistrationNumber] = useState("");
   const [yearsOfExperience, setYearsOfExperience] = useState(5);
   const [documentName, setDocumentName] = useState("");
+  const [documentPath, setDocumentPath] = useState("");
   const [hydrated, setHydrated] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -34,6 +39,7 @@ export default function CredentialsPage() {
       setRegistrationNumber(saved.registrationNumber);
       setYearsOfExperience(saved.yearsOfExperience);
       setDocumentName(saved.documentName);
+      setDocumentPath(saved.documentPath);
     }
     setHydrated(true);
   }, []);
@@ -47,6 +53,7 @@ export default function CredentialsPage() {
       registrationNumber,
       yearsOfExperience,
       documentName,
+      documentPath,
     });
   }, [
     hydrated,
@@ -77,7 +84,7 @@ export default function CredentialsPage() {
           window.alert("Please complete all credential fields.");
           return false;
         }
-        if (!documentName) {
+        if (!documentPath) {
           window.alert("Please upload your verification document.");
           return false;
         }
@@ -91,6 +98,7 @@ export default function CredentialsPage() {
           registrationNumber,
           yearsOfExperience,
           documentName,
+          documentPath,
         });
       }}
       footer={
@@ -173,9 +181,19 @@ export default function CredentialsPage() {
           <p className="mt-2 text-sm text-munity-muted">Previously uploaded: {documentName}</p>
         ) : null}
         <FileUpload
-          onFileChange={(file) => {
+          onFileChange={async (file) => {
             setDirty(true);
-            setDocumentName(file?.name ?? "");
+            if (!file) return;
+            const result = await uploadCredentialDocument(file);
+            if ("error" in result) {
+              window.alert(`Document upload failed: ${result.error}`);
+              return;
+            }
+            if (documentPath) {
+              void removeCredentialDocument(documentPath);
+            }
+            setDocumentName(result.displayName);
+            setDocumentPath(result.path);
           }}
         />
       </div>

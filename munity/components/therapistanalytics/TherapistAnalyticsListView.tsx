@@ -8,14 +8,22 @@ import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShel
 import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
 import { patientRoutes } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
+import type { PatientMoodSummary } from "@/lib/mood/mood-queries";
+import { MOOD_LABELS } from "@/lib/mood/mood-scale";
 
 interface TherapistAnalyticsListViewProps {
   patients: TherapistPatient[];
+  /** Keyed by patient id — mood check-ins over the last 30 days. */
+  moodByPatient?: Record<string, PatientMoodSummary>;
 }
 
-export function TherapistAnalyticsListView({ patients }: TherapistAnalyticsListViewProps) {
+export function TherapistAnalyticsListView({
+  patients,
+  moodByPatient = {},
+}: TherapistAnalyticsListViewProps) {
   const activeCount = patients.filter((p) => p.status === "Active").length;
   const totalSessions = patients.reduce((sum, p) => sum + p.sessionCount, 0);
+  const totalCheckins = Object.values(moodByPatient).reduce((sum, m) => sum + m.checkinCount, 0);
 
   const overviewStats = [
     {
@@ -28,6 +36,12 @@ export function TherapistAnalyticsListView({ patients }: TherapistAnalyticsListV
       label: "Total Sessions",
       value: String(totalSessions),
       detail: "Across all patients",
+      icon: TrendingUp,
+    },
+    {
+      label: "Mood Check-ins",
+      value: String(totalCheckins),
+      detail: "Logged in the last 30 days",
       icon: TrendingUp,
     },
   ];
@@ -113,9 +127,7 @@ export function TherapistAnalyticsListView({ patients }: TherapistAnalyticsListV
               </Link>
             </div>
 
-            {/* NOTE: mood score, symptom change, and attendance aren't backed by real
-                assessment data yet — showing real session counts and dates instead. */}
-            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                   Sessions
@@ -136,6 +148,24 @@ export function TherapistAnalyticsListView({ patients }: TherapistAnalyticsListV
                 <p className="mt-2 text-lg font-bold text-munity-text">
                   {patient.nextSessionLabel ?? "None scheduled"}
                 </p>
+              </div>
+              <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
+                <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
+                  Mood (30d)
+                </p>
+                {moodByPatient[patient.id]?.latestMood ? (
+                  <>
+                    <p className="mt-2 text-lg font-bold text-munity-text">
+                      {MOOD_LABELS[moodByPatient[patient.id].latestMood!]}
+                    </p>
+                    <p className="mt-1 text-xs text-munity-muted">
+                      {moodByPatient[patient.id].checkinCount} check-in
+                      {moodByPatient[patient.id].checkinCount === 1 ? "" : "s"} logged
+                    </p>
+                  </>
+                ) : (
+                  <p className="mt-2 text-sm text-munity-muted">No check-ins yet</p>
+                )}
               </div>
             </div>
           </motion.section>
