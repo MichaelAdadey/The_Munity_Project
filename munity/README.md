@@ -41,9 +41,9 @@ Use these when Supabase is **not** configured. Login screens also show and pre-f
 
 | | |
 | --- | --- |
-| **Name** | Alex Rivera |
-| **Email** | `alex.rivera@munity.app` |
-| **Password** | `User1234!` |
+| **Name** | Fred Revss |
+| **Email** | `example@gmail.com` |
+| **Password** | `123456ab` |
 | **Login** | [`/login`](http://localhost:3000/login) |
 | **Opens** | `/home` — feed, communities, full Resources nav |
 | **Access** | Member experience only |
@@ -57,9 +57,9 @@ Password: 123456ab
 
 | | |
 | --- | --- |
-| **Name** | Dr. Elena Aris |
-| **Email** | `elena.aris@munity.app` |
-| **Password** | `Therapist1234!` |
+| **Name** | Jason Akoto |
+| **Email** | `therapist1@gmail.com` |
+| **Password** | `therapist123` |
 | **Login** | [`/therapistlogin`](http://localhost:3000/therapistlogin) |
 | **Opens** | `/therapistdashboard` — schedule, patients, clinical tools |
 | **Access** | Therapist clinical app |
@@ -73,8 +73,8 @@ Password: therapist123
 
 | | |
 | --- | --- |
-| **Name** | Munity Admin |
-| **Email** | `admin@munity.app` |
+| **Name** | Tracy Admin |
+| **Email** | `admin2@gmail.com` |
 | **Password** | `Admin1234!` |
 | **Login** | [`/admin/login`](http://localhost:3000/admin/login) |
 | **Opens** | `/admin` — applications, members, support overview |
