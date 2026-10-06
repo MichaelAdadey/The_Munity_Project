@@ -103,15 +103,23 @@ export const fetchAppointmentsForRange = async (
   } = await supabase.auth.getUser();
   if (!user) return [];
 
-  const { data: bookingsRaw, error } = await supabase
-    .from("bookings")
-    .select("id, scheduled_at, status, session_type, patient_id")
-    .eq("therapist_id", user.id)
-    .gte("scheduled_at", rangeStart)
-    .lte("scheduled_at", rangeEnd)
-    .order("scheduled_at", { ascending: true });
+  const [{ data: bookingsRaw, error }, { data: myDetails }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("id, scheduled_at, status, session_type, patient_id")
+      .eq("therapist_id", user.id)
+      .gte("scheduled_at", rangeStart)
+      .lte("scheduled_at", rangeEnd)
+      .order("scheduled_at", { ascending: true }),
+    supabase
+      .from("therapist_details")
+      .select("practice_location")
+      .eq("profile_id", user.id)
+      .maybeSingle(),
+  ]);
 
   if (error) throw new Error(error.message);
+  const practiceLocation = myDetails?.practice_location ?? null;
 
   const bookings = bookingsRaw ?? [];
   const patientIds = Array.from(
@@ -140,6 +148,7 @@ export const fetchAppointmentsForRange = async (
       time: scheduledAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       isToday: scheduledAt.toDateString() === now.toDateString(),
       isPast: scheduledAt.getTime() < now.getTime(),
+      location: practiceLocation,
     };
   });
 };
