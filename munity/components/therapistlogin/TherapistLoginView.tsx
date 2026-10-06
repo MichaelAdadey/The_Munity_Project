@@ -5,16 +5,16 @@ import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import {
-  signInAsTherapist,
+  
   signInWithGoogleAsTherapistLogin,
-  type TherapistLoginState,
+  
 } from "@/app/therapistlogin/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
-import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
+// import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
-import { getMockAccountByRole } from "@/lib/mock-credentials";
+// import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
 import { AuthActionState, signInTherapist } from "@/lib/auth/actions";
 
@@ -50,7 +50,7 @@ function GoogleSubmitButton() {
     <Button
       type="submit"
       variant="secondary"
-      className="h-[54px] w-full rounded-xl"
+      className="h-13.5 w-full rounded-xl"
       loading={pending}
       loadingLabel="Connecting with Google…"
     >
@@ -122,7 +122,7 @@ export function TherapistLoginView() {
   //   undefined,
   // );
   const [state, formAction] = useActionState(signInTherapist, initialState)
-  const demoTherapist = getMockAccountByRole("therapist");
+  // const demoTherapist = getMockAccountByRole("therapist");
 
   return (
     <AuthShell
@@ -152,13 +152,13 @@ export function TherapistLoginView() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-6">
+      <div className="flex w-full max-w-120 flex-col gap-6">
         <AuthBrandHeader
           title="Welcome Back"
           subtitle="Sign in with your approved therapist credentials"
         />
 
-        <MockCredentialsHint role="therapist" />
+        {/* <MockCredentialsHint role="therapist" /> */}
 
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10 py-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
@@ -177,7 +177,7 @@ export function TherapistLoginView() {
               placeholder="name@example.com"
               icon={Mail}
               autoComplete="email"
-              defaultValue={demoTherapist.email}
+              // defaultValue={demoTherapist.email}
             />
 
             <div className="flex flex-col gap-2">
@@ -200,7 +200,7 @@ export function TherapistLoginView() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  defaultValue={demoTherapist.password}
+                  // defaultValue={demoTherapist.password}
                   required
                   className="auth-input pr-12"
                 />

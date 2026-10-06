@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import {
   Camera,
   ChevronDown,
-  Flame,
   Heart,
   ImageIcon,
   MapPin,
@@ -18,7 +17,6 @@ import {
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
 import {
-  LivePulse,
   liveFadeUp,
   liveStagger,
   useLiveToast,
@@ -31,7 +29,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useMockStore } from "@/lib/mock-store";
+// import { useMockStore } from "@/lib/mock-store";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import {
@@ -221,7 +219,7 @@ function MoodLineChart() {
 }
 
 export function MemberProfileView() {
-  const store = useMockStore();
+  // const store = useMockStore();
   const { flash } = useLiveToast();
   const {
     profile,
@@ -438,7 +436,7 @@ export function MemberProfileView() {
                   type="button"
                   onClick={() => setAvatarViewerOpen(true)}
                   aria-label="View profile photo"
-                  className="relative size-full cursor-zoom-in overflow-hidden rounded-full border-4 border-[#fbf9f8] bg-white shadow-xl"
+                  className="relative size-full cursor-zoom-in overflow-hidden rounded-full border-4 border-munity-bg bg-white shadow-xl"
                 >
                   <ProfileMedia
                     src={avatarSrc}
@@ -452,7 +450,7 @@ export function MemberProfileView() {
                   type="button"
                   onClick={() => setPhotoTarget("avatar")}
                   aria-label="Change profile photo"
-                  className="absolute -bottom-1 -right-1 flex size-9 items-center justify-center rounded-full border-2 border-[#fbf9f8] bg-munity-green text-white shadow-md transition hover:bg-munity-green-dark"
+                  className="absolute -bottom-1 -right-1 flex size-9 items-center justify-center rounded-full border-2 border-munity-bg bg-munity-green text-white shadow-md transition hover:bg-munity-green-dark"
                 >
                   <Camera className="size-4" />
                 </button>
@@ -659,7 +657,7 @@ export function MemberProfileView() {
 
           {/* Right column */}
           <div className="flex flex-col gap-6 xl:col-span-4">
-            <section className="relative overflow-hidden rounded-3xl bg-munity-green p-8 text-center shadow-xl">
+            {/* <section className="relative overflow-hidden rounded-3xl bg-munity-green p-8 text-center shadow-xl">
               <div className="absolute -right-12 -top-12 size-32 rounded-full bg-[rgba(214,231,161,0.2)] blur-2xl" />
               <Flame
                 className="mx-auto size-12 text-munity-lime"
@@ -680,7 +678,7 @@ export function MemberProfileView() {
               <p className="mt-4 text-xs font-medium leading-relaxed text-white/70">
                 Only 7 days left to reach your Monthly Goal!
               </p>
-            </section>
+            </section> */}
 
             <section className="flex flex-col gap-4 rounded-[20px] bg-[#eae8e7] p-6">
               <div className="flex items-center gap-2">
