@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "../supabase/client";
 
 export type CommunityOption = {
@@ -33,18 +33,23 @@ export const fetchCommunityOptions = async (): Promise<CommunityOption[]> => {
 export const useCommunityOptions = (flash: (message: string) => void) => {
   const [options, setOptions] = useState<CommunityOption[]>([]);
 
+  const flashRef = useRef(flash);
+  useEffect(() => {
+    flashRef.current = flash;
+  }, [flash]);
+
   const load = useCallback(() => {
     void (async () => {
       try {
         const data = await fetchCommunityOptions();
         setOptions(data);
       } catch (error) {
-        flash(
+        flashRef.current(
           error instanceof Error ? error.message : "Couldn't load communities",
         );
       }
     })();
-  }, [flash]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -118,34 +123,43 @@ export const useMyCommunities = (flash: (message: string) => void) => {
   const [membershipIds, setMembershipIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const flashRef = useRef(flash);
+  useEffect(() => {
+    flashRef.current = flash;
+  }, [flash]);
+
   const load = useCallback(() => {
     void (async () => {
       try {
-        const [communities, ids] = await Promise.all([
-          await fetchCommunitiesWithCounts(),
-          await fetchMyMembershipIds(),
+        const [communitiesResult, ids] = await Promise.all([
+          fetchCommunitiesWithCounts(),
+          fetchMyMembershipIds(),
         ]);
-        setCommunities(communities);
+        setCommunities(communitiesResult);
         setMembershipIds(ids);
       } catch (error) {
-        flash(
+        flashRef.current(
           error instanceof Error ? error.message : "Couldn't load communities",
         );
       } finally {
         setLoading(false);
       }
     })();
-  }, [flash]);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(load, 0);
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  return {
-    joined: communities.filter((c) => membershipIds.includes(c.id)),
-    suggested: communities.filter((c) => !membershipIds.includes(c.id)),
-    loading,
-    refresh: load,
-  };
+  const joined = useMemo(
+    () => communities.filter((c) => membershipIds.includes(c.id)),
+    [communities, membershipIds],
+  );
+  const suggested = useMemo(
+    () => communities.filter((c) => !membershipIds.includes(c.id)),
+    [communities, membershipIds],
+  );
+
+  return { joined, suggested, loading, refresh: load };
 };
