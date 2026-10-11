@@ -23,7 +23,10 @@ export function TherapistAnalyticsListView({
 }: TherapistAnalyticsListViewProps) {
   const activeCount = patients.filter((p) => p.status === "Active").length;
   const totalSessions = patients.reduce((sum, p) => sum + p.sessionCount, 0);
-  const totalCheckins = Object.values(moodByPatient).reduce((sum, m) => sum + m.checkinCount, 0);
+  const totalCheckins = Object.values(moodByPatient).reduce(
+    (sum, m) => sum + m.checkinCount,
+    0,
+  );
 
   const overviewStats = [
     {
@@ -81,9 +84,18 @@ export function TherapistAnalyticsListView({
             >
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-munity-muted">{stat.label}</p>{index === 0 ? <LivePulse label="Live" /> : null}</div>
-                  <p className="mt-2 text-3xl font-bold text-munity-text">{stat.value}</p>
-                  <p className="mt-1 text-sm text-munity-green">{stat.detail}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-munity-muted">
+                      {stat.label}
+                    </p>
+                    {index === 0 ? <LivePulse label="Live" /> : null}
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-munity-text">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-sm text-munity-green">
+                    {stat.detail}
+                  </p>
                 </div>
                 <div className="flex size-11 items-center justify-center rounded-xl bg-munity-lime/50">
                   <Icon className="size-5 text-munity-green" />
@@ -109,10 +121,17 @@ export function TherapistAnalyticsListView({
                 className="flex items-center gap-4 transition hover:opacity-80"
               >
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-xl">
-                  <Image src={patient.avatar} alt={patient.name} fill className="object-cover" />
+                  <Image
+                    src={patient.avatar}
+                    alt={patient.name}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold text-munity-text">{patient.name}</p>
+                  <p className="font-semibold text-munity-text">
+                    {patient.name}
+                  </p>
                   <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                     {patient.clientId} · {patient.status}
                   </p>
@@ -132,14 +151,20 @@ export function TherapistAnalyticsListView({
                 <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                   Sessions
                 </p>
-                <p className="mt-2 text-2xl font-bold text-munity-text">{patient.sessionCount}</p>
-                <p className="mt-1 text-xs text-munity-muted">Completed to date</p>
+                <p className="mt-2 text-2xl font-bold text-munity-text">
+                  {patient.sessionCount}
+                </p>
+                <p className="mt-1 text-xs text-munity-muted">
+                  Completed to date
+                </p>
               </div>
               <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                   Last session
                 </p>
-                <p className="mt-2 text-lg font-bold text-munity-text">{patient.lastSessionLabel}</p>
+                <p className="mt-2 text-lg font-bold text-munity-text">
+                  {patient.lastSessionLabel}
+                </p>
               </div>
               <div className="rounded-2xl border border-munity-border bg-munity-sidebar/30 p-4">
                 <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
@@ -160,11 +185,16 @@ export function TherapistAnalyticsListView({
                     </p>
                     <p className="mt-1 text-xs text-munity-muted">
                       {moodByPatient[patient.id].checkinCount} check-in
-                      {moodByPatient[patient.id].checkinCount === 1 ? "" : "s"} logged
+                      {moodByPatient[patient.id].checkinCount === 1
+                        ? ""
+                        : "s"}{" "}
+                      logged
                     </p>
                   </>
                 ) : (
-                  <p className="mt-2 text-sm text-munity-muted">No check-ins yet</p>
+                  <p className="mt-2 text-sm text-munity-muted">
+                    No check-ins yet
+                  </p>
                 )}
               </div>
             </div>

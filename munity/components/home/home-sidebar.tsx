@@ -1,11 +1,11 @@
-import Link from "next/link"
-import { Card } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
-import { Flame, Users, Wind } from "lucide-react"
-import { MunityLeafIcon } from "@/components/icons/MunityIcons"
-import { formatCount } from "@/lib/utils"
-import type { Community } from "@/lib/types"
+import Link from "next/link";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Flame, Users, Wind } from "lucide-react";
+import { MunityLeafIcon } from "@/components/icons/MunityIcons";
+import { formatCount } from "@/lib/utils";
+import type { Community } from "@/lib/types";
 
 export function HomeSidebar({ suggested }: { suggested: Community[] }) {
   return (
@@ -17,7 +17,8 @@ export function HomeSidebar({ suggested }: { suggested: Community[] }) {
             <h3 className="font-semibold">Daily Anchor</h3>
           </div>
           <p className="mt-2 text-sm text-primary-foreground/90">
-            Take 3 deep breaths. Focus on the sensation of air entering your lungs.
+            Take 3 deep breaths. Focus on the sensation of air entering your
+            lungs.
           </p>
           <Button asChild variant="secondary" size="sm" className="mt-4 w-full">
             <Link href="/emergency#breathe">Start Breathing Exercise</Link>
@@ -33,7 +34,9 @@ export function HomeSidebar({ suggested }: { suggested: Community[] }) {
           </div>
           <span className="text-2xl font-bold tabular-nums">14</span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">14 days of consistent mindfulness</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          14 days of consistent mindfulness
+        </p>
         <Progress value={70} className="mt-3" />
       </Card>
 
@@ -46,7 +49,10 @@ export function HomeSidebar({ suggested }: { suggested: Community[] }) {
           {suggested.map((c) => (
             <li key={c.id} className="flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <Link href={`/communities/${c.slug}`} className="block truncate text-sm font-medium hover:underline">
+                <Link
+                  href={`/communities/${c.slug}`}
+                  className="block truncate text-sm font-medium hover:underline"
+                >
                   {c.name}
                 </Link>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -65,5 +71,5 @@ export function HomeSidebar({ suggested }: { suggested: Community[] }) {
         </Button>
       </Card>
     </aside>
-  )
+  );
 }

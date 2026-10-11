@@ -8,11 +8,9 @@ import { signInWithGoogle } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
 import { AuthShell } from "@/components/auth/AuthShell";
-// import { MockCredentialsHint } from "@/components/auth/MockCredentialsHint";
 import { Button } from "@/components/ui/AppButton";
-// import { getMockAccountByRole } from "@/lib/mock-credentials";
 import { routes } from "@/lib/routes";
-import { signIn, type AuthActionState  } from "@/lib/auth/actions";
+import { signIn, type AuthActionState } from "@/lib/auth/actions";
 
 const initialState: AuthActionState = {};
 
@@ -57,7 +55,7 @@ function GoogleSubmitButton() {
 }
 
 function LoginButton() {
-  const {pending} = useFormStatus();
+  const { pending } = useFormStatus();
 
   return (
     <Button
@@ -92,7 +90,10 @@ function AuthField({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="px-1 text-sm font-semibold tracking-[0.14px] text-munity-text">
+      <label
+        htmlFor={id}
+        className="px-1 text-sm font-semibold tracking-[0.14px] text-munity-text"
+      >
         {label}
       </label>
       <div className="relative">
@@ -151,8 +152,6 @@ export function LoginView() {
           subtitle="Continue your journey with Munity"
         />
 
-        {/* <MockCredentialsHint role="user" /> */}
-
         <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10.25 pb-10.25 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
             <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
@@ -170,7 +169,6 @@ export function LoginView() {
               placeholder="name@example.com"
               icon={Mail}
               autoComplete="email"
-              // defaultValue={demoUser.email}
             />
 
             <div className="flex flex-col gap-2">
@@ -196,7 +194,6 @@ export function LoginView() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  // defaultValue={demoUser.password}
                   required
                   className="auth-input pr-12"
                 />
@@ -206,7 +203,11 @@ export function LoginView() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-munity-gray transition-colors hover:text-munity-green"
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
             </div>

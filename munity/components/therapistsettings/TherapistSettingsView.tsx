@@ -81,7 +81,9 @@ export function TherapistSettingsView() {
     }
 
     setToggles((current) => ({ ...current, [key]: !current[key] }));
-    flash(`${key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())} updated`);
+    flash(
+      `${key.replace(/([A-Z])/g, " $1").replace(/^./, (letter) => letter.toUpperCase())} updated`,
+    );
   }
 
   return (
@@ -90,7 +92,9 @@ export function TherapistSettingsView() {
       title="Settings"
       subtitle="Manage notifications, security, and workspace preferences."
     >
-      <div className="flex justify-end"><LivePulse label="Preferences synced" /></div>
+      <div className="flex justify-end">
+        <LivePulse label="Preferences synced" />
+      </div>
       <div className="flex flex-col gap-6">
         {settingsGroups.map((group) => {
           const Icon = group.icon;
@@ -104,8 +108,12 @@ export function TherapistSettingsView() {
                   <Icon className="size-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-munity-text">{group.title}</h2>
-                  <p className="mt-1 text-sm text-munity-muted">{group.description}</p>
+                  <h2 className="text-lg font-semibold text-munity-text">
+                    {group.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-munity-muted">
+                    {group.description}
+                  </p>
                 </div>
               </div>
 
@@ -116,13 +124,19 @@ export function TherapistSettingsView() {
                     className="flex flex-wrap items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-munity-text">{item.label}</p>
-                      <p className="mt-0.5 text-sm text-munity-muted">{item.detail}</p>
+                      <p className="text-sm font-semibold text-munity-text">
+                        {item.label}
+                      </p>
+                      <p className="mt-0.5 text-sm text-munity-muted">
+                        {item.detail}
+                      </p>
                     </div>
                     <button
                       type="button"
                       role="switch"
-                      aria-checked={item.key === "darkMode" ? darkMode : toggles[item.key]}
+                      aria-checked={
+                        item.key === "darkMode" ? darkMode : toggles[item.key]
+                      }
                       onClick={() => toggle(item.key)}
                       className={`relative h-7 w-12 rounded-full transition ${
                         (item.key === "darkMode" ? darkMode : toggles[item.key])
@@ -132,7 +146,11 @@ export function TherapistSettingsView() {
                     >
                       <span
                         className={`absolute top-0.5 size-6 rounded-full bg-white shadow transition ${
-                          (item.key === "darkMode" ? darkMode : toggles[item.key])
+                          (
+                            item.key === "darkMode"
+                              ? darkMode
+                              : toggles[item.key]
+                          )
                             ? "left-5"
                             : "left-0.5"
                         }`}
@@ -151,7 +169,9 @@ export function TherapistSettingsView() {
               <Lock className="size-5" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-munity-text">Password</h2>
+              <h2 className="text-lg font-semibold text-munity-text">
+                Password
+              </h2>
               <p className="mt-1 text-sm text-munity-muted">
                 Update the password you use for therapist login.
               </p>

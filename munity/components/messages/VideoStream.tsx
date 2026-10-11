@@ -10,7 +10,12 @@ interface VideoStreamProps {
 }
 
 /** Binds a live MediaStream to a <video> element — the DOM API has no declarative way to do this. */
-export function VideoStream({ stream, muted, mirrored, className }: VideoStreamProps) {
+export function VideoStream({
+  stream,
+  muted,
+  mirrored,
+  className,
+}: VideoStreamProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {

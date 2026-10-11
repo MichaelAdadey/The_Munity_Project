@@ -15,7 +15,6 @@ import {
   VideoOff,
 } from "lucide-react";
 import { useLiveToast } from "@/components/live/LiveFeedback";
-// import { chatIdFromPatient } from "@/lib/therapist-chats";
 import { therapistMessagesPath } from "@/lib/routes";
 import { ensureTherapistThread } from "@/lib/messages/client-queries";
 
@@ -65,38 +64,6 @@ export function TherapistSessionOverlays({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // useEffect(() => {
-  //   if (!patient || !kind) return;
-  //   setPhase("connecting");
-  //   setSeconds(0);
-  //   setMuted(false);
-  //   setCameraOff(false);
-  //   setMinimized(false);
-  //   setDraft("");
-  //   setMessages([
-  //     {
-  //       id: "m1",
-  //       from: "them",
-  //       content:
-  //         kind === "chat"
-  //           ? "Hi Doctor — I’m ready whenever you are."
-  //           : "I’ve joined the waiting room.",
-  //       time: "Just now",
-  //     },
-  //     {
-  //       id: "m2",
-  //       from: "me",
-  //       content:
-  //         kind === "chat"
-  //           ? "Thanks for checking in. How has your day felt so far?"
-  //           : "Connecting now — we’ll start in a moment.",
-  //       time: "Just now",
-  //     },
-  //   ]);
-  //   const timer = window.setTimeout(() => setPhase("connected"), 1200);
-  //   return () => window.clearTimeout(timer);
-  // }, [patient, kind]);
-
   useEffect(() => {
     if (!patient || !kind || kind !== "video" || phase !== "connected") return;
     const tick = window.setInterval(() => setSeconds((prev) => prev + 1), 1000);
@@ -105,7 +72,10 @@ export function TherapistSessionOverlays({
 
   useEffect(() => {
     if (kind !== "chat") return;
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
   }, [messages, kind]);
 
   if (!patient || !kind) return null;
@@ -125,16 +95,16 @@ export function TherapistSessionOverlays({
   async function expandToMessages() {
     try {
       const threadId = await ensureTherapistThread(activePatient.patientUuid);
-      flash(`Opening full chat with ${activePatient.name}`)
+      flash(`Opening full chat with ${activePatient.name}`);
       onClose();
-      router.push(therapistMessagesPath({ chatId: threadId}))
+      router.push(therapistMessagesPath({ chatId: threadId }));
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't open that conversation")
+      flash(
+        error instanceof Error
+          ? error.message
+          : "Couldn't open that conversation",
+      );
     }
-    // const chatId = chatIdFromPatient(activePatient);
-    // flash(`Opening full chat with ${activePatient.name}`);
-    // onClose();
-    // router.push(therapistMessagesPath({ chatId }));
   }
 
   function sendMessage() {
@@ -214,10 +184,16 @@ export function TherapistSessionOverlays({
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-munity-lime/90">
                 Video session
               </p>
-              <h2 className="mt-2 text-2xl font-semibold tracking-tight">{activePatient.name}</h2>
-              <p className="mt-1 text-sm text-white/60">{activePatient.patientId}</p>
+              <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                {activePatient.name}
+              </h2>
+              <p className="mt-1 text-sm text-white/60">
+                {activePatient.patientId}
+              </p>
               <p className="mt-2 text-sm text-white/70">
-                {phase === "connecting" ? "Connecting…" : formatDuration(seconds)}
+                {phase === "connecting"
+                  ? "Connecting…"
+                  : formatDuration(seconds)}
               </p>
               <div className="mt-8 flex items-center justify-center gap-4">
                 <button
@@ -227,11 +203,17 @@ export function TherapistSessionOverlays({
                     flash(muted ? "Microphone on" : "Microphone muted");
                   }}
                   className={`flex size-14 items-center justify-center rounded-full transition ${
-                    muted ? "bg-white text-munity-text" : "bg-white/15 hover:bg-white/25"
+                    muted
+                      ? "bg-white text-munity-text"
+                      : "bg-white/15 hover:bg-white/25"
                   }`}
                   aria-label={muted ? "Unmute" : "Mute"}
                 >
-                  {muted ? <MicOff className="size-5" /> : <Mic className="size-5" />}
+                  {muted ? (
+                    <MicOff className="size-5" />
+                  ) : (
+                    <Mic className="size-5" />
+                  )}
                 </button>
                 <button
                   type="button"
@@ -240,11 +222,17 @@ export function TherapistSessionOverlays({
                     flash(cameraOff ? "Camera on" : "Camera off");
                   }}
                   className={`flex size-14 items-center justify-center rounded-full transition ${
-                    cameraOff ? "bg-white text-munity-text" : "bg-white/15 hover:bg-white/25"
+                    cameraOff
+                      ? "bg-white text-munity-text"
+                      : "bg-white/15 hover:bg-white/25"
                   }`}
                   aria-label={cameraOff ? "Turn camera on" : "Turn camera off"}
                 >
-                  {cameraOff ? <VideoOff className="size-5" /> : <Video className="size-5" />}
+                  {cameraOff ? (
+                    <VideoOff className="size-5" />
+                  ) : (
+                    <Video className="size-5" />
+                  )}
                 </button>
                 <button
                   type="button"
@@ -285,9 +273,14 @@ export function TherapistSessionOverlays({
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{activePatient.name}</p>
+              <p className="truncate text-sm font-semibold">
+                {activePatient.name}
+              </p>
               <p className="mt-0.5 text-xs text-munity-lime/90">
-                Video · {phase === "connecting" ? "Connecting…" : formatDuration(seconds)}
+                Video ·{" "}
+                {phase === "connecting"
+                  ? "Connecting…"
+                  : formatDuration(seconds)}
               </p>
             </div>
             <Maximize2 className="size-4 shrink-0 text-white/70" />
@@ -341,7 +334,8 @@ export function TherapistSessionOverlays({
                   {activePatient.name}
                 </p>
                 <p className="text-xs text-munity-muted">
-                  Text consultation · {activePatient.patientId} · {activePatient.time}
+                  Text consultation · {activePatient.patientId} ·{" "}
+                  {activePatient.time}
                 </p>
               </div>
               <button

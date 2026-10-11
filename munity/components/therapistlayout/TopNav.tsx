@@ -19,13 +19,19 @@ const navItems: { label: NavItem; href: string }[] = [
   { label: "Patients", href: routes.therapistPatients },
 ];
 
-export function TopNav({ active = "Patients", showSearch = false }: TopNavProps) {
+export function TopNav({
+  active = "Patients",
+  showSearch = false,
+}: TopNavProps) {
   return (
     <LiveToastProvider>
       <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-input-border/30 bg-munity-bg/80 shadow-sm backdrop-blur-md">
         <div className="flex h-16 w-full items-center justify-between px-10">
           <div className="flex items-center gap-8">
-            <Link href={routes.therapistDashboard} className="text-2xl font-bold text-munity-green">
+            <Link
+              href={routes.therapistDashboard}
+              className="text-2xl font-bold text-munity-green"
+            >
               Munity
             </Link>
             <nav className="hidden items-center gap-6 md:flex">
@@ -57,7 +63,7 @@ export function TopNav({ active = "Patients", showSearch = false }: TopNavProps)
                   className="h-9 w-64 rounded-full bg-[#efeded] py-2 pl-10 pr-4 text-sm font-semibold text-gray-500 outline-none"
                 />
                 <svg
-                  className="absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-muted"
+                  className="absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-munity-muted"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"

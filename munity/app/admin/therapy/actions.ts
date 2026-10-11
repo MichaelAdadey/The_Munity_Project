@@ -27,7 +27,9 @@ async function assertAdmin() {
 
 export type AdminActionResult = { error?: string; success?: boolean };
 
-export async function approveTherapist(profileId: string): Promise<AdminActionResult> {
+export async function approveTherapist(
+  profileId: string,
+): Promise<AdminActionResult> {
   const supabase = await assertAdmin();
 
   const { error } = await supabase
@@ -50,7 +52,9 @@ export async function approveTherapist(profileId: string): Promise<AdminActionRe
   return { success: true };
 }
 
-export async function rejectTherapist(profileId: string): Promise<AdminActionResult> {
+export async function rejectTherapist(
+  profileId: string,
+): Promise<AdminActionResult> {
   const supabase = await assertAdmin();
 
   const { error } = await supabase

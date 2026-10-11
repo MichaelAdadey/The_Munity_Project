@@ -12,7 +12,10 @@ import {
   ghanaLicensingBodies,
   ghanaRegions,
 } from "@/lib/ghana-therapist";
-import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
+import {
+  getOnboardingStepData,
+  saveOnboardingStepData,
+} from "@/lib/onboarding-data";
 import { routes } from "@/lib/routes";
 import {
   removeCredentialDocument,
@@ -103,10 +106,18 @@ export default function CredentialsPage() {
       }}
       footer={
         <div className="relative flex items-center justify-center gap-8 opacity-40">
-          <div aria-hidden className="pointer-events-none absolute inset-0 bg-white mix-blend-saturation" />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-white mix-blend-saturation"
+          />
           {assets.therapistOnboarding.trustBadges.map((src) => (
             // eslint-disable-next-line @next/next/no-img-element
-            <img key={src} src={src} alt="" className="h-8 w-24 object-contain" />
+            <img
+              key={src}
+              src={src}
+              alt=""
+              className="h-8 w-24 object-contain"
+            />
           ))}
         </div>
       }
@@ -175,10 +186,13 @@ export default function CredentialsPage() {
           Verification of Credentials
         </label>
         <p className="mt-1 text-xs font-medium text-munity-muted">
-          Upload a copy of your current council registration or certification document.
+          Upload a copy of your current council registration or certification
+          document.
         </p>
         {documentName ? (
-          <p className="mt-2 text-sm text-munity-muted">Previously uploaded: {documentName}</p>
+          <p className="mt-2 text-sm text-munity-muted">
+            Previously uploaded: {documentName}
+          </p>
         ) : null}
         <FileUpload
           onFileChange={async (file) => {

@@ -53,39 +53,45 @@ export async function submitTherapistOnboarding(payload: {
   // We keep both the full bank account number (needed to actually pay them)
   // and a last-4 version (safe to show in the UI without re-reading the full number).
   const bankAccountNumber = payout.bankAccountNumber || null;
-  const bankAccountLast4 = bankAccountNumber ? bankAccountNumber.slice(-4) : null;
+  const bankAccountLast4 = bankAccountNumber
+    ? bankAccountNumber.slice(-4)
+    : null;
 
-  const { error: detailsError } = await supabase.from("therapist_details").upsert(
-    {
-      profile_id: user.id,
-      title: basicInfo.title,
-      gender: basicInfo.gender,
-      professional_title: basicInfo.professionalTitle,
-      phone: basicInfo.phone,
-      practice_location: basicInfo.practiceLocation,
-      exact_practice_location: basicInfo.exactPracticeLocation,
-      licensing_body: credentials.licensingBody,
-      license_type: credentials.licenseType,
-      license_number: credentials.registrationNumber,
-      region_of_issue: credentials.regionOfIssue,
-      years_of_experience: credentials.yearsOfExperience,
-      license_document_name: credentials.documentPath,
-      specialties: specialties.specialties,
-      payout_methods: payout.payoutMethods,
-      mobile_money_network: payout.mobileMoneyNetwork,
-      mobile_money_number: payout.momoNumber,
-      mobile_money_account_name: payout.momoAccountName,
-      bank_name: payout.bankName,
-      bank_account_name: payout.bankAccountName,
-      bank_account_number: bankAccountNumber,
-      bank_account_last4: bankAccountLast4,
-      verification_status: "in-review",
-    },
-    { onConflict: "profile_id" },
-  );
+  const { error: detailsError } = await supabase
+    .from("therapist_details")
+    .upsert(
+      {
+        profile_id: user.id,
+        title: basicInfo.title,
+        gender: basicInfo.gender,
+        professional_title: basicInfo.professionalTitle,
+        phone: basicInfo.phone,
+        practice_location: basicInfo.practiceLocation,
+        exact_practice_location: basicInfo.exactPracticeLocation,
+        licensing_body: credentials.licensingBody,
+        license_type: credentials.licenseType,
+        license_number: credentials.registrationNumber,
+        region_of_issue: credentials.regionOfIssue,
+        years_of_experience: credentials.yearsOfExperience,
+        license_document_name: credentials.documentPath,
+        specialties: specialties.specialties,
+        payout_methods: payout.payoutMethods,
+        mobile_money_network: payout.mobileMoneyNetwork,
+        mobile_money_number: payout.momoNumber,
+        mobile_money_account_name: payout.momoAccountName,
+        bank_name: payout.bankName,
+        bank_account_name: payout.bankAccountName,
+        bank_account_number: bankAccountNumber,
+        bank_account_last4: bankAccountLast4,
+        verification_status: "in-review",
+      },
+      { onConflict: "profile_id" },
+    );
 
   if (detailsError) {
-    return { error: `Could not save therapist details: ${detailsError.message}` };
+    return {
+      error: `Could not save therapist details: ${detailsError.message}`,
+    };
   }
 
   return { success: true };

@@ -8,7 +8,11 @@ import { PatientSidebar } from "@/components/therapistlayout/Sidebars";
 import { CollapsibleSidebarLayout } from "@/components/therapistlayout/CollapsibleSidebarLayout";
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
-import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
+import {
+  LivePulse,
+  LiveTicker,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { patientRoutes } from "@/lib/routes";
 import type { TherapistPatient } from "@/lib/therapist/patients-queries";
 import type { SessionNote } from "@/lib/therapist/session-notes-queries";
@@ -85,7 +89,9 @@ export function PatientFilesView({ patient, notes }: PatientFilesViewProps) {
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
                     Documents
                   </p>
-                  <h1 className="mt-2 text-3xl font-bold text-munity-text">Files</h1>
+                  <h1 className="mt-2 text-3xl font-bold text-munity-text">
+                    Files
+                  </h1>
                   <p className="mt-1 text-base text-munity-muted">
                     Clinical session notes on file for {patient.name}
                   </p>
@@ -138,7 +144,9 @@ export function PatientFilesView({ patient, notes }: PatientFilesViewProps) {
                               <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-munity-lime/50">
                                 <FileText className="size-4 text-munity-green" />
                               </div>
-                              <span className="font-semibold text-munity-text">{note.title}</span>
+                              <span className="font-semibold text-munity-text">
+                                {note.title}
+                              </span>
                             </div>
                           </td>
                           <td className="px-5 py-4">
@@ -146,8 +154,12 @@ export function PatientFilesView({ patient, notes }: PatientFilesViewProps) {
                               Clinical
                             </span>
                           </td>
-                          <td className="px-5 py-4 text-munity-muted">{formatDate(note.sessionDate)}</td>
-                          <td className="px-5 py-4 text-munity-muted">{formatDateTime(note.createdAt)}</td>
+                          <td className="px-5 py-4 text-munity-muted">
+                            {formatDate(note.sessionDate)}
+                          </td>
+                          <td className="px-5 py-4 text-munity-muted">
+                            {formatDateTime(note.createdAt)}
+                          </td>
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-end gap-2">
                               <Link

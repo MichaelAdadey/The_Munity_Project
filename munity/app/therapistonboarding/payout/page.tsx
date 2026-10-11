@@ -6,7 +6,11 @@ import { Field } from "@/components/ui/Field";
 import { ChipSelect } from "@/components/ui/ChipSelect";
 import { Select } from "@/components/ui/AppSelect";
 import { ghanaBanks, ghanaMobileMoneyProviders } from "@/lib/ghana-therapist";
-import { getOnboardingStepData, saveOnboardingStepData, getAllOnboardingStepData } from "@/lib/onboarding-data";
+import {
+  getOnboardingStepData,
+  saveOnboardingStepData,
+  getAllOnboardingStepData,
+} from "@/lib/onboarding-data";
 import { submitTherapistOnboarding } from "@/app/therapistonboarding/actions";
 import { routes } from "@/lib/routes";
 
@@ -93,8 +97,15 @@ export default function PayoutPage() {
       }}
       onBeforeContinue={async () => {
         const all = getAllOnboardingStepData();
-        if (!all["basic-info"] || !all.credentials || !all.specialties || !all.payout) {
-          window.alert("Please complete all onboarding steps before submitting.");
+        if (
+          !all["basic-info"] ||
+          !all.credentials ||
+          !all.specialties ||
+          !all.payout
+        ) {
+          window.alert(
+            "Please complete all onboarding steps before submitting.",
+          );
           return false;
         }
         const result = await submitTherapistOnboarding({
@@ -118,7 +129,9 @@ export default function PayoutPage() {
           momoAccountName: String(formData.get("momoAccountName") || "").trim(),
           momoNumber: String(formData.get("momoNumber") || "").trim(),
           bankAccountName: String(formData.get("bankAccountName") || "").trim(),
-          bankAccountNumber: String(formData.get("bankAccountNumber") || "").trim(),
+          bankAccountNumber: String(
+            formData.get("bankAccountNumber") || "",
+          ).trim(),
         });
       }}
     >
@@ -230,8 +243,8 @@ export default function PayoutPage() {
       ) : null}
 
       <p className="mt-8 text-sm text-munity-muted">
-        Your payout details are encrypted and stored securely. Payouts are processed weekly in
-        Ghana cedis (GHS).
+        Your payout details are encrypted and stored securely. Payouts are
+        processed weekly in Ghana cedis (GHS).
       </p>
     </OnboardingStepPage>
   );

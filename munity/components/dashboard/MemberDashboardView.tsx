@@ -39,21 +39,6 @@ const weekMood = [
   { day: "Sun", score: 9 },
 ];
 
-// const upcoming = [
-//   {
-//     title: "Video session with Dr. Sarah Jenkins",
-//     time: "Today · 2:00 PM",
-//     type: "Therapy",
-//     href: "/Therapy",
-//   },
-//   {
-//     title: "Anxiety Peer Support check-in",
-//     time: "Tomorrow · 6:30 PM",
-//     type: "Community",
-//     href: "/Communities",
-//   },
-// ];
-
 const goals = [
   { title: "Log mood 5 days this week", progress: 80, done: false },
   { title: "Complete breathing homework", progress: 100, done: true },
@@ -93,12 +78,6 @@ export function MemberDashboardView({
   const { joined: joinedCommunities } = useMyCommunities(flash);
 
   const stats = [
-    // {
-    //   label: "Day streak",
-    //   value: String(store.profile.dayStreak),
-    //   detail: "Keep going — you’re on a roll",
-    //   icon: Flame,
-    // },
     {
       label: "Mood average",
       value: store.moodToday ? "8.0" : "7.4",

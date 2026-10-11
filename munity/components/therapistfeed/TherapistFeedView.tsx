@@ -92,7 +92,9 @@ export function TherapistFeedView() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [expandedComments, setExpandedComments] = useState<string | null>(null);
-  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>(
+    {},
+  );
   const [posting, setPosting] = useState(false);
   const [search, setSearch] = useState("");
   const [momentIndex, setMomentIndex] = useState(0);
@@ -226,11 +228,7 @@ export function TherapistFeedView() {
       setSelectedCommunityId(null);
       setAnonymous(false);
       clearPhoto();
-      flash(
-        anonymous
-          ? "Posted anonymously"
-          : "Shared with the community",
-      );
+      flash(anonymous ? "Posted anonymously" : "Shared with the community");
       refresh();
     } finally {
       setPosting(false);
@@ -280,7 +278,9 @@ export function TherapistFeedView() {
                   {greeting}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold tracking-tight text-munity-green">
-                  {profileLoading ? "..." : `${fullName}, share with the community`}
+                  {profileLoading
+                    ? "..."
+                    : `${fullName}, share with the community`}
                 </h2>
               </div>
               <Lightbulb className="size-5 shrink-0 text-munity-green/70" />
@@ -392,7 +392,9 @@ export function TherapistFeedView() {
                 </select>
                 <select
                   value={selectedCommunityId ?? ""}
-                  onChange={(e) => setSelectedCommunityId(e.target.value || null)}
+                  onChange={(e) =>
+                    setSelectedCommunityId(e.target.value || null)
+                  }
                   className="rounded-full bg-munity-sidebar px-3.5 py-2 text-xs font-semibold text-munity-muted outline-none transition hover:bg-munity-lime/40"
                   aria-label="Choose post audience"
                 >
@@ -520,7 +522,9 @@ export function TherapistFeedView() {
                       ) : (
                         <div className="relative size-10 overflow-hidden rounded-full">
                           <Image
-                            src={post.avatarUrl ?? "/images/home-feed/sarah.jpg"}
+                            src={
+                              post.avatarUrl ?? "/images/home-feed/sarah.jpg"
+                            }
                             alt={post.author}
                             fill
                             className="object-cover"
@@ -804,7 +808,9 @@ export function TherapistFeedView() {
               </AnimatePresence>
               <button
                 type="button"
-                onClick={() => setMomentIndex((value) => (value + 1) % mindfulMoments.length)}
+                onClick={() =>
+                  setMomentIndex((value) => (value + 1) % mindfulMoments.length)
+                }
                 className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-munity-lime-light underline underline-offset-4 transition hover:opacity-80"
               >
                 <Wind className="size-3.5" />

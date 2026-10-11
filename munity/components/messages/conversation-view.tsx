@@ -1,27 +1,27 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { ArrowLeft, MoreVertical, Send, Stethoscope } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { cn, initials, timeAgo } from "@/lib/utils"
-import type { Conversation, Message } from "@/lib/types"
+import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, MoreVertical, Send, Stethoscope } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { cn, initials, timeAgo } from "@/lib/utils";
+import type { Conversation, Message } from "@/lib/types";
 
 export function ConversationView({
   conversation,
   initialMessages,
 }: {
-  conversation: Conversation
-  initialMessages: Message[]
+  conversation: Conversation;
+  initialMessages: Message[];
 }) {
-  const [messages, setMessages] = useState(initialMessages)
-  const [draft, setDraft] = useState("")
+  const [messages, setMessages] = useState(initialMessages);
+  const [draft, setDraft] = useState("");
 
   function send() {
-    const text = draft.trim()
-    if (!text) return
+    const text = draft.trim();
+    if (!text) return;
     setMessages((prev) => [
       ...prev,
       {
@@ -32,14 +32,18 @@ export function ConversationView({
         content: text,
         created_at: new Date().toISOString(),
       },
-    ])
-    setDraft("")
+    ]);
+    setDraft("");
   }
 
   return (
     <div className="flex h-full min-w-0 flex-1 flex-col bg-background">
       <header className="flex shrink-0 items-center gap-3 border-b border-border p-4">
-        <Link href="/messages" className="md:hidden" aria-label="Back to conversations">
+        <Link
+          href="/messages"
+          className="md:hidden"
+          aria-label="Back to conversations"
+        >
           <Button variant="ghost" size="icon" className="rounded-full">
             <ArrowLeft className="size-4" />
           </Button>
@@ -51,14 +55,23 @@ export function ConversationView({
         </Avatar>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
-            <span className="truncate text-sm font-semibold">{conversation.participant_name}</span>
-            {conversation.is_therapist && <Stethoscope className="size-3.5 text-primary" />}
+            <span className="truncate text-sm font-semibold">
+              {conversation.participant_name}
+            </span>
+            {conversation.is_therapist && (
+              <Stethoscope className="size-3.5 text-primary" />
+            )}
           </div>
           <span className="text-xs text-muted-foreground">
             {conversation.is_therapist ? "Licensed therapist" : "Peer support"}
           </span>
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full" aria-label="More options">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="rounded-full"
+          aria-label="More options"
+        >
           <MoreVertical className="size-4" />
         </Button>
       </header>
@@ -67,7 +80,10 @@ export function ConversationView({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={cn("flex", message.is_self ? "justify-end" : "justify-start")}
+            className={cn(
+              "flex",
+              message.is_self ? "justify-end" : "justify-start",
+            )}
           >
             <div
               className={cn(
@@ -81,7 +97,9 @@ export function ConversationView({
               <span
                 className={cn(
                   "mt-1 block text-[11px]",
-                  message.is_self ? "text-primary-foreground/70" : "text-muted-foreground",
+                  message.is_self
+                    ? "text-primary-foreground/70"
+                    : "text-muted-foreground",
                 )}
               >
                 {timeAgo(message.created_at)}
@@ -98,19 +116,24 @@ export function ConversationView({
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                send()
+                e.preventDefault();
+                send();
               }
             }}
             placeholder="Write a message..."
             className="min-h-11 flex-1 resize-none"
             rows={1}
           />
-          <Button size="icon" className="shrink-0 rounded-full" onClick={send} disabled={!draft.trim()}>
+          <Button
+            size="icon"
+            className="shrink-0 rounded-full"
+            onClick={send}
+            disabled={!draft.trim()}
+          >
             <Send className="size-4" />
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,31 +1,31 @@
-'use client'
+"use client";
 
-import { useActionState } from 'react'
-import { useFormStatus } from 'react-dom'
-import Link from 'next/link'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { useActionState } from "react";
+import { useFormStatus } from "react-dom";
+import Link from "next/link";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import {
   signIn,
   signUp,
   signInWithGoogle,
   type AuthState,
-} from '@/app/(auth)/actions'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
+} from "@/app/(auth)/actions";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 
 function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus()
+  const { pending } = useFormStatus();
   return (
     <Button type="submit" className="w-full rounded-full" disabled={pending}>
-      {pending ? 'Please wait…' : label}
+      {pending ? "Please wait…" : label}
     </Button>
-  )
+  );
 }
 
 function GoogleButton() {
-  const { pending } = useFormStatus()
+  const { pending } = useFormStatus();
   return (
     <Button
       type="submit"
@@ -53,15 +53,15 @@ function GoogleButton() {
       </svg>
       Continue with Google
     </Button>
-  )
+  );
 }
 
-export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
-  const action = mode === 'login' ? signIn : signUp
+export function AuthForm({ mode }: { mode: "login" | "signup" }) {
+  const action = mode === "login" ? signIn : signUp;
   const [state, formAction] = useActionState<AuthState, FormData>(
     action,
     undefined,
-  )
+  );
 
   return (
     <div className="space-y-5">
@@ -79,7 +79,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       )}
 
       <form action={formAction} className="space-y-4">
-        {mode === 'signup' && (
+        {mode === "signup" && (
           <div className="space-y-2">
             <Label htmlFor="full_name">Full Name</Label>
             <Input
@@ -108,7 +108,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
-            {mode === 'login' && (
+            {mode === "login" && (
               <Link
                 href="#"
                 className="text-xs font-medium text-primary hover:underline"
@@ -122,19 +122,21 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
             name="password"
             type="password"
             placeholder="••••••••"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            autoComplete={
+              mode === "login" ? "current-password" : "new-password"
+            }
             required
             className="h-11"
           />
         </div>
 
-        {mode === 'login' && (
+        {mode === "login" && (
           <label className="flex items-center gap-2 text-sm text-muted-foreground">
             <Checkbox name="remember" /> Remember Me
           </label>
         )}
 
-        <SubmitButton label={mode === 'login' ? 'Login' : 'Create Account'} />
+        <SubmitButton label={mode === "login" ? "Login" : "Create Account"} />
       </form>
 
       <div className="flex items-center gap-3">
@@ -147,5 +149,5 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         <GoogleButton />
       </form>
     </div>
-  )
+  );
 }

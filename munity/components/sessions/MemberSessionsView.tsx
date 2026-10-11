@@ -14,8 +14,6 @@ import {
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { liveFadeUp, useLiveToast } from "@/components/live/LiveFeedback";
-// import { mockStore, useMockStore } from "@/lib/mock-store";
-// import type { Booking, BookingPriority } from "@/lib/mock-db";
 import { messagesPath, routes, therapyPath } from "@/lib/routes";
 import { SessionBooking } from "@/lib/sessions/queries";
 import {
@@ -228,7 +226,7 @@ function SessionCard({
                 try {
                   await cancelBooking(booking.id);
                   flash("Upcoming session removed");
-                  onChanged()
+                  onChanged();
                 } catch (error) {
                   flash(
                     error instanceof Error

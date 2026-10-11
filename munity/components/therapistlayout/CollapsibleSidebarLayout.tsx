@@ -21,7 +21,9 @@ export function CollapsibleSidebarLayout({
   const sidebarState = useSidebar();
 
   if (!sidebarState) {
-    throw new Error("CollapsibleSidebarLayout must be used within SidebarProvider");
+    throw new Error(
+      "CollapsibleSidebarLayout must be used within SidebarProvider",
+    );
   }
 
   const { open, toggle, expandedWidth, collapsedWidth } = sidebarState;

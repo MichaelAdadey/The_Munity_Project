@@ -15,12 +15,18 @@ interface TherapistClinicalNotesListViewProps {
   notes: SessionNote[];
 }
 
-export function TherapistClinicalNotesListView({ patients, notes }: TherapistClinicalNotesListViewProps) {
+export function TherapistClinicalNotesListView({
+  patients,
+  notes,
+}: TherapistClinicalNotesListViewProps) {
   const patientsWithNotes = patients.map((patient) => ({
     ...patient,
     notes: notes
       .filter((note) => note.patientId === patient.slug)
-      .sort((a, b) => new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime()),
+      .sort(
+        (a, b) =>
+          new Date(b.sessionDate).getTime() - new Date(a.sessionDate).getTime(),
+      ),
   }));
 
   return (
@@ -60,15 +66,24 @@ export function TherapistClinicalNotesListView({ patients, notes }: TherapistCli
                 className="flex items-center gap-4 transition hover:opacity-80"
               >
                 <div className="relative size-12 shrink-0 overflow-hidden rounded-xl">
-                  <Image src={patient.avatar} alt={patient.name} fill className="object-cover" />
+                  <Image
+                    src={patient.avatar}
+                    alt={patient.name}
+                    fill
+                    className="object-cover"
+                  />
                 </div>
                 <div>
-                  <p className="font-semibold text-munity-text">{patient.name}</p>
+                  <p className="font-semibold text-munity-text">
+                    {patient.name}
+                  </p>
                   <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                     {patient.clientId}
                   </p>
                 </div>
-                {index === 0 && patient.notes.length > 0 ? <LivePulse label="Has notes" /> : null}
+                {index === 0 && patient.notes.length > 0 ? (
+                  <LivePulse label="Has notes" />
+                ) : null}
               </Link>
               <Link
                 href={patientRoutes(patient.slug).clinicalNotes}
@@ -81,7 +96,9 @@ export function TherapistClinicalNotesListView({ patients, notes }: TherapistCli
             </div>
 
             {patient.notes.length === 0 ? (
-              <p className="mt-4 text-sm text-munity-muted">No session notes saved for {patient.name} yet.</p>
+              <p className="mt-4 text-sm text-munity-muted">
+                No session notes saved for {patient.name} yet.
+              </p>
             ) : (
               <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-2">
                 {patient.notes.slice(0, 4).map((note) => (
@@ -92,14 +109,18 @@ export function TherapistClinicalNotesListView({ patients, notes }: TherapistCli
                   >
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-xs font-medium text-munity-muted">
-                        {new Date(`${note.sessionDate}T12:00:00`).toLocaleDateString(undefined, {
+                        {new Date(
+                          `${note.sessionDate}T12:00:00`,
+                        ).toLocaleDateString(undefined, {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
                         })}
                       </span>
                     </div>
-                    <h3 className="mt-2 text-base font-semibold text-munity-text">{note.title}</h3>
+                    <h3 className="mt-2 text-base font-semibold text-munity-text">
+                      {note.title}
+                    </h3>
                     <p className="mt-1 line-clamp-2 text-sm leading-5 text-munity-muted">
                       {note.body}
                     </p>

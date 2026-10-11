@@ -108,7 +108,13 @@ export function MunitySunIcon({ title, className, ...props }: IconProps) {
     >
       {title ? <title>{title}</title> : null}
       <circle cx="12" cy="12" r="4.25" fill="currentColor" opacity="0.35" />
-      <circle cx="12" cy="12" r="3.25" stroke="currentColor" strokeWidth="1.5" />
+      <circle
+        cx="12"
+        cy="12"
+        r="3.25"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      />
       <path
         d="M12 3.5v2.2M12 18.3v2.2M3.5 12h2.2M18.3 12h2.2M6.1 6.1l1.6 1.6M16.3 16.3l1.6 1.6M17.9 6.1l-1.6 1.6M7.7 16.3l-1.6 1.6"
         stroke="currentColor"

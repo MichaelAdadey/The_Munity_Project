@@ -27,7 +27,7 @@ import { CollapsibleSidebarLayout } from "@/components/therapistlayout/Collapsib
 import { SidebarProvider } from "@/components/therapistlayout/SidebarContext";
 import { AnimatedPage } from "@/components/ui/AnimatedPage";
 import { Button } from "@/components/ui/AppButton";
-import { LivePulse, LiveTicker } from "@/components/live/LiveFeedback";
+import { LivePulse } from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 import type { CredentialVerificationStatus } from "@/lib/therapist/credential-status-queries";
 
@@ -35,7 +35,8 @@ const secondaryInfo = [
   {
     icon: Shield,
     title: "Secure Encryption",
-    description: "Your documents are protected with HIPAA-compliant AES-256 encryption.",
+    description:
+      "Your documents are protected with HIPAA-compliant AES-256 encryption.",
   },
   {
     icon: Bell,
@@ -59,7 +60,9 @@ type ReviewChecklistItem = {
 };
 
 /** Once a therapist_details row exists, the four onboarding steps that fed it are all complete. */
-function getReviewChecklist(status: CredentialVerificationStatus): ReviewChecklistItem[] {
+function getReviewChecklist(
+  status: CredentialVerificationStatus,
+): ReviewChecklistItem[] {
   const submitted = status !== "not-submitted";
   const decided = status === "verified" || status === "rejected";
 
@@ -122,7 +125,10 @@ function getReviewProgressPercent(checklist: ReviewChecklistItem[]) {
 }
 
 function formatSubmittedRelative(submittedAt: string, now = Date.now()) {
-  const seconds = Math.max(0, Math.floor((now - new Date(submittedAt).getTime()) / 1000));
+  const seconds = Math.max(
+    0,
+    Math.floor((now - new Date(submittedAt).getTime()) / 1000),
+  );
   if (seconds < 60) return "just now";
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
@@ -154,7 +160,10 @@ function ChecklistRow({ item }: { item: ReviewChecklistItem }) {
       }`}
     >
       {isComplete ? (
-        <Check className="mt-0.5 size-5 shrink-0 text-munity-green" strokeWidth={2.5} />
+        <Check
+          className="mt-0.5 size-5 shrink-0 text-munity-green"
+          strokeWidth={2.5}
+        />
       ) : (
         <Icon
           className={`mt-0.5 size-4 shrink-0 ${isActive ? "animate-pulse text-munity-green" : "text-munity-muted"}`}
@@ -165,7 +174,9 @@ function ChecklistRow({ item }: { item: ReviewChecklistItem }) {
           <span className="text-base text-munity-text">{item.label}</span>
           {isActive ? <LivePulse label="In progress" /> : null}
         </div>
-        <p className="mt-1 text-xs leading-relaxed text-munity-muted">{item.detail}</p>
+        <p className="mt-1 text-xs leading-relaxed text-munity-muted">
+          {item.detail}
+        </p>
       </div>
     </div>
   );
@@ -204,31 +215,47 @@ interface ReviewStatusCardProps {
   applicantName: string | null;
 }
 
-function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCardProps) {
+function ReviewStatusCard({
+  status,
+  submittedAt,
+  applicantName,
+}: ReviewStatusCardProps) {
   if (status === "verified") {
     return (
       <>
         <motion.article
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+          className="relative overflow-hidden rounded-4xl border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
         >
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-8 flex size-24 items-center justify-center rounded-full bg-[#d9eaa3]">
-              <CheckCircle2 className="size-10 text-munity-green" strokeWidth={1.75} />
+              <CheckCircle2
+                className="size-10 text-munity-green"
+                strokeWidth={1.75}
+              />
             </div>
-            <h1 className="text-base text-munity-green">You&apos;re verified!</h1>
+            <h1 className="text-base text-munity-green">
+              You&apos;re verified!
+            </h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
               {applicantName ? (
                 <>
-                  Congratulations, <span className="font-semibold text-munity-text">{applicantName}</span>.{" "}
+                  Congratulations,{" "}
+                  <span className="font-semibold text-munity-text">
+                    {applicantName}
+                  </span>
+                  .{" "}
                 </>
               ) : null}
-              Clinical Operations has approved your credentials. Your therapist dashboard is now
-              live.
+              Clinical Operations has approved your credentials. Your therapist
+              dashboard is now live.
             </p>
             <div className="mt-10">
-              <Button href={routes.therapistDashboard} className="h-14 rounded-xl px-8">
+              <Button
+                href={routes.therapistDashboard}
+                className="h-14 rounded-xl px-8"
+              >
                 <Home className="size-4" />
                 Go to Dashboard
               </Button>
@@ -246,22 +273,31 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
         <motion.article
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-[32px] border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+          className="relative overflow-hidden rounded-4xl border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
         >
           <div className="flex flex-col items-center text-center">
             <div className="relative mb-8 flex size-24 items-center justify-center rounded-full bg-[#ffdad6]">
-              <AlertTriangle className="size-10 text-[#93000a]" strokeWidth={1.75} />
+              <AlertTriangle
+                className="size-10 text-[#93000a]"
+                strokeWidth={1.75}
+              />
             </div>
-            <h1 className="text-base text-munity-green">Application not approved</h1>
+            <h1 className="text-base text-munity-green">
+              Application not approved
+            </h1>
             <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
               {applicantName ? (
                 <>
-                  Hi <span className="font-semibold text-munity-text">{applicantName}</span>,{" "}
+                  Hi{" "}
+                  <span className="font-semibold text-munity-text">
+                    {applicantName}
+                  </span>
+                  ,{" "}
                 </>
               ) : null}
-              Clinical Operations was unable to verify your credentials with the information
-              provided. Reach out to support to learn what&apos;s missing or to appeal this
-              decision.
+              Clinical Operations was unable to verify your credentials with the
+              information provided. Reach out to support to learn what&apos;s
+              missing or to appeal this decision.
             </p>
             <div className="mt-10">
               <Button href={routes.help} className="h-14 rounded-xl px-8">
@@ -279,14 +315,16 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
   const submitted = status === "in-review";
   const checklist = getReviewChecklist(status);
   const progress = getReviewProgressPercent(checklist);
-  const submittedLabel = submittedAt ? formatSubmittedRelative(submittedAt) : null;
+  const submittedLabel = submittedAt
+    ? formatSubmittedRelative(submittedAt)
+    : null;
 
   return (
     <>
       <motion.article
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-[32px] border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
+        className="relative overflow-hidden rounded-4xl border border-munity-border/50 bg-white/70 p-12 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm"
       >
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-8 flex size-24 items-center justify-center rounded-full bg-[#d9eaa3]">
@@ -296,7 +334,9 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
 
           <div className="flex flex-wrap items-center justify-center gap-3">
             <h1 className="text-base text-munity-green">
-              {submitted ? "Application submitted for verification" : "Finish onboarding to start review"}
+              {submitted
+                ? "Application submitted for verification"
+                : "Finish onboarding to start review"}
             </h1>
             {submitted ? <LivePulse label="Review active" /> : null}
           </div>
@@ -304,16 +344,24 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
           <p className="mt-4 max-w-md text-base leading-relaxed text-munity-muted">
             {applicantName ? (
               <>
-                Thanks, <span className="font-semibold text-munity-text">{applicantName}</span>.{" "}
+                Thanks,{" "}
+                <span className="font-semibold text-munity-text">
+                  {applicantName}
+                </span>
+                .{" "}
               </>
             ) : null}
-            Clinical Operations is verifying your credentials before your therapist account can go
-            live. Dashboard access unlocks only after approval.
+            Clinical Operations is verifying your credentials before your
+            therapist account can go live. Dashboard access unlocks only after
+            approval.
           </p>
 
           {!submitted ? (
             <div className="mt-6">
-              <Button href={routes.therapistOnboarding.basicInfo} className="h-12 rounded-xl px-6">
+              <Button
+                href={routes.therapistOnboarding.basicInfo}
+                className="h-12 rounded-xl px-6"
+              >
                 Continue Onboarding
               </Button>
             </div>
@@ -342,7 +390,7 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
               animate={{ width: `${Math.max(8, progress)}%` }}
               transition={{ type: "spring", stiffness: 120, damping: 20 }}
             >
-              <div className="absolute inset-y-0 right-0 w-20 bg-gradient-to-l from-white/30 to-transparent" />
+              <div className="absolute inset-y-0 right-0 w-20 bg-linear-to-l from-white/30 to-transparent" />
             </motion.div>
           </div>
           <p className="mt-2 text-left text-xs font-semibold text-munity-green">
@@ -350,8 +398,9 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
           </p>
 
           <p className="mt-4 text-left text-xs italic leading-relaxed text-munity-muted">
-            &ldquo;Munity is committed to safety and quality. Every profile is manually reviewed by
-            our Clinical Operations team to maintain nurtured stability for our peers.&rdquo;
+            &ldquo;Munity is committed to safety and quality. Every profile is
+            manually reviewed by our Clinical Operations team to maintain
+            nurtured stability for our peers.&rdquo;
           </p>
         </div>
 
@@ -369,8 +418,9 @@ function ReviewStatusCard({ status, submittedAt, applicantName }: ReviewStatusCa
                 We’ll notify you when verification is complete
               </p>
               <p className="mt-1 text-xs leading-relaxed text-munity-muted">
-                Therapist login and dashboard stay locked until Clinical Operations activates your
-                credentials. You can leave this page — your application remains in review.
+                Therapist login and dashboard stay locked until Clinical
+                Operations activates your credentials. You can leave this page —
+                your application remains in review.
               </p>
             </div>
           </div>
@@ -414,10 +464,16 @@ export function CredentialAuthenticationView({
   const pendingReview = status === "in-review";
 
   return (
-    <SidebarProvider storageKey="munity-credential-sidebar-open" expandedWidth={288}>
+    <SidebarProvider
+      storageKey="munity-credential-sidebar-open"
+      expandedWidth={288}
+    >
       <div className="flex min-h-screen flex-col bg-munity-bg">
         <header className="fixed inset-x-0 top-0 z-50 flex h-16 items-center border-b border-munity-input-border/20 bg-munity-bg/80 px-10 shadow-sm backdrop-blur-md">
-          <Link href={routes.home} className="text-base font-bold text-munity-green">
+          <Link
+            href={routes.home}
+            className="text-base font-bold text-munity-green"
+          >
             Munity
           </Link>
         </header>

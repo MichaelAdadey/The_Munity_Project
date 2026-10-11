@@ -4,7 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { ChipSelect } from "@/components/ui/ChipSelect";
-import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
+import {
+  getOnboardingStepData,
+  saveOnboardingStepData,
+} from "@/lib/onboarding-data";
 import { therapistSpecialtyCategories } from "@/lib/therapist-specialties";
 import { routes } from "@/lib/routes";
 
@@ -30,8 +33,9 @@ export default function SpecialtiesPage() {
   }, [hydrated, dirty, selected]);
 
   const activeCategory =
-    therapistSpecialtyCategories.find((category) => category.id === categoryId) ??
-    therapistSpecialtyCategories[0];
+    therapistSpecialtyCategories.find(
+      (category) => category.id === categoryId,
+    ) ?? therapistSpecialtyCategories[0];
 
   const catalog = useMemo(() => {
     const q = query.trim().toLowerCase();

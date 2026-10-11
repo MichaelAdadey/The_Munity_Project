@@ -61,7 +61,9 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   const [summary, setSummary] = useState("");
   const [observations, setObservations] = useState("");
   const [homework, setHomework] = useState<string[]>([""]);
-  const [sessionDate, setSessionDate] = useState(new Date().toISOString().slice(0, 10));
+  const [sessionDate, setSessionDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
   const [exportOpen, setExportOpen] = useState(false);
 
   function buildPlainText() {
@@ -76,23 +78,28 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
       "Clinical observations:",
       observations.trim(),
       "",
-      homework.filter(Boolean).length ? `Next steps:\n- ${homework.filter(Boolean).join("\n- ")}` : null,
+      homework.filter(Boolean).length
+        ? `Next steps:\n- ${homework.filter(Boolean).join("\n- ")}`
+        : null,
     ]
       .filter(Boolean)
       .join("\n\n");
   }
 
   function buildHTML() {
-    const items = homework.filter(Boolean).map((h) => `<li>${h}</li>`).join("");
+    const items = homework
+      .filter(Boolean)
+      .map((h) => `<li>${h}</li>`)
+      .join("");
     return `
       <div style="font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; padding:20px; color:#21311b;">
         <h1 style="color:#3e5219;">Session note for ${patient.name}</h1>
         <p><strong>Date:</strong> ${sessionDate}</p>
         ${title ? `<p><strong>Title:</strong> ${title}</p>` : ""}
         <h2>Summary</h2>
-        <p>${summary.replace(/\n/g, '<br/>')}</p>
+        <p>${summary.replace(/\n/g, "<br/>")}</p>
         <h2>Clinical observations</h2>
-        <p>${observations.replace(/\n/g, '<br/>')}</p>
+        <p>${observations.replace(/\n/g, "<br/>")}</p>
         ${items ? `<h2>Next steps</h2><ul>${items}</ul>` : ""}
       </div>
     `;
@@ -159,7 +166,9 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
   }, [homework.length]);
 
   function removeHomework(index: number) {
-    setHomework((prev) => (prev.length === 1 ? [""] : prev.filter((_, i) => i !== index)));
+    setHomework((prev) =>
+      prev.length === 1 ? [""] : prev.filter((_, i) => i !== index),
+    );
   }
 
   async function handleSave() {
@@ -184,7 +193,11 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
         router.push(notesHref);
         router.refresh();
       } catch (error) {
-        flash(error instanceof Error ? error.message : "Couldn't save that session note");
+        flash(
+          error instanceof Error
+            ? error.message
+            : "Couldn't save that session note",
+        );
       }
     }, "Saving session note...");
   }
@@ -222,15 +235,22 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
                     Documentation
                   </p>
-                  <h1 className="mt-2 text-3xl font-bold text-munity-text">New Session Note</h1>
+                  <h1 className="mt-2 text-3xl font-bold text-munity-text">
+                    New Session Note
+                  </h1>
                   <p className="mt-1 text-base text-munity-muted">
                     Record today’s session for {patient.name}
                   </p>
-                  <div className="mt-3"><LivePulse label="Draft autosaved" /></div>
+                  <div className="mt-3">
+                    <LivePulse label="Draft autosaved" />
+                  </div>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <div className="relative">
-                    <Button variant="outline" onClick={() => setExportOpen((s) => !s)}>
+                    <Button
+                      variant="outline"
+                      onClick={() => setExportOpen((s) => !s)}
+                    >
                       Export
                     </Button>
                     {exportOpen && (
@@ -269,10 +289,16 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                     )}
                   </div>
 
-                  <Button variant="outline" onClick={() => router.push(notesHref)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(notesHref)}
+                  >
                     Cancel
                   </Button>
-                  <Button onClick={handleSave} disabled={!title.trim() || !summary.trim()}>
+                  <Button
+                    onClick={handleSave}
+                    disabled={!title.trim() || !summary.trim()}
+                  >
                     <Save className="size-4" />
                     Save note
                   </Button>
@@ -287,7 +313,9 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                 }}
               >
                 <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
-                  <h2 className="text-lg font-semibold text-munity-text">Session details</h2>
+                  <h2 className="text-lg font-semibold text-munity-text">
+                    Session details
+                  </h2>
                   <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label htmlFor="session-title" className={labelClassName}>
@@ -342,7 +370,9 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                 </section>
 
                 <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
-                  <h2 className="text-lg font-semibold text-munity-text">Clinical observations</h2>
+                  <h2 className="text-lg font-semibold text-munity-text">
+                    Clinical observations
+                  </h2>
                   <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <Select
                       label="Mood rating"
@@ -358,7 +388,10 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                     />
                   </div>
                   <div className="mt-5">
-                    <label htmlFor="clinical-observations" className={labelClassName}>
+                    <label
+                      htmlFor="clinical-observations"
+                      className={labelClassName}
+                    >
                       Notes
                     </label>
                     <textarea
@@ -399,16 +432,18 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                   <div className="mt-5 flex flex-col gap-3">
                     {homework.map((task, index) => (
                       <div key={index} className="flex items-center gap-2">
-                            <input
-                              ref={(el) => {
-                                inputsRef.current[index] = el;
-                              }}
-                              type="text"
-                              value={task}
-                              onChange={(event) => updateHomework(index, event.target.value)}
-                              placeholder={`Homework task ${index + 1}`}
-                              className={fieldClassName}
-                            />
+                        <input
+                          ref={(el) => {
+                            inputsRef.current[index] = el;
+                          }}
+                          type="text"
+                          value={task}
+                          onChange={(event) =>
+                            updateHomework(index, event.target.value)
+                          }
+                          placeholder={`Homework task ${index + 1}`}
+                          className={fieldClassName}
+                        />
                         <button
                           type="button"
                           onClick={() => removeHomework(index)}
@@ -423,10 +458,17 @@ export function NewSessionNoteView({ patient }: NewSessionNoteViewProps) {
                 </section>
 
                 <div className="flex flex-wrap justify-end gap-3">
-                  <Button type="button" variant="outline" onClick={() => router.push(notesHref)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => router.push(notesHref)}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" disabled={!title.trim() || !summary.trim()}>
+                  <Button
+                    type="submit"
+                    disabled={!title.trim() || !summary.trim()}
+                  >
                     <Save className="size-4" />
                     Save note
                   </Button>

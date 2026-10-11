@@ -1,19 +1,19 @@
-"use client"
+"use client";
 
-import { usePathname } from "next/navigation"
-import { ConversationList } from "@/components/messages/conversation-list"
-import { cn } from "@/lib/utils"
-import type { Conversation } from "@/lib/types"
+import { usePathname } from "next/navigation";
+import { ConversationList } from "@/components/messages/conversation-list";
+import { cn } from "@/lib/utils";
+import type { Conversation } from "@/lib/types";
 
 export function MessagesShell({
   conversations,
   children,
 }: {
-  conversations: Conversation[]
-  children: React.ReactNode
+  conversations: Conversation[];
+  children: React.ReactNode;
 }) {
-  const pathname = usePathname()
-  const hasActiveConversation = pathname !== "/messages"
+  const pathname = usePathname();
+  const hasActiveConversation = pathname !== "/messages";
 
   return (
     <div className="mx-auto flex h-[calc(100dvh-4rem-4.5rem)] max-w-6xl px-0 lg:h-[calc(100dvh-4rem)] lg:px-8 lg:py-6">
@@ -36,5 +36,5 @@ export function MessagesShell({
         </div>
       </div>
     </div>
-  )
+  );
 }

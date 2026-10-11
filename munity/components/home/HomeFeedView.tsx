@@ -24,13 +24,9 @@ import {
 } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
 import { DailyMoodCheckin } from "@/components/home/DailyMoodCheckin";
-// import { EditPostDialog } from "@/components/home/EditPostDialog";
 import { moodIcons, type MoodLabel } from "@/components/home/MoodIcons";
-// import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
 import { MunitySunIcon } from "@/components/icons/MunityIcons";
-// import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { startCalmAmbient } from "@/lib/calm-ambient";
-// import { useMockStore } from "@/lib/mock-store";
 import { communityPath, routes, therapyPath } from "@/lib/routes";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import { formatRelativeTime, useFeed } from "@/hooks/use-feed";
@@ -94,22 +90,6 @@ const mindfulMoments = [
   "Unclench your jaw. Drop your shoulders. Soften your gaze for ten seconds.",
 ];
 
-// const liveActivitySeed = [
-//   {
-//     who: "Jordan",
-//     action: "supported a post in Mindful Paths",
-//     tone: "support",
-//   },
-//   { who: "Priya", action: "joined Grief Garden", tone: "join" },
-//   { who: "Marcus", action: "shared a calm check-in", tone: "post" },
-//   {
-//     who: "Elena A.",
-//     action: "is available for sessions today",
-//     tone: "therapy",
-//   },
-//   { who: "Campus Calm", action: "started a live peer circle", tone: "live" },
-// ];
-
 const cardClass =
   "rounded-[20px] border border-munity-border bg-white shadow-[0_4px_10px_rgba(85,107,47,0.05)]";
 
@@ -134,7 +114,6 @@ export function HomeFeedView() {
     refresh,
   } = useFeed();
 
-  // const store = useMockStore();
   const [showMoods, setShowMoods] = useState(true);
   const [selectedMood, setSelectedMood] = useState<MoodLabel | null>(null);
   const [composerText, setComposerText] = useState("");
@@ -160,8 +139,6 @@ export function HomeFeedView() {
   const [audioMuted, setAudioMuted] = useState(false);
   const ambientRef = useRef<ReturnType<typeof startCalmAmbient>>(null);
   const [momentIndex, setMomentIndex] = useState(0);
-  // const [activityIndex, setActivityIndex] = useState(0);
-  // const [onlineNow, setOnlineNow] = useState(128);
   const [justSupported, setJustSupported] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [openPostMenu, setOpenPostMenu] = useState<string | null>(null);
@@ -206,7 +183,6 @@ export function HomeFeedView() {
   const therapists = allTherapists.slice(0, 2);
 
   const visiblePosts = useMemo(() => {
-    // const activePosts = store.posts.filter((post) => !post.archived);
     const query = search.trim().toLowerCase();
     if (!query) return posts;
     return posts.filter(
@@ -214,26 +190,8 @@ export function HomeFeedView() {
         post.content.toLowerCase().includes(query) ||
         post.author.toLowerCase().includes(query) ||
         post.feeling.toLowerCase().includes(query),
-      // (post.communityName?.toLowerCase().includes(query) ?? false),
     );
   }, [search, posts]);
-
-  // const liveActivity = useMemo(() => {
-  //   const recentPost = store.posts[0];
-  //   const dynamic = recentPost
-  //     ? [
-  //         {
-  //           who: recentPost.anonymous
-  //             ? "Someone"
-  //             : recentPost.author.split(" ")[0],
-  //           action: `posted in ${recentPost.communityName ?? "the feed"}`,
-  //           tone: "post",
-  //         },
-  //         ...liveActivitySeed,
-  //       ]
-  //     : liveActivitySeed;
-  //   return dynamic;
-  // }, [store.posts]);
 
   useEffect(() => {
     if (!toast) return;
@@ -247,14 +205,6 @@ export function HomeFeedView() {
     }, 8000);
     return () => window.clearInterval(timer);
   }, []);
-
-  // useEffect(() => {
-  //   const timer = window.setInterval(() => {
-  //     setActivityIndex((value) => (value + 1) % liveActivity.length);
-  //     setOnlineNow((value) => value + (Math.random() > 0.5 ? 1 : -1));
-  //   }, 4200);
-  //   return () => window.clearInterval(timer);
-  // }, [liveActivity.length]);
 
   const startBreathing = () => {
     setBreathing(true);
@@ -340,15 +290,6 @@ export function HomeFeedView() {
     setPhotoPreview(objectUrl);
     setShowPhotoPicker(false);
     flash("Photo ready - add a caption or post");
-    // const reader = new FileReader();
-    // reader.onload = () => {
-    //   const result = typeof reader.result === "string" ? reader.result : null;
-    //   if (!result) return;
-    //   setPhotoPreview(result);
-    //   setShowPhotoPicker(false);
-    //   flash("Photo ready — add a caption or post");
-    // };
-    // reader.readAsDataURL(file);
   }
 
   async function supportPost(postId: string) {
@@ -511,14 +452,6 @@ export function HomeFeedView() {
                 </motion.p>
               ) : null}
               <div className="mt-5 flex w-full gap-2">
-                {/* <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
-                  <p className="text-base font-bold text-munity-green">
-                    {store.profile.dayStreak}
-                  </p>
-                  <p className="mt-0.5 text-[11px] font-medium text-munity-muted">
-                    Day Streak
-                  </p>
-                </div> */}
                 <div className="flex-1 rounded-xl bg-munity-sidebar px-3 py-3 text-center">
                   <p className="text-base font-bold text-munity-green">
                     {joinedCommunities.length}
@@ -537,36 +470,6 @@ export function HomeFeedView() {
               </Link>
             </div>
           </section>
-
-          {/* <section className={`${cardClass} p-4`}>
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.08em] text-munity-muted">
-                Live now
-              </p>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f7e4] px-2 py-1 text-[11px] font-semibold text-[#2f6b3a]">
-                <span className="relative flex size-2">
-                  <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#22c55e] opacity-60" />
-                  <span className="relative inline-flex size-2 rounded-full bg-[#22c55e]" />
-                </span>
-                {Math.max(96, onlineNow)} online
-              </span>
-            </div>
-            <AnimatePresence mode="wait">
-              <motion.p
-                key={activityIndex}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.28 }}
-                className="mt-3 text-sm leading-relaxed text-munity-text"
-              >
-                <span className="font-semibold text-munity-green">
-                  {liveActivity[activityIndex]?.who}
-                </span>{" "}
-                {liveActivity[activityIndex]?.action}
-              </motion.p>
-            </AnimatePresence>
-          </section> */}
 
           <section className={`${cardClass} p-5`}>
             <div className="mb-3 flex items-center justify-between">
@@ -911,7 +814,7 @@ export function HomeFeedView() {
                     delay: Math.min(index * 0.04, 0.2),
                     duration: 0.3,
                   }}
-                  className={`${cardClass} p-5 sm:p-6`} //${post.accent ? "border-l-4 border-l-munity-green" : ""}
+                  className={`${cardClass} p-5 sm:p-6`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">

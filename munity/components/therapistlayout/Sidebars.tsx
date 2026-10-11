@@ -96,7 +96,7 @@ export function PatientSidebar({
                   : "text-munity-muted hover:bg-white/50"
               }`}
             >
-              <Icon className="size-[18px]" />
+              <Icon className="size-4.5" />
               {label}
             </Link>
           );
@@ -142,7 +142,7 @@ export function OnboardingSidebar({
           return (
             <div key={step.number} className="relative">
               {index < onboardingSteps.length - 1 && (
-                <div className="absolute bottom-0 left-[27px] top-10 w-0.5 bg-munity-divider" />
+                <div className="absolute bottom-0 left-6.75 top-10 w-0.5 bg-munity-divider" />
               )}
               <Link
                 href={step.href}
@@ -261,7 +261,7 @@ export function TherapistSidebar({ active }: TherapistSidebarProps) {
                     : "text-munity-muted hover:bg-white/50"
                 }`}
               >
-                <Icon className="size-[18px]" />
+                <Icon className="size-4.5" />
                 {label}
               </Link>
             );

@@ -1,35 +1,35 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
-import { CommunityCard } from "@/components/community-card"
-import { cn } from "@/lib/utils"
-import type { Community } from "@/lib/types"
+import { useMemo, useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
+import { CommunityCard } from "@/components/community-card";
+import { cn } from "@/lib/utils";
+import type { Community } from "@/lib/types";
 
 export function CommunityBrowser({
   communities,
   categories,
 }: {
-  communities: Community[]
-  categories: string[]
+  communities: Community[];
+  categories: string[];
 }) {
-  const [query, setQuery] = useState("")
-  const [active, setActive] = useState("All")
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState("All");
 
   const filtered = useMemo(() => {
     return communities.filter((c) => {
-      const matchesCategory = active === "All" || c.category === active
+      const matchesCategory = active === "All" || c.category === active;
       const matchesQuery =
         !query ||
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.description.toLowerCase().includes(query.toLowerCase()) ||
-        c.category.toLowerCase().includes(query.toLowerCase())
-      return matchesCategory && matchesQuery
-    })
-  }, [communities, active, query])
+        c.category.toLowerCase().includes(query.toLowerCase());
+      return matchesCategory && matchesQuery;
+    });
+  }, [communities, active, query]);
 
-  const filters = ["All", ...categories]
+  const filters = ["All", ...categories];
 
   return (
     <div className="space-y-6">
@@ -62,7 +62,9 @@ export function CommunityBrowser({
       </div>
 
       {filtered.length === 0 ? (
-        <p className="py-12 text-center text-muted-foreground">No communities match your search.</p>
+        <p className="py-12 text-center text-muted-foreground">
+          No communities match your search.
+        </p>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((community) => (
@@ -71,5 +73,5 @@ export function CommunityBrowser({
         </div>
       )}
     </div>
-  )
+  );
 }

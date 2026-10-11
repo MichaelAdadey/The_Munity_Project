@@ -1,17 +1,21 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Search, Stethoscope } from "lucide-react"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { cn, initials, timeAgo } from "@/lib/utils"
-import type { Conversation } from "@/lib/types"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Search, Stethoscope } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn, initials, timeAgo } from "@/lib/utils";
+import type { Conversation } from "@/lib/types";
 
-export function ConversationList({ conversations }: { conversations: Conversation[] }) {
-  const pathname = usePathname()
+export function ConversationList({
+  conversations,
+}: {
+  conversations: Conversation[];
+}) {
+  const pathname = usePathname();
 
   return (
     <div className="flex h-full flex-col bg-card">
@@ -19,14 +23,18 @@ export function ConversationList({ conversations }: { conversations: Conversatio
         <h1 className="text-lg font-semibold tracking-tight">Messages</h1>
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search conversations" className="h-9 pl-9" aria-label="Search conversations" />
+          <Input
+            placeholder="Search conversations"
+            className="h-9 pl-9"
+            aria-label="Search conversations"
+          />
         </div>
       </div>
 
       <ScrollArea className="min-h-0 flex-1">
         <nav className="flex flex-col p-2">
           {conversations.map((conversation) => {
-            const active = pathname === `/messages/${conversation.id}`
+            const active = pathname === `/messages/${conversation.id}`;
             return (
               <Link
                 key={conversation.id}
@@ -57,7 +65,8 @@ export function ConversationList({ conversations }: { conversations: Conversatio
                     <p
                       className={cn(
                         "truncate text-sm text-muted-foreground",
-                        conversation.unread_count > 0 && "font-medium text-foreground",
+                        conversation.unread_count > 0 &&
+                          "font-medium text-foreground",
                       )}
                     >
                       {conversation.last_message}
@@ -70,10 +79,10 @@ export function ConversationList({ conversations }: { conversations: Conversatio
                   </Badge>
                 )}
               </Link>
-            )
+            );
           })}
         </nav>
       </ScrollArea>
     </div>
-  )
+  );
 }

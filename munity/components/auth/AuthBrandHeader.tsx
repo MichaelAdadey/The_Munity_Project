@@ -18,9 +18,15 @@ export function AuthBrandHeader({
         className="flex size-16 items-center justify-center rounded-2xl bg-munity-olive shadow-[0_1px_1px_rgba(0,0,0,0.05)]"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={assets.auth.logoIcon} alt="Munity" className="h-[27px] w-[25px]" />
+        <img
+          src={assets.auth.logoIcon}
+          alt="Munity"
+          className="h-6.75 w-6.25"
+        />
       </Link>
-      <h1 className="pt-2 text-[32px] font-bold tracking-[-0.8px] text-munity-green">{title}</h1>
+      <h1 className="pt-2 text-[32px] font-bold tracking-[-0.8px] text-munity-green">
+        {title}
+      </h1>
       <p className="text-base text-munity-muted">{subtitle}</p>
     </div>
   );

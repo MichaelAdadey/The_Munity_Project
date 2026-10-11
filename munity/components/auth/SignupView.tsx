@@ -4,7 +4,15 @@ import { useActionState, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+  User,
+} from "lucide-react";
 import { signInWithGoogle } from "@/app/(auth)/actions";
 import { AuthBrandHeader } from "@/components/auth/AuthBrandHeader";
 import { AuthDivider } from "@/components/auth/AuthDivider";
@@ -56,7 +64,7 @@ function GoogleSubmitButton() {
 }
 
 function CreateAccountButton({ disabled = false }: { disabled?: boolean }) {
-  const {pending} = useFormStatus();
+  const { pending } = useFormStatus();
 
   return (
     <Button

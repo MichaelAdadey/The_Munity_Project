@@ -17,7 +17,11 @@ import {
 } from "lucide-react";
 import { TherapistAppShell } from "@/components/therapistlayout/TherapistAppShell";
 import { MunityLeafIcon } from "@/components/icons/MunityIcons";
-import { LivePulse, LiveTicker, useLiveToast } from "@/components/live/LiveFeedback";
+import {
+  LivePulse,
+  LiveTicker,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { Button } from "@/components/ui/AppButton";
 import {
   Dialog,
@@ -38,7 +42,12 @@ import { assets } from "@/lib/assets";
 import { routes } from "@/lib/routes";
 import { PROFILE_UPDATED_EVENT } from "@/hooks/use-current-profile";
 
-type EditSection = "profile" | "personal" | "credentials" | "specialties" | "payout";
+type EditSection =
+  | "profile"
+  | "personal"
+  | "credentials"
+  | "specialties"
+  | "payout";
 
 const specialtyOptions = [
   "Anxiety & Stress",
@@ -76,7 +85,9 @@ function ProfileSection({
       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold text-munity-text">{title}</h2>
-          {description ? <p className="mt-1 text-sm text-munity-muted">{description}</p> : null}
+          {description ? (
+            <p className="mt-1 text-sm text-munity-muted">{description}</p>
+          ) : null}
         </div>
         {onEdit ? (
           <button
@@ -97,7 +108,9 @@ function ProfileSection({
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col gap-1 border-b border-munity-border/60 py-3 last:border-b-0 last:pb-0 first:pt-0">
-      <dt className="text-xs font-semibold uppercase tracking-wide text-munity-muted">{label}</dt>
+      <dt className="text-xs font-semibold uppercase tracking-wide text-munity-muted">
+        {label}
+      </dt>
       <dd className="text-sm font-medium text-munity-text">{value}</dd>
     </div>
   );
@@ -116,26 +129,32 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5">
-      <span className="text-xs font-semibold tracking-wide text-munity-muted">{label}</span>
+      <span className="text-xs font-semibold tracking-wide text-munity-muted">
+        {label}
+      </span>
       {multiline ? (
         <textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={4}
-          className="w-full resize-none rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+          className="w-full resize-none rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
         />
       ) : (
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-xl border border-[#c5c8b8] bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
+          className="w-full rounded-xl border border-munity-input-border bg-white px-3 py-2.5 text-sm text-munity-text outline-none ring-munity-green/30 focus:ring-2"
         />
       )}
     </label>
   );
 }
 
-function VerificationBadge({ status }: { status: TherapistProfile["verificationStatus"] }) {
+function VerificationBadge({
+  status,
+}: {
+  status: TherapistProfile["verificationStatus"];
+}) {
   if (status === "verified") {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-munity-lime/60 px-3 py-1 text-xs font-bold text-munity-olive-text">
@@ -148,7 +167,11 @@ function VerificationBadge({ status }: { status: TherapistProfile["verificationS
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
       <Shield className="size-3.5" />
-      {status === "in-review" ? "Verification in review" : status === "rejected" ? "Verification rejected" : "Verification pending"}
+      {status === "in-review"
+        ? "Verification in review"
+        : status === "rejected"
+          ? "Verification rejected"
+          : "Verification pending"}
     </span>
   );
 }
@@ -169,7 +192,9 @@ export function TherapistProfileView({
   const [avatarViewerOpen, setAvatarViewerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  async function handleAvatarChange(event: React.ChangeEvent<HTMLInputElement>) {
+  async function handleAvatarChange(
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -197,7 +222,9 @@ export function TherapistProfileView({
       return;
     }
 
-    const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { data: publicUrlData } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(path);
     const newAvatarUrl = publicUrlData.publicUrl;
 
     const { error: updateError } = await supabase
@@ -229,15 +256,21 @@ export function TherapistProfileView({
       ...draft,
       firstName: draft.firstName.trim() || profile.firstName,
       lastName: draft.lastName.trim() || profile.lastName,
-      professionalTitle: draft.professionalTitle.trim() || profile.professionalTitle,
+      professionalTitle:
+        draft.professionalTitle.trim() || profile.professionalTitle,
       phone: draft.phone.trim() || profile.phone,
       email: draft.email.trim() || profile.email,
-      practiceLocation: draft.practiceLocation.trim() || profile.practiceLocation,
+      practiceLocation:
+        draft.practiceLocation.trim() || profile.practiceLocation,
       exactPracticeLocation:
         draft.exactPracticeLocation.trim() || profile.exactPracticeLocation,
       bio: draft.bio.trim() || profile.bio,
-      specialties: draft.specialties.length ? draft.specialties : profile.specialties,
-      payoutMethods: draft.payoutMethods.length ? draft.payoutMethods : profile.payoutMethods,
+      specialties: draft.specialties.length
+        ? draft.specialties
+        : profile.specialties,
+      payoutMethods: draft.payoutMethods.length
+        ? draft.payoutMethods
+        : profile.payoutMethods,
     };
 
     setIsSaving(true);
@@ -287,9 +320,9 @@ export function TherapistProfileView({
       <motion.section
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-[24px] border border-munity-border bg-white shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
+        className="overflow-hidden rounded-3xl border border-munity-border bg-white shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
       >
-        <div className="bg-gradient-to-r from-munity-lime/40 via-munity-green/5 to-transparent px-8 py-8">
+        <div className="bg-linear-to-r from-munity-lime/40 via-munity-green/5 to-transparent px-8 py-8">
           <div className="flex flex-wrap items-center gap-6">
             <div className="relative size-24 shrink-0">
               <button
@@ -306,7 +339,9 @@ export function TherapistProfileView({
                 />
                 {isUploadingAvatar ? (
                   <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                    <span className="text-xs font-semibold text-white">Uploading…</span>
+                    <span className="text-xs font-semibold text-white">
+                      Uploading…
+                    </span>
                   </div>
                 ) : null}
               </button>
@@ -329,7 +364,9 @@ export function TherapistProfileView({
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-3">
-                <h2 className="text-3xl font-bold text-munity-text">{displayName}</h2>
+                <h2 className="text-3xl font-bold text-munity-text">
+                  {displayName}
+                </h2>
                 <VerificationBadge status={profile.verificationStatus} />
                 <LivePulse label="Profile live" />
               </div>
@@ -365,7 +402,9 @@ export function TherapistProfileView({
           </div>
         </div>
         <div className="border-t border-munity-border px-8 py-5">
-          <p className="text-sm leading-relaxed text-munity-muted">{profile.bio}</p>
+          <p className="text-sm leading-relaxed text-munity-muted">
+            {profile.bio}
+          </p>
         </div>
       </motion.section>
 
@@ -379,11 +418,20 @@ export function TherapistProfileView({
           <dl>
             <DetailRow label="Title" value={profile.title} />
             <DetailRow label="Gender" value={profile.gender} />
-            <DetailRow label="Full Name" value={`${profile.firstName} ${profile.lastName}`} />
-            <DetailRow label="Professional Title" value={profile.professionalTitle} />
+            <DetailRow
+              label="Full Name"
+              value={`${profile.firstName} ${profile.lastName}`}
+            />
+            <DetailRow
+              label="Professional Title"
+              value={profile.professionalTitle}
+            />
             <DetailRow label="Phone" value={profile.phone} />
             <DetailRow label="Email" value={profile.email} />
-            <DetailRow label="Practice Location (Region)" value={profile.practiceLocation} />
+            <DetailRow
+              label="Practice Location (Region)"
+              value={profile.practiceLocation}
+            />
             <DetailRow
               label="Exact Practice Location"
               value={profile.exactPracticeLocation || "Not provided"}
@@ -438,7 +486,10 @@ export function TherapistProfileView({
           delay={0.2}
         >
           <dl>
-            <DetailRow label="Payment Methods" value={profile.payoutMethods.join(", ")} />
+            <DetailRow
+              label="Payment Methods"
+              value={profile.payoutMethods.join(", ")}
+            />
             {profile.mobileMoneyNetwork ? (
               <DetailRow
                 label="Mobile Money"
@@ -465,7 +516,9 @@ export function TherapistProfileView({
         transition={{ delay: 0.25 }}
         className="rounded-[20px] border border-munity-green/15 bg-munity-green/5 p-6"
       >
-        <h2 className="text-base font-bold text-munity-text">Public contact shortcuts</h2>
+        <h2 className="text-base font-bold text-munity-text">
+          Public contact shortcuts
+        </h2>
         <p className="mt-1 text-sm text-munity-muted">
           These are the details patients see when booking with you.
         </p>
@@ -515,7 +568,8 @@ export function TherapistProfileView({
                     : "Edit profile"}
             </DialogTitle>
             <DialogDescription>
-              Updates stay on this device for the therapist preview — they do not reopen onboarding.
+              Updates stay on this device for the therapist preview — they do
+              not reopen onboarding.
             </DialogDescription>
           </DialogHeader>
 
@@ -525,24 +579,32 @@ export function TherapistProfileView({
                 <Field
                   label="Title"
                   value={draft.title}
-                  onChange={(value) => setDraft((prev) => ({ ...prev, title: value }))}
+                  onChange={(value) =>
+                    setDraft((prev) => ({ ...prev, title: value }))
+                  }
                 />
                 <Field
                   label="Gender"
                   value={draft.gender}
-                  onChange={(value) => setDraft((prev) => ({ ...prev, gender: value }))}
+                  onChange={(value) =>
+                    setDraft((prev) => ({ ...prev, gender: value }))
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field
                   label="First name"
                   value={draft.firstName}
-                  onChange={(value) => setDraft((prev) => ({ ...prev, firstName: value }))}
+                  onChange={(value) =>
+                    setDraft((prev) => ({ ...prev, firstName: value }))
+                  }
                 />
                 <Field
                   label="Last name"
                   value={draft.lastName}
-                  onChange={(value) => setDraft((prev) => ({ ...prev, lastName: value }))}
+                  onChange={(value) =>
+                    setDraft((prev) => ({ ...prev, lastName: value }))
+                  }
                 />
               </div>
               <Field
@@ -555,12 +617,16 @@ export function TherapistProfileView({
               <Field
                 label="Phone"
                 value={draft.phone}
-                onChange={(value) => setDraft((prev) => ({ ...prev, phone: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, phone: value }))
+                }
               />
               <Field
                 label="Email"
                 value={draft.email}
-                onChange={(value) => setDraft((prev) => ({ ...prev, email: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, email: value }))
+                }
               />
               <Field
                 label="Practice location (region)"
@@ -573,7 +639,10 @@ export function TherapistProfileView({
                 label="Exact practice location"
                 value={draft.exactPracticeLocation}
                 onChange={(value) =>
-                  setDraft((prev) => ({ ...prev, exactPracticeLocation: value }))
+                  setDraft((prev) => ({
+                    ...prev,
+                    exactPracticeLocation: value,
+                  }))
                 }
               />
               {editSection === "profile" ? (
@@ -581,7 +650,9 @@ export function TherapistProfileView({
                   label="Bio"
                   value={draft.bio}
                   multiline
-                  onChange={(value) => setDraft((prev) => ({ ...prev, bio: value }))}
+                  onChange={(value) =>
+                    setDraft((prev) => ({ ...prev, bio: value }))
+                  }
                 />
               ) : null}
             </div>
@@ -592,22 +663,30 @@ export function TherapistProfileView({
               <Field
                 label="Licensing body"
                 value={draft.licensingBody}
-                onChange={(value) => setDraft((prev) => ({ ...prev, licensingBody: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, licensingBody: value }))
+                }
               />
               <Field
                 label="License type"
                 value={draft.licenseType}
-                onChange={(value) => setDraft((prev) => ({ ...prev, licenseType: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, licenseType: value }))
+                }
               />
               <Field
                 label="License number"
                 value={draft.licenseNumber}
-                onChange={(value) => setDraft((prev) => ({ ...prev, licenseNumber: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, licenseNumber: value }))
+                }
               />
               <Field
                 label="Expiry date"
                 value={draft.licenseExpiry}
-                onChange={(value) => setDraft((prev) => ({ ...prev, licenseExpiry: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, licenseExpiry: value }))
+                }
               />
             </div>
           ) : null}
@@ -624,7 +703,7 @@ export function TherapistProfileView({
                     className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                       active
                         ? "bg-munity-green text-white"
-                        : "border border-[#c5c8b8] bg-white text-munity-text hover:border-munity-green/40"
+                        : "border border-munity-input-border bg-white text-munity-text hover:border-munity-green/40"
                     }`}
                   >
                     {specialty}
@@ -647,7 +726,7 @@ export function TherapistProfileView({
                       className={`rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                         active
                           ? "bg-munity-green text-white"
-                          : "border border-[#c5c8b8] bg-white text-munity-text hover:border-munity-green/40"
+                          : "border border-munity-input-border bg-white text-munity-text hover:border-munity-green/40"
                       }`}
                     >
                       {method}
@@ -672,7 +751,9 @@ export function TherapistProfileView({
               <Field
                 label="Bank name"
                 value={draft.bankName ?? ""}
-                onChange={(value) => setDraft((prev) => ({ ...prev, bankName: value }))}
+                onChange={(value) =>
+                  setDraft((prev) => ({ ...prev, bankName: value }))
+                }
               />
               <Field
                 label="Bank account (last 4)"
@@ -684,11 +765,11 @@ export function TherapistProfileView({
             </div>
           ) : null}
 
-          <DialogFooter className="border-[#e5e5e1] bg-[#f3f4ee]">
+          <DialogFooter className="border-munity-border bg-[#f3f4ee]">
             <button
               type="button"
               onClick={() => setEditSection(null)}
-              className="rounded-xl border-2 border-[#75796b] bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
+              className="rounded-xl border-2 border-munity-gray bg-white px-4 py-2.5 text-sm font-semibold text-munity-text shadow-sm transition hover:bg-[#eceee6]"
             >
               Cancel
             </button>

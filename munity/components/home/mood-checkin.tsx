@@ -1,33 +1,47 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Slider } from "@/components/ui/slider"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const FEELINGS = ["Calm", "Anxious", "Optimistic", "Tired", "Grateful", "Overwhelmed"]
+const FEELINGS = [
+  "Calm",
+  "Anxious",
+  "Optimistic",
+  "Tired",
+  "Grateful",
+  "Overwhelmed",
+];
 
 export function MoodCheckin() {
-  const [value, setValue] = useState([50])
-  const [selected, setSelected] = useState<string[]>([])
-  const [saved, setSaved] = useState(false)
+  const [value, setValue] = useState([50]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [saved, setSaved] = useState(false);
 
   function toggle(feeling: string) {
     setSelected((prev) =>
-      prev.includes(feeling) ? prev.filter((f) => f !== feeling) : [...prev, feeling],
-    )
+      prev.includes(feeling)
+        ? prev.filter((f) => f !== feeling)
+        : [...prev, feeling],
+    );
   }
 
-  const label = value[0] < 33 ? "Struggling" : value[0] < 66 ? "Balanced" : "Thriving"
+  const label =
+    value[0] < 33 ? "Struggling" : value[0] < 66 ? "Balanced" : "Thriving";
 
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">How are you feeling today?</h2>
-          <p className="text-sm text-muted-foreground">Track your nurtured stability to see patterns over time.</p>
+          <h2 className="text-lg font-semibold tracking-tight">
+            How are you feeling today?
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Track your nurtured stability to see patterns over time.
+          </p>
         </div>
         <Badge variant="secondary" className="shrink-0">
           Daily Check-in
@@ -37,7 +51,9 @@ export function MoodCheckin() {
       <div className="mt-6">
         <Slider
           value={value}
-          onValueChange={(next) => setValue(Array.isArray(next) ? [...next] : [next])}
+          onValueChange={(next) =>
+            setValue(Array.isArray(next) ? [...next] : [next])
+          }
           max={100}
           step={1}
           aria-label="Mood level"
@@ -75,5 +91,5 @@ export function MoodCheckin() {
         {saved ? "Check-in saved" : "Save today's check-in"}
       </Button>
     </Card>
-  )
+  );
 }

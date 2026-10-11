@@ -1,36 +1,37 @@
-"use client"
+"use client";
 
-import { useMemo, useState } from "react"
-import { Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
-import { TherapistCard } from "@/components/therapy/therapist-card"
-import { cn } from "@/lib/utils"
-import type { Therapist } from "@/lib/types"
+import { useMemo, useState } from "react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { TherapistCard } from "@/components/therapy/therapist-card";
+import { cn } from "@/lib/utils";
+import type { Therapist } from "@/lib/types";
 
 export function TherapistDirectory({
   therapists,
   specializations,
 }: {
-  therapists: Therapist[]
-  specializations: string[]
+  therapists: Therapist[];
+  specializations: string[];
 }) {
-  const [query, setQuery] = useState("")
-  const [active, setActive] = useState("All")
+  const [query, setQuery] = useState("");
+  const [active, setActive] = useState("All");
 
   const filtered = useMemo(() => {
     return therapists.filter((t) => {
-      const matchesSpecialization = active === "All" || t.specializations.includes(active)
-      const q = query.toLowerCase()
+      const matchesSpecialization =
+        active === "All" || t.specializations.includes(active);
+      const q = query.toLowerCase();
       const matchesQuery =
         !q ||
         t.full_name.toLowerCase().includes(q) ||
         t.title.toLowerCase().includes(q) ||
-        t.specializations.some((s) => s.toLowerCase().includes(q))
-      return matchesSpecialization && matchesQuery
-    })
-  }, [therapists, active, query])
+        t.specializations.some((s) => s.toLowerCase().includes(q));
+      return matchesSpecialization && matchesQuery;
+    });
+  }, [therapists, active, query]);
 
-  const filters = ["All", ...specializations]
+  const filters = ["All", ...specializations];
 
   return (
     <div className="space-y-6">
@@ -74,5 +75,5 @@ export function TherapistDirectory({
         </div>
       )}
     </div>
-  )
+  );
 }

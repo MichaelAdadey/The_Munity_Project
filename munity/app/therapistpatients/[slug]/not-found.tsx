@@ -6,7 +6,8 @@ export default function PatientNotFound() {
     <main className="flex min-h-screen flex-col items-center justify-center bg-munity-bg px-6 text-center">
       <h1 className="text-3xl font-bold text-munity-text">Patient not found</h1>
       <p className="mt-3 max-w-md text-munity-muted">
-        We couldn&apos;t find a patient record for this link. Return to your dashboard to continue.
+        We couldn&apos;t find a patient record for this link. Return to your
+        dashboard to continue.
       </p>
       <Link
         href={routes.therapistDashboard}
