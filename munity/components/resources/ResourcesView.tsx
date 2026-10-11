@@ -177,8 +177,6 @@ export function ResourcesView({
     availableCategories.includes(c.label),
   );
 
-  // const catalog = useMemo(() => getResourceCatalog(), []);
-  // const categoryContent = resourceCategoriesById[activeCategory];
   const search = query.trim().toLowerCase();
 
   const categoryResources = useMemo(
@@ -426,25 +424,6 @@ export function ResourcesView({
       </MemberAppShell>
     );
   }
-
-  // function openTrending(title: string) {
-  //   const resource = findCatalogResource(title);
-  //   if (resource) {
-  //     openResource(resource);
-  //     return;
-  //   }
-  //   openResource({
-  //     id: resourceIdFromTitle(title),
-  //     title,
-  //     description: `A trending ${activeCategory.toLowerCase()} resource from the hub preview.`,
-  //     duration: "6 min read",
-  //     image: "/images/resources/side1.png",
-  //     cta: "Read More",
-  //     type: "Trending",
-  //     category: activeCategory,
-  //     video: false,
-  //   });
-  // }
 
   return (
     <MemberAppShell isLoggedIn={isLoggedIn}>

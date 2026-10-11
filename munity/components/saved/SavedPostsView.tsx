@@ -5,23 +5,22 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Bookmark, Heart, MessageCircle } from "lucide-react";
 import { MemberAppShell } from "@/components/memberlayout/MemberAppShell";
-// import { EditPostDialog } from "@/components/home/EditPostDialog";
-// import { PostOptionsMenu } from "@/components/home/PostOptionsMenu";
-import { liveFadeUp, liveStagger, useLiveToast } from "@/components/live/LiveFeedback";
-// import { mockStore, useMockStore } from "@/lib/mock-store";
+import {
+  liveFadeUp,
+  liveStagger,
+  useLiveToast,
+} from "@/components/live/LiveFeedback";
 import { routes } from "@/lib/routes";
 import { useSavedPosts } from "@/hooks/saved-posts";
 import { toggleSavePost } from "@/lib/feed/actions";
-import type { FeedPost as MockFeedPost } from "@/lib/mock-db";
 
 export function SavedPostsView() {
-  const {posts, commentsByPost, loading, error, refresh} = useSavedPosts();
+  const { posts, commentsByPost, loading, error, refresh } = useSavedPosts();
   const { flash } = useLiveToast();
   const [search, setSearch] = useState("");
-  const [removingId, setRemovingId] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<string | null>(null);
   // NOTE: no trigger sets this yet, and EditPostDialog still targets the old mock-store
   // post shape rather than the real Supabase-backed feed — editing isn't wired up here.
-  const [editingPost, setEditingPost] = useState<MockFeedPost | null>(null);
 
   const savedPosts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -31,22 +30,21 @@ export function SavedPostsView() {
         post.content.toLowerCase().includes(query) ||
         post.author.toLowerCase().includes(query) ||
         post.feeling.toLowerCase().includes(query),
-        // (post.communityName?.toLowerCase().includes(query) ?? false),
     );
   }, [search, posts]);
 
   const handleUnsave = async (postId: string) => {
     setRemovingId(postId);
     try {
-      await toggleSavePost(postId)
+      await toggleSavePost(postId);
       flash("Removed from saved posts");
-      refresh()
+      refresh();
     } catch (error) {
-      flash(error instanceof Error ? error.message : "Couldn't remove post")
+      flash(error instanceof Error ? error.message : "Couldn't remove post");
     } finally {
-      setRemovingId(null)
+      setRemovingId(null);
     }
-  }
+  };
 
   return (
     <MemberAppShell
@@ -60,7 +58,9 @@ export function SavedPostsView() {
           <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
             Library
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-munity-text">Saved Posts</h1>
+          <h1 className="mt-2 text-3xl font-bold text-munity-text">
+            Saved Posts
+          </h1>
           <p className="mt-1 text-base text-munity-muted">
             Resources and posts you&apos;ve bookmarked for later
           </p>
@@ -107,7 +107,12 @@ export function SavedPostsView() {
             )}
           </div>
         ) : (
-          <motion.div variants={liveStagger} initial="hidden" animate="show" className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <motion.div
+            variants={liveStagger}
+            initial="hidden"
+            animate="show"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2"
+          >
             {savedPosts.map((post) => (
               <motion.article
                 key={post.id}
@@ -116,19 +121,23 @@ export function SavedPostsView() {
               >
                 <div className="min-w-0 flex-1 py-1">
                   <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-munity-muted">
-                    {/* {post.communityId && post.communityName ? (
-                      <Link href={communityPath(store.communities.find((community) => community.id === post.communityId)?.slug ?? "")}>
-                        {post.communityName}
-                      </Link>
-                    ) : "Community post"} */} Community post
+                    Community post
                   </div>
                   <h2 className="mt-2 text-base font-semibold text-munity-text group-hover:text-munity-green">
                     {post.author}
                   </h2>
-                  <p className="mt-1 line-clamp-2 text-sm text-munity-muted">{post.content}</p>
+                  <p className="mt-1 line-clamp-2 text-sm text-munity-muted">
+                    {post.content}
+                  </p>
                   <p className="mt-3 flex gap-3 text-xs text-munity-muted">
-                    <span className="inline-flex items-center gap-1"><Heart className="size-3" />{post.supportCount}</span>
-                    <span className="inline-flex items-center gap-1"><MessageCircle className="size-3" />{commentsByPost[post.id]?.length ?? post.commentCount}</span>
+                    <span className="inline-flex items-center gap-1">
+                      <Heart className="size-3" />
+                      {post.supportCount}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <MessageCircle className="size-3" />
+                      {commentsByPost[post.id]?.length ?? post.commentCount}
+                    </span>
                   </p>
                 </div>
                 <button
@@ -145,14 +154,6 @@ export function SavedPostsView() {
           </motion.div>
         )}
       </div>
-
-      {/* <EditPostDialog
-        post={editingPost}
-        onOpenChange={(nextOpen) => {
-          if (!nextOpen) setEditingPost(null);
-        }}
-        flash={flash}
-      /> */}
     </MemberAppShell>
   );
 }

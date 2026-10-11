@@ -55,7 +55,9 @@ export async function signInWithGoogleAsTherapistLogin(): Promise<void> {
   });
 
   if (error) {
-    redirect(`${routes.therapistLogin}?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `${routes.therapistLogin}?error=${encodeURIComponent(error.message)}`,
+    );
   }
   if (data.url) redirect(data.url);
 }

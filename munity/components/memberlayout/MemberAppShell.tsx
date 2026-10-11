@@ -94,7 +94,7 @@ function GuestShell({ children }: { children: ReactNode }) {
     <LiveToastProvider>
       <div className="min-h-screen bg-munity-bg">
         <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-border/60 bg-munity-bg/90 backdrop-blur-md">
-          <div className="mx-auto flex h-16 max-w-[1440px] items-center justify-between px-6 lg:px-10">
+          <div className="mx-auto flex h-16 max-w-360 items-center justify-between px-6 lg:px-10">
             <Link
               href={routes.home}
               className="text-2xl font-bold text-munity-green"
@@ -191,7 +191,7 @@ function LoggedInShell({
                       : "text-munity-muted hover:bg-white/70"
                   }`}
                 >
-                  <Icon className="size-[18px]" />
+                  <Icon className="size-4.5" />
                   {label}
                 </Link>
               );

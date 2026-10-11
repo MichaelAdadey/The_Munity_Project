@@ -33,11 +33,15 @@ export function TestimonialsCarousel() {
   const [index, setIndex] = useState(0);
 
   function goPrev() {
-    setIndex((current) => (current === 0 ? testimonials.length - 1 : current - 1));
+    setIndex((current) =>
+      current === 0 ? testimonials.length - 1 : current - 1,
+    );
   }
 
   function goNext() {
-    setIndex((current) => (current === testimonials.length - 1 ? 0 : current + 1));
+    setIndex((current) =>
+      current === testimonials.length - 1 ? 0 : current + 1,
+    );
   }
 
   const item = testimonials[index];
@@ -47,22 +51,34 @@ export function TestimonialsCarousel() {
       <div className="mx-auto max-w-7xl">
         <div className="flex items-end justify-between gap-6">
           <div>
-            <h2 className="text-[32px] font-bold text-munity-text">Real Stories of Recovery</h2>
+            <h2 className="text-[32px] font-bold text-munity-text">
+              Real Stories of Recovery
+            </h2>
             <p className="mt-2 text-base text-munity-muted">
               Voices from our thriving community members.
             </p>
           </div>
           <div className="hidden gap-4 sm:flex">
-            <Button variant="outline" className="size-12 rounded-full p-0" onClick={goPrev} aria-label="Previous testimonial">
+            <Button
+              variant="outline"
+              className="size-12 rounded-full p-0"
+              onClick={goPrev}
+              aria-label="Previous testimonial"
+            >
               <ChevronLeft className="size-4" />
             </Button>
-            <Button variant="outline" className="size-12 rounded-full p-0" onClick={goNext} aria-label="Next testimonial">
+            <Button
+              variant="outline"
+              className="size-12 rounded-full p-0"
+              onClick={goNext}
+              aria-label="Next testimonial"
+            >
               <ChevronRight className="size-4" />
             </Button>
           </div>
         </div>
 
-        <div className="relative mt-12 min-h-[320px] overflow-hidden">
+        <div className="relative mt-12 min-h-80 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.article
               key={item.name}
@@ -76,16 +92,23 @@ export function TestimonialsCarousel() {
               <div>
                 <div className="flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="size-5 fill-munity-green text-munity-green" />
+                    <Star
+                      key={i}
+                      className="size-5 fill-munity-green text-munity-green"
+                    />
                   ))}
                 </div>
-                <p className="mt-4 text-base italic leading-relaxed text-munity-text">{item.quote}</p>
+                <p className="mt-4 text-base italic leading-relaxed text-munity-text">
+                  {item.quote}
+                </p>
               </div>
               <div className="mt-8 flex items-center gap-4">
                 <div className={`size-12 rounded-full ${item.avatarClass}`} />
                 <div>
                   <p className="font-bold text-munity-text">{item.name}</p>
-                  <p className="text-xs font-medium text-munity-muted">{item.role}</p>
+                  <p className="text-xs font-medium text-munity-muted">
+                    {item.role}
+                  </p>
                 </div>
               </div>
             </motion.article>
@@ -100,7 +123,9 @@ export function TestimonialsCarousel() {
               onClick={() => setIndex(dotIndex)}
               aria-label={`Show testimonial ${dotIndex + 1}`}
               className={`h-2 rounded-full transition-all ${
-                dotIndex === index ? "w-8 bg-munity-green" : "w-2 bg-munity-divider"
+                dotIndex === index
+                  ? "w-8 bg-munity-green"
+                  : "w-2 bg-munity-divider"
               }`}
             />
           ))}

@@ -45,13 +45,18 @@ export function LandingHeader({
 }) {
   const router = useRouter();
   const { profile } = useCurrentProfile();
-  const avatarSrc = profile?.avatarUrl ?? (session ? avatarForRole(session.role) : "/images/profile/avatar.jpg");
+  const avatarSrc =
+    profile?.avatarUrl ??
+    (session ? avatarForRole(session.role) : "/images/profile/avatar.jpg");
   const displayName = profile?.fullName ?? session?.name ?? "";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-munity-input-border/20 bg-munity-bg/80 shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-10">
-        <Link href={routes.home} className="text-2xl font-bold text-munity-green">
+        <Link
+          href={routes.home}
+          className="text-2xl font-bold text-munity-green"
+        >
           Munity
         </Link>
 

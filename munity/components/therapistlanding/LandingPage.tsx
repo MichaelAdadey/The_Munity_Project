@@ -97,7 +97,7 @@ function HeroSection() {
           <span className="inline-flex w-fit rounded-full bg-munity-lime px-4 py-1.5 text-sm font-semibold tracking-wide text-munity-olive-text">
             Mental Wellness Reinvented
           </span>
-          <h1 className="text-5xl font-bold leading-[1.25] tracking-[-0.96px] text-munity-text">
+          <h1 className="text-5xl font-bold leading-tight tracking-[-0.96px] text-munity-text">
             Find Support.
             <br />
             Build Connections.
@@ -107,20 +107,20 @@ function HeroSection() {
             Care.
           </h1>
           <p className="max-w-lg text-lg leading-[1.6] text-munity-muted">
-            A safe community where emotional support and professional therapy work together to
-            nurture your mental well-being.
+            A safe community where emotional support and professional therapy
+            work together to nurture your mental well-being.
           </p>
           <div className="flex flex-wrap gap-4 pt-2">
             <Link
               href={routes.signup}
-              className="inline-flex h-[52px] items-center gap-2 rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
+              className="inline-flex h-13 items-center gap-2 rounded-xl bg-munity-green px-6 text-sm font-semibold tracking-wide text-white transition hover:bg-munity-green-dark"
             >
               Join Community
               <UserPlus className="size-4" />
             </Link>
             <Link
               href={routes.login}
-              className="inline-flex h-[52px] items-center gap-2 rounded-xl bg-munity-lime px-6 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:bg-munity-lime-light"
+              className="inline-flex h-13 items-center gap-2 rounded-xl bg-munity-lime px-6 text-sm font-semibold tracking-wide text-munity-olive-text transition hover:bg-munity-lime-light"
             >
               Find a Therapist
               <Search className="size-4" />
@@ -159,7 +159,9 @@ function StatsSection() {
       <div className="mx-auto grid max-w-7xl grid-cols-2 gap-8 md:grid-cols-4">
         {stats.map((stat) => (
           <div key={stat.label} className="text-center">
-            <p className="text-[32px] font-bold text-munity-green">{stat.value}</p>
+            <p className="text-[32px] font-bold text-munity-green">
+              {stat.value}
+            </p>
             <p className="mt-1 text-sm font-semibold tracking-wide text-munity-muted">
               {stat.label}
             </p>
@@ -179,8 +181,8 @@ function FeaturesSection() {
             Comprehensive Care for Every Mind
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-base text-munity-muted">
-            Our ecosystem is built on the belief that stability is nurtured through a combination of
-            peer empathy and clinical expertise.
+            Our ecosystem is built on the belief that stability is nurtured
+            through a combination of peer empathy and clinical expertise.
           </p>
         </div>
 
@@ -189,10 +191,12 @@ function FeaturesSection() {
             <div className="flex size-12 items-center justify-center rounded-xl bg-munity-green/10">
               <Users className="size-5 text-munity-green" />
             </div>
-            <h3 className="mt-4 text-2xl font-semibold text-munity-text">Peer Support Communities</h3>
+            <h3 className="mt-4 text-2xl font-semibold text-munity-text">
+              Peer Support Communities
+            </h3>
             <p className="mt-3 text-base text-munity-muted">
-              Join safe, moderated spaces where people with shared experiences offer mutual
-              understanding and encouragement.
+              Join safe, moderated spaces where people with shared experiences
+              offer mutual understanding and encouragement.
             </p>
             <div className="mt-4 overflow-hidden rounded-xl">
               <Image
@@ -216,8 +220,8 @@ function FeaturesSection() {
                 Posting
               </h3>
               <p className="mt-3 text-sm font-semibold leading-relaxed text-munity-muted">
-                Share your story or seek advice without the pressure of identity. Your privacy is our
-                priority.
+                Share your story or seek advice without the pressure of
+                identity. Your privacy is our priority.
               </p>
             </div>
             <p className="mt-8 border-t border-munity-input-border/20 pt-8 text-base italic text-munity-green/70">
@@ -236,8 +240,8 @@ function FeaturesSection() {
                 Therapy
               </h3>
               <p className="mt-3 text-sm font-semibold leading-relaxed text-munity-olive-text/80">
-                Book 1-on-1 video or chat sessions with licensed clinicians specializing in anxiety,
-                trauma, and more.
+                Book 1-on-1 video or chat sessions with licensed clinicians
+                specializing in anxiety, trauma, and more.
               </p>
             </div>
             <Link
@@ -269,8 +273,9 @@ function FeaturesSection() {
                 Emotional Wellness Resources
               </h3>
               <p className="mt-3 text-base text-munity-muted">
-                Access a curated library of mindfulness exercises, guided journals, and crisis
-                management tools developed by mental health professionals.
+                Access a curated library of mindfulness exercises, guided
+                journals, and crisis management tools developed by mental health
+                professionals.
               </p>
             </div>
             <div className="grid flex-1 grid-cols-2 gap-4">
@@ -280,7 +285,9 @@ function FeaturesSection() {
                   className="flex flex-col items-center gap-2 rounded-xl bg-white p-4 shadow-[0_4px_10px_rgba(85,107,47,0.05)]"
                 >
                   <Icon className="size-5 text-munity-green" />
-                  <span className="text-xs font-bold text-munity-text">{label}</span>
+                  <span className="text-xs font-bold text-munity-text">
+                    {label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -308,15 +315,19 @@ function JourneySection() {
                   {item.step}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-semibold text-munity-text">{item.title}</h3>
-                  <p className="mt-2 text-base text-munity-muted">{item.description}</p>
+                  <h3 className="text-2xl font-semibold text-munity-text">
+                    {item.title}
+                  </h3>
+                  <p className="mt-2 text-base text-munity-muted">
+                    {item.description}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="relative rounded-[32px] bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+        <div className="relative rounded-4xl bg-white p-8 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           <span className="absolute -right-4 -top-4 rounded-lg bg-[#4c4d3b] px-4 py-2 text-xs font-medium text-white">
             Safe & Confidential
           </span>
@@ -336,10 +347,10 @@ function JourneySection() {
 function CtaSection() {
   return (
     <section className="px-10 py-24">
-      <div className="relative mx-auto max-w-[1000px] overflow-hidden rounded-[40px] bg-munity-green px-10 py-20 text-center">
+      <div className="relative mx-auto max-w-250 overflow-hidden rounded-[40px] bg-munity-green px-10 py-20 text-center">
         <div
           aria-hidden
-          className="absolute -right-32 -top-32 size-64 rounded-full bg-white/10 blur-[40px]"
+          className="absolute -right-32 -top-32 size-64 rounded-full bg-white/10 blur-2xl"
         />
         <div
           aria-hidden
@@ -350,7 +361,8 @@ function CtaSection() {
             Ready to find your community?
           </h2>
           <p className="mx-auto mt-5 max-w-xl text-lg text-white/90">
-            Join thousands of others on a path to sustained mental wellness and connection.
+            Join thousands of others on a path to sustained mental wellness and
+            connection.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link

@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { CalendarCheck2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useState } from "react";
+import { CalendarCheck2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -12,22 +12,24 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
-import type { Therapist } from "@/lib/types"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+import type { Therapist } from "@/lib/types";
 
 export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
-  const [sessionType, setSessionType] = useState(therapist.session_types[0])
-  const [confirmed, setConfirmed] = useState(false)
+  const [sessionType, setSessionType] = useState(therapist.session_types[0]);
+  const [confirmed, setConfirmed] = useState(false);
 
   return (
     <Dialog
       onOpenChange={(open) => {
-        if (!open) setConfirmed(false)
+        if (!open) setConfirmed(false);
       }}
     >
-      <DialogTrigger render={<Button className="w-full rounded-full" size="lg" />}>
+      <DialogTrigger
+        render={<Button className="w-full rounded-full" size="lg" />}
+      >
         <CalendarCheck2 className="size-4" />
         Book a session
       </DialogTrigger>
@@ -39,12 +41,15 @@ export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
             </div>
             <h2 className="mt-4 font-semibold">Session requested</h2>
             <p className="mt-1 text-sm text-pretty text-muted-foreground">
-              {therapist.full_name} will confirm your {sessionType.toLowerCase()} session for{" "}
-              {therapist.next_available}. You'll get a message once it's confirmed.
+              {therapist.full_name} will confirm your{" "}
+              {sessionType.toLowerCase()} session for {therapist.next_available}
+              . You&apos;ll get a message once it&apos;s confirmed.
             </p>
             <div className="mt-5">
               <DialogClose
-                render={<Button variant="outline" className="w-full rounded-full" />}
+                render={
+                  <Button variant="outline" className="w-full rounded-full" />
+                }
               >
                 Done
               </DialogClose>
@@ -53,9 +58,12 @@ export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle>Book a session with {therapist.full_name}</DialogTitle>
+              <DialogTitle>
+                Book a session with {therapist.full_name}
+              </DialogTitle>
               <DialogDescription>
-                Next available: {therapist.next_available} · ₵{therapist.hourly_rate}/session
+                Next available: {therapist.next_available} · ₵
+                {therapist.hourly_rate}/session
               </DialogDescription>
             </DialogHeader>
 
@@ -81,10 +89,15 @@ export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
             </div>
 
             <DialogFooter>
-              <DialogClose render={<Button variant="outline" className="rounded-full" />}>
+              <DialogClose
+                render={<Button variant="outline" className="rounded-full" />}
+              >
                 Cancel
               </DialogClose>
-              <Button className="rounded-full" onClick={() => setConfirmed(true)}>
+              <Button
+                className="rounded-full"
+                onClick={() => setConfirmed(true)}
+              >
                 Request session
               </Button>
             </DialogFooter>
@@ -92,5 +105,5 @@ export function BookSessionDialog({ therapist }: { therapist: Therapist }) {
         )}
       </DialogContent>
     </Dialog>
-  )
+  );
 }

@@ -152,7 +152,8 @@ export function TherapistDashboardView({
                     href={patientRoutes(alert.patientId).overview}
                     className="text-xs font-medium leading-relaxed text-[#93000a] hover:underline"
                   >
-                    {alert.name} logged &ldquo;{MOOD_LABELS[alert.mood]}&rdquo; ·{" "}
+                    {alert.name} logged &ldquo;{MOOD_LABELS[alert.mood]}&rdquo;
+                    ·{" "}
                     {new Date(alert.createdAt).toLocaleString(undefined, {
                       month: "short",
                       day: "numeric",

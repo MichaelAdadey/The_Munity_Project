@@ -9,7 +9,7 @@ export default async function TherapistDetailPage({
 }) {
   const { id } = await params;
   const isLoggedIn = await getMemberLoggedIn();
-  const therapist = await getTherapistById(id)
+  const therapist = await getTherapistById(id);
 
   return <TherapistDetailView therapist={therapist} isLoggedIn={isLoggedIn} />;
 }

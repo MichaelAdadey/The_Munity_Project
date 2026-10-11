@@ -1,13 +1,13 @@
-import Link from 'next/link'
-import { Logo } from '@/components/logo'
-import { Button } from '@/components/ui/button'
+import Link from "next/link";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
 
 const links = [
-  { href: '#features', label: 'Features' },
-  { href: '#communities', label: 'Communities' },
-  { href: '#stories', label: 'Stories' },
-  { href: '/emergency', label: 'Emergency' },
-]
+  { href: "#features", label: "Features" },
+  { href: "#communities", label: "Communities" },
+  { href: "#stories", label: "Stories" },
+  { href: "/emergency", label: "Emergency" },
+];
 
 export function SiteHeader() {
   return (
@@ -37,5 +37,5 @@ export function SiteHeader() {
         </div>
       </div>
     </header>
-  )
+  );
 }

@@ -32,14 +32,16 @@ function GoogleIcon() {
   );
 }
 
-export function GoogleButton({ href = routes.therapistDashboard }: GoogleButtonProps) {
+export function GoogleButton({
+  href = routes.therapistDashboard,
+}: GoogleButtonProps) {
   const router = useRouter();
   const { withLoading } = useLoading();
 
   return (
     <Button
       variant="secondary"
-      className="h-[54px] w-full"
+      className="h-13.5 w-full"
       onClick={() =>
         withLoading(async () => {
           router.push(href);

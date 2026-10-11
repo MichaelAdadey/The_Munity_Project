@@ -46,7 +46,10 @@ function formatNoteDate(sessionDate: string) {
 }
 
 function formatBarDate(iso: string) {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 }
 
 export function TherapeuticProgressView({
@@ -72,7 +75,11 @@ export function TherapeuticProgressView({
           const data = await fetchPatientProgress(patient.id, start, end);
           setProgress(data);
         } catch (error) {
-          flash(error instanceof Error ? error.message : "Couldn't load progress data");
+          flash(
+            error instanceof Error
+              ? error.message
+              : "Couldn't load progress data",
+          );
         } finally {
           setLoading(false);
         }
@@ -89,16 +96,33 @@ export function TherapeuticProgressView({
   }, [dateRange]);
 
   const attendanceRateLabel =
-    progress.attendanceRatePercent === null ? "—" : `${progress.attendanceRatePercent}%`;
+    progress.attendanceRatePercent === null
+      ? "—"
+      : `${progress.attendanceRatePercent}%`;
 
   const summaryStats = [
-    { label: "Sessions", value: String(progress.totalSessions), detail: dateRange },
+    {
+      label: "Sessions",
+      value: String(progress.totalSessions),
+      detail: dateRange,
+    },
     { label: "Attendance rate", value: attendanceRateLabel, detail: dateRange },
-    { label: "Last session", value: patient.lastSessionLabel, detail: "All time" },
-    { label: "Next session", value: patient.nextSessionLabel ?? "None scheduled", detail: "Upcoming" },
+    {
+      label: "Last session",
+      value: patient.lastSessionLabel,
+      detail: "All time",
+    },
+    {
+      label: "Next session",
+      value: patient.nextSessionLabel ?? "None scheduled",
+      detail: "Upcoming",
+    },
   ];
 
-  const maxBucketCount = Math.max(1, ...progress.sessionsOverTime.map((b) => b.count));
+  const maxBucketCount = Math.max(
+    1,
+    ...progress.sessionsOverTime.map((b) => b.count),
+  );
 
   function buildProgressPlainText() {
     return [
@@ -110,7 +134,9 @@ export function TherapeuticProgressView({
       "",
       "Recent session notes:",
       ...(recentNotes.length
-        ? recentNotes.map((n) => `- ${formatNoteDate(n.sessionDate)}: ${n.title}`)
+        ? recentNotes.map(
+            (n) => `- ${formatNoteDate(n.sessionDate)}: ${n.title}`,
+          )
         : ["- No session notes saved yet"]),
     ].join("\n");
   }
@@ -128,7 +154,12 @@ export function TherapeuticProgressView({
         <ul>
           ${
             recentNotes.length
-              ? recentNotes.map((n) => `<li>${formatNoteDate(n.sessionDate)}: ${n.title}</li>`).join("")
+              ? recentNotes
+                  .map(
+                    (n) =>
+                      `<li>${formatNoteDate(n.sessionDate)}: ${n.title}</li>`,
+                  )
+                  .join("")
               : "<li>No session notes saved yet</li>"
           }
         </ul>
@@ -199,7 +230,9 @@ export function TherapeuticProgressView({
                   <p className="text-sm font-semibold uppercase tracking-[0.14em] text-munity-muted">
                     Insights
                   </p>
-                  <h1 className="mt-2 text-3xl font-bold text-munity-text">Progress</h1>
+                  <h1 className="mt-2 text-3xl font-bold text-munity-text">
+                    Progress
+                  </h1>
                   <p className="mt-1 text-base text-munity-muted">
                     Session outcomes for {patient.name}
                   </p>
@@ -222,7 +255,9 @@ export function TherapeuticProgressView({
                           onClick={() => {
                             withLoading(async () => {
                               exportReportAsPDF();
-                              await new Promise((resolve) => setTimeout(resolve, 500));
+                              await new Promise((resolve) =>
+                                setTimeout(resolve, 500),
+                              );
                             }, "Exporting as PDF...");
                             setExportOpen(false);
                           }}
@@ -235,7 +270,9 @@ export function TherapeuticProgressView({
                           onClick={() => {
                             withLoading(async () => {
                               exportReportAsWord();
-                              await new Promise((resolve) => setTimeout(resolve, 300));
+                              await new Promise((resolve) =>
+                                setTimeout(resolve, 300),
+                              );
                             }, "Exporting as Word...");
                             setExportOpen(false);
                           }}
@@ -282,8 +319,12 @@ export function TherapeuticProgressView({
                     <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                       {stat.label}
                     </p>
-                    <p className="mt-2 text-3xl font-bold text-munity-text">{stat.value}</p>
-                    <p className="mt-1 text-sm text-munity-muted">{stat.detail}</p>
+                    <p className="mt-2 text-3xl font-bold text-munity-text">
+                      {stat.value}
+                    </p>
+                    <p className="mt-1 text-sm text-munity-muted">
+                      {stat.detail}
+                    </p>
                   </motion.article>
                 ))}
               </section>
@@ -292,7 +333,9 @@ export function TherapeuticProgressView({
                 <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-3">
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>
-                      <h2 className="text-xl font-semibold text-munity-text">Sessions over time</h2>
+                      <h2 className="text-xl font-semibold text-munity-text">
+                        Sessions over time
+                      </h2>
                       <p className="mt-1 text-sm text-munity-muted">
                         Completed sessions across the selected range
                       </p>
@@ -305,14 +348,17 @@ export function TherapeuticProgressView({
                         No completed sessions in this range
                       </p>
                       <p className="max-w-xs text-xs text-munity-muted">
-                        Try a wider date range, or check back once sessions with {patient.name} are
-                        marked complete.
+                        Try a wider date range, or check back once sessions with{" "}
+                        {patient.name} are marked complete.
                       </p>
                     </div>
                   ) : (
                     <div className="mt-8 flex h-56 items-end justify-between gap-2">
                       {progress.sessionsOverTime.map((bucket, index) => (
-                        <div key={bucket.label} className="flex flex-1 flex-col items-center gap-2">
+                        <div
+                          key={bucket.label}
+                          className="flex flex-1 flex-col items-center gap-2"
+                        >
                           <span className="text-xs font-semibold text-munity-text">
                             {bucket.count}
                           </span>
@@ -324,7 +370,7 @@ export function TherapeuticProgressView({
                               originY: 1,
                               height: `${Math.max(8, (bucket.count / maxBucketCount) * 160)}px`,
                             }}
-                            className="w-full max-w-[36px] rounded-t-lg bg-munity-green"
+                            className="w-full max-w-9 rounded-t-lg bg-munity-green"
                           />
                           <span className="text-[10px] font-semibold text-munity-muted">
                             {bucket.label}
@@ -339,7 +385,8 @@ export function TherapeuticProgressView({
                       <span className="font-semibold text-munity-text">
                         {progress.totalSessions}
                       </span>{" "}
-                      session{progress.totalSessions === 1 ? "" : "s"} completed · {dateRange.toLowerCase()}
+                      session{progress.totalSessions === 1 ? "" : "s"} completed
+                      · {dateRange.toLowerCase()}
                     </p>
                     <Link
                       href={patientNavHref(patient.slug, "Clinical Notes")}
@@ -352,7 +399,9 @@ export function TherapeuticProgressView({
                 </section>
 
                 <section className="rounded-[20px] border border-munity-border bg-white p-6 shadow-[0_4px_10px_rgba(85,107,47,0.05)] xl:col-span-2">
-                  <h2 className="text-xl font-semibold text-munity-text">Attendance</h2>
+                  <h2 className="text-xl font-semibold text-munity-text">
+                    Attendance
+                  </h2>
                   <p className="mt-1 text-sm text-munity-muted">
                     Last {progress.attendance.length || 0} decided session
                     {progress.attendance.length === 1 ? "" : "s"} in range
@@ -374,8 +423,10 @@ export function TherapeuticProgressView({
                             animate={{ scaleY: 1 }}
                             transition={{ delay: index * 0.04, duration: 0.35 }}
                             style={{ originY: 1 }}
-                            className={`h-24 w-full max-w-[28px] rounded-t-lg ${
-                              session.attended ? "bg-munity-green" : "bg-[#ffdad6]"
+                            className={`h-24 w-full max-w-7 rounded-t-lg ${
+                              session.attended
+                                ? "bg-munity-green"
+                                : "bg-[#ffdad6]"
                             }`}
                           />
                           <span className="text-[10px] font-semibold text-munity-muted">
@@ -388,13 +439,19 @@ export function TherapeuticProgressView({
 
                   <div className="mt-6">
                     <div className="mb-2 flex justify-between text-sm">
-                      <span className="font-medium text-munity-muted">Completion rate</span>
-                      <span className="font-semibold text-munity-green">{attendanceRateLabel}</span>
+                      <span className="font-medium text-munity-muted">
+                        Completion rate
+                      </span>
+                      <span className="font-semibold text-munity-green">
+                        {attendanceRateLabel}
+                      </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-munity-divider">
                       <div
                         className="h-full rounded-full bg-munity-green"
-                        style={{ width: `${progress.attendanceRatePercent ?? 0}%` }}
+                        style={{
+                          width: `${progress.attendanceRatePercent ?? 0}%`,
+                        }}
                       />
                     </div>
                     <div className="mt-4 flex gap-4 text-xs text-munity-muted">
@@ -416,7 +473,9 @@ export function TherapeuticProgressView({
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <FileText className="size-5 text-munity-green" />
-                      <h2 className="text-xl font-semibold text-munity-text">Recent session notes</h2>
+                      <h2 className="text-xl font-semibold text-munity-text">
+                        Recent session notes
+                      </h2>
                     </div>
                     <Link
                       href={patientRoutes(patient.slug).clinicalNotes}
@@ -441,7 +500,9 @@ export function TherapeuticProgressView({
                           >
                             <CalendarClock className="mt-0.5 size-4 shrink-0 text-munity-muted" />
                             <div className="min-w-0">
-                              <p className="font-semibold text-munity-text">{note.title}</p>
+                              <p className="font-semibold text-munity-text">
+                                {note.title}
+                              </p>
                               <p className="mt-0.5 text-xs text-munity-muted">
                                 {formatNoteDate(note.sessionDate)}
                               </p>
@@ -456,16 +517,20 @@ export function TherapeuticProgressView({
                 <section className="rounded-[20px] border border-dashed border-munity-input-border bg-white p-6">
                   <div className="flex items-center gap-2">
                     <ClipboardList className="size-5 text-munity-muted" />
-                    <h2 className="text-xl font-semibold text-munity-text">Clinical assessments</h2>
+                    <h2 className="text-xl font-semibold text-munity-text">
+                      Clinical assessments
+                    </h2>
                   </div>
                   <p className="mt-3 text-sm leading-relaxed text-munity-muted">
-                    Standardized check-ins (GAD-7, mood tracking, symptom scoring) aren&apos;t
-                    collected yet — this section will populate once assessment data is captured for{" "}
-                    {patient.name}.
+                    Standardized check-ins (GAD-7, mood tracking, symptom
+                    scoring) aren&apos;t collected yet — this section will
+                    populate once assessment data is captured for {patient.name}
+                    .
                   </p>
                   <div className="mt-4 flex items-center gap-2 text-xs font-medium text-munity-muted">
                     <CheckCircle2 className="size-3.5" />
-                    Session attendance and cadence above are drawn from real bookings.
+                    Session attendance and cadence above are drawn from real
+                    bookings.
                   </div>
                 </section>
               </div>

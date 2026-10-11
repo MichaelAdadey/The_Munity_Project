@@ -40,25 +40,6 @@ import {
 } from "@/lib/communities/membership-actions";
 import { submitModeratorApplication } from "@/lib/moderators/actions";
 
-// type CommunityFilter =
-//   | "All"
-//   | "Anxiety"
-//   | "Depression"
-//   | "Student Support"
-//   | "Grief"
-//   | "Neurodiversity"
-//   | "Workplace Stress";
-
-// const filters: CommunityFilter[] = [
-//   "All",
-//   "Anxiety",
-//   "Depression",
-//   "Student Support",
-//   "Grief",
-//   "Neurodiversity",
-//   "Workplace Stress",
-// ];
-
 const createFilters: CommunityRecord["filter"][] = [
   "Anxiety",
   "Depression",

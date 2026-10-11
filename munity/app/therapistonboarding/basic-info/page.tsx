@@ -5,8 +5,15 @@ import { createTherapistAccount } from "@/app/therapistsignup/actions";
 import { OnboardingStepPage } from "@/components/therapistonboarding/OnboardingStepPage";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/AppSelect";
-import { genderOptions, ghanaRegions, honorificTitles } from "@/lib/ghana-therapist";
-import { getOnboardingStepData, saveOnboardingStepData } from "@/lib/onboarding-data";
+import {
+  genderOptions,
+  ghanaRegions,
+  honorificTitles,
+} from "@/lib/ghana-therapist";
+import {
+  getOnboardingStepData,
+  saveOnboardingStepData,
+} from "@/lib/onboarding-data";
 import { routes } from "@/lib/routes";
 
 const CREDENTIALS_STORAGE_KEY = "munity-therapist-pending-credentials";
@@ -154,7 +161,9 @@ export default function BasicInfoPage() {
           exactPracticeLocation: exactPracticeLocation.trim(),
           firstName: String(formData.get("firstName") || "").trim(),
           lastName: String(formData.get("lastName") || "").trim(),
-          professionalTitle: String(formData.get("professionalTitle") || "").trim(),
+          professionalTitle: String(
+            formData.get("professionalTitle") || "",
+          ).trim(),
           phone: String(formData.get("phone") || "").trim(),
           email: String(formData.get("email") || "").trim(),
         });
@@ -264,12 +273,17 @@ export default function BasicInfoPage() {
       </div>
 
       <div className="mt-10 border-t border-munity-border/60 pt-8">
-        <h3 className="text-base font-semibold text-munity-text">Login credentials</h3>
+        <h3 className="text-base font-semibold text-munity-text">
+          Login credentials
+        </h3>
         <p className="mt-1 text-sm text-munity-muted">
-          After your application is verified, use these to sign in to your therapist account.
+          After your application is verified, use these to sign in to your
+          therapist account.
         </p>
         {accountError ? (
-          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">{accountError}</p>
+          <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
+            {accountError}
+          </p>
         ) : null}
         <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
           <Field label="Email Address">

@@ -1,10 +1,10 @@
-import Link from 'next/link'
-import { Logo } from '@/components/logo'
+import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export default function AuthLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-background px-4 py-12">
@@ -24,5 +24,5 @@ export default function AuthLayout({
 
       <div className="relative z-10 w-full max-w-md">{children}</div>
     </div>
-  )
+  );
 }

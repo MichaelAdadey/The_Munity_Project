@@ -14,10 +14,15 @@ interface TherapistPatientsListViewProps {
   patients: TherapistPatient[];
 }
 
-export function TherapistPatientsListView({ patients }: TherapistPatientsListViewProps) {
+export function TherapistPatientsListView({
+  patients,
+}: TherapistPatientsListViewProps) {
   const [query, setQuery] = useState("");
   const visiblePatients = useMemo(
-    () => patients.filter((patient) => patient.name.toLowerCase().includes(query.toLowerCase())),
+    () =>
+      patients.filter((patient) =>
+        patient.name.toLowerCase().includes(query.toLowerCase()),
+      ),
     [patients, query],
   );
   const activeCount = useMemo(
@@ -27,11 +32,15 @@ export function TherapistPatientsListView({ patients }: TherapistPatientsListVie
   const nextUpcoming = useMemo(
     () =>
       patients
-        .filter((patient): patient is TherapistPatient & { nextSessionAt: string } =>
-          Boolean(patient.nextSessionAt),
+        .filter(
+          (patient): patient is TherapistPatient & { nextSessionAt: string } =>
+            Boolean(patient.nextSessionAt),
         )
-        .sort((a, b) => new Date(a.nextSessionAt).getTime() - new Date(b.nextSessionAt).getTime())[0] ??
-      null,
+        .sort(
+          (a, b) =>
+            new Date(a.nextSessionAt).getTime() -
+            new Date(b.nextSessionAt).getTime(),
+        )[0] ?? null,
     [patients],
   );
 
@@ -91,7 +100,9 @@ export function TherapistPatientsListView({ patients }: TherapistPatientsListVie
                     />
                   </div>
                   <div>
-                    <p className="font-semibold text-munity-text">{patient.name}</p>
+                    <p className="font-semibold text-munity-text">
+                      {patient.name}
+                    </p>
                     <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
                       {patient.clientId}
                     </p>
@@ -111,14 +122,19 @@ export function TherapistPatientsListView({ patients }: TherapistPatientsListVie
                   {patient.status}
                 </span>
                 <span className="rounded-full bg-munity-sidebar px-3 py-1 text-xs font-semibold text-munity-muted">
-                  {patient.sessionCount} session{patient.sessionCount === 1 ? "" : "s"}
+                  {patient.sessionCount} session
+                  {patient.sessionCount === 1 ? "" : "s"}
                 </span>
               </div>
 
               <div className="mt-5 flex items-center justify-between border-t border-munity-border pt-4 text-sm">
-                <span className="text-munity-muted">Last session: {patient.lastSessionLabel}</span>
+                <span className="text-munity-muted">
+                  Last session: {patient.lastSessionLabel}
+                </span>
                 <span className="font-semibold text-munity-green">
-                  {patient.nextSessionLabel ? `Next: ${patient.nextSessionLabel}` : "No upcoming session"}
+                  {patient.nextSessionLabel
+                    ? `Next: ${patient.nextSessionLabel}`
+                    : "No upcoming session"}
                 </span>
               </div>
             </Link>
@@ -126,11 +142,20 @@ export function TherapistPatientsListView({ patients }: TherapistPatientsListVie
         ))}
       </div>
       {patients.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
-          You don&apos;t have any patients yet. Once someone books a session with you, they&apos;ll show up here.
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted"
+        >
+          You don&apos;t have any patients yet. Once someone books a session
+          with you, they&apos;ll show up here.
         </motion.div>
       ) : visiblePatients.length === 0 ? (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="rounded-[20px] border border-dashed border-munity-border bg-white p-10 text-center text-munity-muted"
+        >
           No patients match “{query}”. Try another name or clear your search.
         </motion.div>
       ) : null}

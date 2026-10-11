@@ -1,20 +1,25 @@
-import Link from 'next/link'
-import { Logo } from '@/components/logo'
+import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 const columns = [
   {
-    title: 'Platform',
-    links: ['Home', 'Communities', 'Resources', 'Therapy'],
+    title: "Platform",
+    links: ["Home", "Communities", "Resources", "Therapy"],
   },
   {
-    title: 'Support',
-    links: ['Emergency Support', 'Help Center', 'Community Guidelines', 'Safety Tools'],
+    title: "Support",
+    links: [
+      "Emergency Support",
+      "Help Center",
+      "Community Guidelines",
+      "Safety Tools",
+    ],
   },
   {
-    title: 'Legal',
-    links: ['Privacy Policy', 'Terms of Service', 'Cookie Policy'],
+    title: "Legal",
+    links: ["Privacy Policy", "Terms of Service", "Cookie Policy"],
   },
-]
+];
 
 export function SiteFooter() {
   return (
@@ -34,7 +39,9 @@ export function SiteFooter() {
           </div>
           {columns.map((col) => (
             <div key={col.title}>
-              <h3 className="text-sm font-semibold text-foreground">{col.title}</h3>
+              <h3 className="text-sm font-semibold text-foreground">
+                {col.title}
+              </h3>
               <ul className="mt-4 space-y-3">
                 {col.links.map((link) => (
                   <li key={link}>
@@ -51,10 +58,11 @@ export function SiteFooter() {
           ))}
         </div>
         <div className="mt-10 border-t border-border pt-6 text-xs text-muted-foreground">
-          © 2024 Munity Peer Support. For emergencies, contact local crisis services
-          immediately. Munity is not a replacement for emergency medical care.
+          © 2024 Munity Peer Support. For emergencies, contact local crisis
+          services immediately. Munity is not a replacement for emergency
+          medical care.
         </div>
       </div>
     </footer>
-  )
+  );
 }

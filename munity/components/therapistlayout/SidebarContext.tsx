@@ -54,7 +54,9 @@ export function SidebarProvider({
     [open, toggle, expandedWidth, collapsedWidth],
   );
 
-  return <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>;
+  return (
+    <SidebarContext.Provider value={value}>{children}</SidebarContext.Provider>
+  );
 }
 
 export function useSidebar() {

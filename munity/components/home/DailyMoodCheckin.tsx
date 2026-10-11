@@ -24,7 +24,9 @@ export function DailyMoodCheckin() {
       await saveMoodCheckin(mood);
       setSavedMood(mood);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save your check-in");
+      setError(
+        err instanceof Error ? err.message : "Couldn't save your check-in",
+      );
     } finally {
       setSaving(false);
     }
@@ -34,7 +36,8 @@ export function DailyMoodCheckin() {
     return (
       <div className={`${cardClass} p-5 sm:p-6`}>
         <p className="text-sm font-semibold text-munity-green">
-          Thanks for checking in — logged as &ldquo;{MOOD_LABELS[savedMood]}&rdquo;.
+          Thanks for checking in — logged as &ldquo;{MOOD_LABELS[savedMood]}
+          &rdquo;.
         </p>
         <button
           type="button"
@@ -52,7 +55,9 @@ export function DailyMoodCheckin() {
       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-munity-muted">
         Daily Check-in
       </p>
-      <h2 className="mt-1 text-lg font-bold text-munity-text">How are you feeling right now?</h2>
+      <h2 className="mt-1 text-lg font-bold text-munity-text">
+        How are you feeling right now?
+      </h2>
       <p className="mt-1 text-sm text-munity-muted">
         Private to you and your therapist — not shared on your feed.
       </p>

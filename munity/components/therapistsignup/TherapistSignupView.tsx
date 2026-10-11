@@ -4,7 +4,14 @@ import { useActionState, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { AlertCircle, CheckCircle2, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Lock,
+  Mail,
+} from "lucide-react";
 import {
   signInWithGoogleAsTherapist,
   signUpAsTherapist,
@@ -46,7 +53,7 @@ function GoogleSubmitButton() {
     <Button
       type="submit"
       variant="secondary"
-      className="h-[54px] w-full rounded-xl"
+      className="h-13.5 w-full rounded-xl"
       loading={pending}
       loadingLabel="Connecting with Google…"
     >
@@ -90,7 +97,10 @@ function AuthField({
 }) {
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="px-1 text-sm font-semibold tracking-[0.14px] text-munity-text">
+      <label
+        htmlFor={id}
+        className="px-1 text-sm font-semibold tracking-[0.14px] text-munity-text"
+      >
         {label}
       </label>
       <div className="relative">
@@ -111,7 +121,8 @@ function AuthField({
 
 function isSupabaseConfiguredClient() {
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   );
 }
 
@@ -149,17 +160,20 @@ export function TherapistSignupView() {
         </p>
       }
     >
-      <div className="flex w-full max-w-[480px] flex-col gap-[31.5px]">
-        <AuthBrandHeader title="Welcome" subtitle="Start your journey with Munity" />
+      <div className="flex w-full max-w-120 flex-col gap-[31.5px]">
+        <AuthBrandHeader
+          title="Welcome"
+          subtitle="Start your journey with Munity"
+        />
 
-        <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-[41px] pb-[41px] pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
+        <div className="rounded-[20px] border border-munity-input-border/30 bg-white px-10.25 pb-10.25 pt-10 shadow-[0_4px_10px_rgba(85,107,47,0.05)]">
           {state?.error ? (
             <div className="mb-6 flex items-start gap-2 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-300">
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <span>{state.error}</span>
             </div>
           ) : null}
-          
+
           {state?.success ? (
             <div className="mb-6 flex items-start gap-2 rounded-xl bg-green-50 px-3 py-2.5 text-sm text-green-800">
               <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
@@ -167,7 +181,11 @@ export function TherapistSignupView() {
             </div>
           ) : null}
 
-          <form action={formAction} onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <form
+            action={formAction}
+            onSubmit={handleSubmit}
+            className="flex flex-col gap-6"
+          >
             <AuthField
               label="Email Address"
               id="email"
@@ -203,7 +221,11 @@ export function TherapistSignupView() {
                   aria-label={showPassword ? "Hide password" : "Show password"}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-munity-gray transition-colors hover:text-munity-green"
                 >
-                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  {showPassword ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
                 </button>
               </div>
             </div>

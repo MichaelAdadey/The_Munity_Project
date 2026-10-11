@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, LogOut, Newspaper, Palette, User } from "lucide-react";
-// import { signOut } from "@/app/(auth)/actions";
 import { ProfileAvatar } from "@/components/live/NotificationsMenu";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { assets } from "@/lib/assets";

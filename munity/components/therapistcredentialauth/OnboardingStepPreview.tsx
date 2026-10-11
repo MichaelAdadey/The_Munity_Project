@@ -33,10 +33,12 @@ function PreviewField({ label, value }: { label: string; value: string }) {
   const confirmed = isFilled(value) && value !== "No document uploaded";
 
   return (
-    <div className="rounded-xl border border-munity-border/60 bg-[#fbf9f8] px-4 py-3">
+    <div className="rounded-xl border border-munity-border/60 bg-munity-bg px-4 py-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold tracking-wide text-munity-muted">{label}</p>
+          <p className="text-sm font-semibold tracking-wide text-munity-muted">
+            {label}
+          </p>
           <p className="mt-1 text-base text-munity-text">{value || "—"}</p>
         </div>
         {confirmed ? (
@@ -61,14 +63,20 @@ function PreviewField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ConfirmedBanner({ complete, total }: { complete: number; total: number }) {
+function ConfirmedBanner({
+  complete,
+  total,
+}: {
+  complete: number;
+  total: number;
+}) {
   const allDone = complete === total && total > 0;
   return (
     <div
       className={`mb-6 flex items-center gap-3 rounded-2xl px-4 py-3 ${
         allDone
           ? "border border-munity-green/25 bg-munity-lime/50"
-          : "border border-munity-border bg-[#f5f3f3]"
+          : "border border-munity-border bg-munity-sidebar"
       }`}
     >
       <span
@@ -97,16 +105,20 @@ function ConfirmedBanner({ complete, total }: { complete: number; total: number 
 function EmptyPreview({ stepLabel }: { stepLabel: string }) {
   return (
     <p className="text-base text-munity-muted">
-      No saved {stepLabel.toLowerCase()} yet. Complete this step during onboarding to preview it
-      here.
+      No saved {stepLabel.toLowerCase()} yet. Complete this step during
+      onboarding to preview it here.
     </p>
   );
 }
 
-const stepMeta: Record<OnboardingStepId, { title: string; description: string }> = {
+const stepMeta: Record<
+  OnboardingStepId,
+  { title: string; description: string }
+> = {
   "basic-info": {
     title: "Basic Information",
-    description: "Your personal details and login credentials from your application.",
+    description:
+      "Your personal details and login credentials from your application.",
   },
   credentials: {
     title: "Credentials Upload",
@@ -118,13 +130,20 @@ const stepMeta: Record<OnboardingStepId, { title: string; description: string }>
   },
   payout: {
     title: "Payout Configuration",
-    description: "Payment methods you connected for session and support payouts.",
+    description:
+      "Payment methods you connected for session and support payouts.",
   },
 };
 
-export function OnboardingStepPreview({ stepId }: { stepId: OnboardingStepId }) {
+export function OnboardingStepPreview({
+  stepId,
+}: {
+  stepId: OnboardingStepId;
+}) {
   const meta = stepMeta[stepId];
-  const [data, setData] = useState<OnboardingStepDataMap[OnboardingStepId] | null>(null);
+  const [data, setData] = useState<
+    OnboardingStepDataMap[OnboardingStepId] | null
+  >(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -133,22 +152,30 @@ export function OnboardingStepPreview({ stepId }: { stepId: OnboardingStepId }) 
   }, [stepId]);
 
   return (
-    <article className="w-full max-w-2xl rounded-[32px] border border-munity-border/50 bg-white/70 p-10 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm">
+    <article className="w-full max-w-2xl rounded-4xl border border-munity-border/50 bg-white/70 p-10 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] backdrop-blur-sm">
       <div className="mb-2 inline-flex rounded-full bg-munity-lime/60 px-3 py-1 text-xs font-semibold text-munity-olive-text">
         Read-only preview
       </div>
       <h1 className="text-[28px] font-bold text-munity-text">{meta.title}</h1>
-      <p className="mt-2 text-base leading-relaxed text-munity-muted">{meta.description}</p>
+      <p className="mt-2 text-base leading-relaxed text-munity-muted">
+        {meta.description}
+      </p>
 
       <div className="mt-8 border-t border-munity-border/50 pt-8">
         {!ready ? null : !data ? (
           <EmptyPreview stepLabel={meta.title} />
         ) : stepId === "basic-info" ? (
-          <BasicInfoPreview data={data as OnboardingStepDataMap["basic-info"]} />
+          <BasicInfoPreview
+            data={data as OnboardingStepDataMap["basic-info"]}
+          />
         ) : stepId === "credentials" ? (
-          <CredentialsPreview data={data as OnboardingStepDataMap["credentials"]} />
+          <CredentialsPreview
+            data={data as OnboardingStepDataMap["credentials"]}
+          />
         ) : stepId === "specialties" ? (
-          <SpecialtiesPreview data={data as OnboardingStepDataMap["specialties"]} />
+          <SpecialtiesPreview
+            data={data as OnboardingStepDataMap["specialties"]}
+          />
         ) : (
           <PayoutPreview data={data as OnboardingStepDataMap["payout"]} />
         )}
@@ -157,7 +184,11 @@ export function OnboardingStepPreview({ stepId }: { stepId: OnboardingStepId }) 
   );
 }
 
-function BasicInfoPreview({ data }: { data: OnboardingStepDataMap["basic-info"] }) {
+function BasicInfoPreview({
+  data,
+}: {
+  data: OnboardingStepDataMap["basic-info"];
+}) {
   const fields = [
     optionLabel(honorificTitles, data.title),
     optionLabel(genderOptions, data.gender),
@@ -175,11 +206,20 @@ function BasicInfoPreview({ data }: { data: OnboardingStepDataMap["basic-info"] 
     <div>
       <ConfirmedBanner complete={complete} total={fields.length} />
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <PreviewField label="Title" value={optionLabel(honorificTitles, data.title)} />
-        <PreviewField label="Gender" value={optionLabel(genderOptions, data.gender)} />
+        <PreviewField
+          label="Title"
+          value={optionLabel(honorificTitles, data.title)}
+        />
+        <PreviewField
+          label="Gender"
+          value={optionLabel(genderOptions, data.gender)}
+        />
         <PreviewField label="First Name" value={data.firstName} />
         <PreviewField label="Last Name" value={data.lastName} />
-        <PreviewField label="Professional Title" value={data.professionalTitle} />
+        <PreviewField
+          label="Professional Title"
+          value={data.professionalTitle}
+        />
         <PreviewField label="Phone Number" value={data.phone} />
         <div className="md:col-span-2">
           <PreviewField
@@ -200,7 +240,11 @@ function BasicInfoPreview({ data }: { data: OnboardingStepDataMap["basic-info"] 
   );
 }
 
-function CredentialsPreview({ data }: { data: OnboardingStepDataMap["credentials"] }) {
+function CredentialsPreview({
+  data,
+}: {
+  data: OnboardingStepDataMap["credentials"];
+}) {
   const fields = [
     optionLabel(ghanaLicenseTypes, data.licenseType),
     data.registrationNumber,
@@ -220,7 +264,10 @@ function CredentialsPreview({ data }: { data: OnboardingStepDataMap["credentials
             label="License Type"
             value={optionLabel(ghanaLicenseTypes, data.licenseType)}
           />
-          <PreviewField label="Council Registration Number" value={data.registrationNumber} />
+          <PreviewField
+            label="Council Registration Number"
+            value={data.registrationNumber}
+          />
           <PreviewField
             label="Licensing Body"
             value={optionLabel(ghanaLicensingBodies, data.licensingBody)}
@@ -231,7 +278,11 @@ function CredentialsPreview({ data }: { data: OnboardingStepDataMap["credentials
           />
           <PreviewField
             label="Years of Experience"
-            value={data.yearsOfExperience >= 20 ? "20+" : String(data.yearsOfExperience)}
+            value={
+              data.yearsOfExperience >= 20
+                ? "20+"
+                : String(data.yearsOfExperience)
+            }
           />
         </div>
         <PreviewField
@@ -243,14 +294,21 @@ function CredentialsPreview({ data }: { data: OnboardingStepDataMap["credentials
   );
 }
 
-function SpecialtiesPreview({ data }: { data: OnboardingStepDataMap["specialties"] }) {
+function SpecialtiesPreview({
+  data,
+}: {
+  data: OnboardingStepDataMap["specialties"];
+}) {
   if (data.specialties.length === 0) {
     return <EmptyPreview stepLabel="specialties" />;
   }
 
   return (
     <div>
-      <ConfirmedBanner complete={data.specialties.length} total={data.specialties.length} />
+      <ConfirmedBanner
+        complete={data.specialties.length}
+        total={data.specialties.length}
+      />
       <p className="mb-3 text-sm font-semibold text-munity-text">
         Selected ({data.specialties.length})
       </p>
@@ -311,11 +369,17 @@ function PayoutPreview({ data }: { data: OnboardingStepDataMap["payout"] }) {
         {hasMobileMoney ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <PreviewField label="Name on MoMo Account" value={data.momoAccountName} />
+              <PreviewField
+                label="Name on MoMo Account"
+                value={data.momoAccountName}
+              />
             </div>
             <PreviewField
               label="Mobile Money Network"
-              value={optionLabel(ghanaMobileMoneyProviders, data.mobileMoneyNetwork)}
+              value={optionLabel(
+                ghanaMobileMoneyProviders,
+                data.mobileMoneyNetwork,
+              )}
             />
             <PreviewField label="MoMo Number" value={data.momoNumber} />
           </div>
@@ -324,10 +388,19 @@ function PayoutPreview({ data }: { data: OnboardingStepDataMap["payout"] }) {
         {hasBank ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div className="md:col-span-2">
-              <PreviewField label="Name on Bank Account" value={data.bankAccountName} />
+              <PreviewField
+                label="Name on Bank Account"
+                value={data.bankAccountName}
+              />
             </div>
-            <PreviewField label="Bank Name" value={optionLabel(ghanaBanks, data.bankName)} />
-            <PreviewField label="Bank Account Number" value={data.bankAccountNumber} />
+            <PreviewField
+              label="Bank Name"
+              value={optionLabel(ghanaBanks, data.bankName)}
+            />
+            <PreviewField
+              label="Bank Account Number"
+              value={data.bankAccountNumber}
+            />
           </div>
         ) : null}
       </div>

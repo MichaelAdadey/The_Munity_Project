@@ -23,7 +23,10 @@ function formatDate(iso: string) {
   });
 }
 
-export function TherapistFilesListView({ patients, notes }: TherapistFilesListViewProps) {
+export function TherapistFilesListView({
+  patients,
+  notes,
+}: TherapistFilesListViewProps) {
   const notesByPatient = new Map<string, SessionNote[]>();
   for (const note of notes) {
     const list = notesByPatient.get(note.patientId) ?? [];
@@ -55,7 +58,10 @@ export function TherapistFilesListView({ patients, notes }: TherapistFilesListVi
       />
       <div className="flex flex-col gap-6">
         {patients.map((patient) => {
-          const patientNotes = (notesByPatient.get(patient.id) ?? []).slice(0, 3);
+          const patientNotes = (notesByPatient.get(patient.id) ?? []).slice(
+            0,
+            3,
+          );
           const fileCount = notesByPatient.get(patient.id)?.length ?? 0;
           return (
             <motion.section
@@ -71,12 +77,20 @@ export function TherapistFilesListView({ patients, notes }: TherapistFilesListVi
                   className="flex items-center gap-4 transition hover:opacity-80"
                 >
                   <div className="relative size-12 shrink-0 overflow-hidden rounded-xl">
-                    <Image src={patient.avatar} alt={patient.name} fill className="object-cover" />
+                    <Image
+                      src={patient.avatar}
+                      alt={patient.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                   <div>
-                    <p className="font-semibold text-munity-text">{patient.name}</p>
+                    <p className="font-semibold text-munity-text">
+                      {patient.name}
+                    </p>
                     <p className="text-xs font-bold uppercase tracking-wide text-munity-muted">
-                      {patient.clientId} · {fileCount} file{fileCount === 1 ? "" : "s"}
+                      {patient.clientId} · {fileCount} file
+                      {fileCount === 1 ? "" : "s"}
                     </p>
                   </div>
                 </Link>
@@ -91,12 +105,17 @@ export function TherapistFilesListView({ patients, notes }: TherapistFilesListVi
               </div>
 
               {patientNotes.length === 0 ? (
-                <p className="mt-4 text-sm text-munity-muted">No files uploaded for {patient.name} yet.</p>
+                <p className="mt-4 text-sm text-munity-muted">
+                  No files uploaded for {patient.name} yet.
+                </p>
               ) : (
                 <table className="mt-4 w-full text-left text-sm">
                   <tbody>
                     {patientNotes.map((note) => (
-                      <tr key={note.id} className="border-b border-munity-border/60 last:border-b-0">
+                      <tr
+                        key={note.id}
+                        className="border-b border-munity-border/60 last:border-b-0"
+                      >
                         <td className="py-3 pr-3">
                           <Link
                             href={`${patientRoutes(patient.slug).clinicalNotes}?note=${note.id}`}
@@ -105,7 +124,9 @@ export function TherapistFilesListView({ patients, notes }: TherapistFilesListVi
                             <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-munity-lime/50">
                               <FileText className="size-4 text-munity-green" />
                             </div>
-                            <span className="font-medium text-munity-text">{note.title}</span>
+                            <span className="font-medium text-munity-text">
+                              {note.title}
+                            </span>
                           </Link>
                         </td>
                         <td className="py-3 pl-3 text-right text-munity-muted">

@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Archive, ArchiveRestore, Copy, Flag, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArchiveRestore,
+  Copy,
+  Flag,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -164,7 +172,8 @@ export function PostOptionsMenu({
           <DialogHeader>
             <DialogTitle>Delete post?</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this post? This can&apos;t be undone.
+              Are you sure you want to delete this post? This can&apos;t be
+              undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -191,8 +200,8 @@ export function PostOptionsMenu({
           <DialogHeader>
             <DialogTitle>Report post</DialogTitle>
             <DialogDescription>
-              Let us know why this post doesn&apos;t belong on Munity. Our moderators will
-              review it.
+              Let us know why this post doesn&apos;t belong on Munity. Our
+              moderators will review it.
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col gap-1.5">

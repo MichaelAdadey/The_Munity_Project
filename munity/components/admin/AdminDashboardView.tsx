@@ -14,30 +14,6 @@ import {
 import { routes } from "@/lib/routes";
 import { DashboardData } from "@/lib/admin/dashboard-queries";
 
-// const alerts = [
-//   {
-//     title: "Critical Flag: User #829",
-//     body: "Potential high-risk trigger detected in 'Depression' community.",
-//     time: "12m ago",
-//     tone: "critical" as const,
-//     icon: AlertTriangle,
-//   },
-//   {
-//     title: "API Usage Spike",
-//     body: "System performance remains stable at 90% load.",
-//     time: "45m ago",
-//     tone: "warning" as const,
-//     icon: Zap,
-//   },
-//   {
-//     title: "New Therapist Verified",
-//     body: "Dr. Aris Thorne has completed credential review.",
-//     time: "2h ago",
-//     tone: "success" as const,
-//     icon: CheckCircle2,
-//   },
-// ];
-
 function chartPoints(
   data: { growth: number; retention: number }[],
   key: "growth" | "retention",
@@ -468,46 +444,6 @@ function AdminDashboardContent({ data }: { data: DashboardData }) {
             ))}
           </div>
         </article>
-
-        {/* <article className="rounded-[20px] border border-munity-border bg-white/70 p-6 shadow-[0px_4px_20px_rgba(85,107,47,0.05)] xl:col-span-3">
-          <h2 className="text-2xl font-semibold text-munity-text">
-            Recent Alerts
-          </h2>
-          <div className="mt-4 flex flex-col gap-4">
-            {alerts.map((alert) => {
-              const Icon = alert.icon;
-              return (
-                <div
-                  key={alert.title}
-                  className="flex gap-3 border-b border-[rgba(197,200,184,0.3)] pb-3 last:border-b-0 last:pb-0"
-                >
-                  <div
-                    className={`mt-1 flex size-8 shrink-0 items-center justify-center rounded-full ${
-                      alert.tone === "critical"
-                        ? "bg-[rgba(255,218,214,0.3)] text-[#ba1a1a]"
-                        : alert.tone === "warning"
-                          ? "bg-[#fff3cd] text-[#8a6d00]"
-                          : "bg-munity-lime/50 text-munity-green"
-                    }`}
-                  >
-                    <Icon className="size-3.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold tracking-wide text-munity-text">
-                      {alert.title}
-                    </p>
-                    <p className="mt-1 text-[11px] leading-relaxed text-munity-muted">
-                      {alert.body}
-                    </p>
-                    <p className="mt-1 text-[10px] font-medium text-munity-muted/70">
-                      {alert.time}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </article> */}
       </section>
     </div>
   );

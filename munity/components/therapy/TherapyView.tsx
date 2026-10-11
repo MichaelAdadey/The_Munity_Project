@@ -21,9 +21,7 @@ import {
   liveStagger,
   useLiveToast,
 } from "@/components/live/LiveFeedback";
-// import { useMockStore } from "@/lib/mock-store";
 import { routes, therapyPath } from "@/lib/routes";
-// import type { TherapistRecord } from "@/lib/mock-db";
 import { TherapyListItem } from "@/lib/therapy/queries";
 import { createBooking } from "@/lib/therapy/booking-actions";
 import {
@@ -31,30 +29,11 @@ import {
   useMyBookings,
 } from "@/lib/therapy/booking-status";
 
-// type Specialization =
-//   | "Anxiety & Stress"
-//   | "Depression"
-//   | "CBT Therapy"
-//   | "Family Issues";
-
-// type AvailabilityFilter = "Today" | "This Week" | "Weekend";
-
 type SortOption =
   | "Recommended"
   | "Highest rated"
   | "Price: low to high"
   | "Price: high to low";
-
-// const SPECIALIZATIONS: Specialization[] = [
-//   "Anxiety & Stress",
-//   "Depression",
-//   "CBT Therapy",
-//   "Family Issues",
-// ];
-
-// const AVAILABILITY_OPTIONS: AvailabilityFilter[] = ["Today", "This Week", "Weekend"];
-
-// const LANGUAGES = ["English", "Spanish", "Italian", "Mandarin"];
 
 const SORT_OPTIONS: SortOption[] = [
   "Recommended",
@@ -85,18 +64,13 @@ export function TherapyView({
   therapists: TherapyListItem[];
 }) {
   const router = useRouter();
-  // const store = useMockStore();
   const { flash } = useLiveToast();
   const [nameQuery, setNameQuery] = useState("");
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([]);
-  // const [language, setLanguage] = useState("English");
   const [maxPrice, setMaxPrice] = useState(PRICE_MAX);
-  // const [availability, setAvailability] = useState<AvailabilityFilter>("Today");
   const [sortBy, setSortBy] = useState<SortOption>("Recommended");
   const [page, setPage] = useState(1);
-  // const [bookedTherapistId, setBookedTherapistId] = useState<string | null>(
-  //   null,
-  // );
+
   const [bookingTherapist, setBookingTherapist] =
     useState<TherapyListItem | null>(null);
 
@@ -251,33 +225,6 @@ export function TherapyView({
                 </div>
               </div>
 
-              {/* <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="therapy-language"
-                  className="text-sm font-semibold tracking-wide text-munity-text"
-                >
-                  Language
-                </label>
-                <div className="relative">
-                  <select
-                    id="therapy-language"
-                    value={language}
-                    onChange={(e) => {
-                      setLanguage(e.target.value);
-                      setPage(1);
-                    }}
-                    className="w-full appearance-none rounded-xl border border-[#c5c8b8] bg-[#f5f3f3] px-4 py-2.5 text-base text-munity-text outline-none transition focus:border-munity-green/40 focus:bg-white"
-                  >
-                    {LANGUAGES.map((lang) => (
-                      <option key={lang} value={lang}>
-                        {lang}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-5 -translate-y-1/2 text-munity-muted" />
-                </div>
-              </div> */}
-
               <div className="flex flex-col gap-4 pb-1.5">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold tracking-wide text-munity-text">
@@ -301,34 +248,6 @@ export function TherapyView({
                   aria-label="Maximum session price"
                 />
               </div>
-
-              {/* <div className="flex flex-col gap-2">
-                <p className="text-sm font-semibold tracking-wide text-munity-text">
-                  Availability
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABILITY_OPTIONS.map((option) => {
-                    const active = availability === option;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        onClick={() => {
-                          setAvailability(option);
-                          setPage(1);
-                        }}
-                        className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                          active
-                            ? "border border-munity-green bg-munity-green text-white"
-                            : "border border-[#c5c8b8] text-munity-text hover:border-munity-green/40"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div> */}
             </div>
           </aside>
 
@@ -416,9 +335,6 @@ export function TherapyView({
                       </div>
                     </div>
 
-                    {/* <p className="line-clamp-2 text-base italic leading-relaxed text-munity-muted">
-                      &ldquo;{therapist.quote}&rdquo;
-                    </p> */}
                     {therapist.bio ? (
                       <p className="line-clamp-2 text-base leading-relaxed text-munity-muted">
                         {therapist.bio}

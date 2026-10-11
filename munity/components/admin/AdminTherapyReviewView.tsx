@@ -51,7 +51,9 @@ export function AdminTherapyReviewView({
 
   return (
     <div className="mx-auto max-w-3xl p-6">
-      <h1 className="text-2xl font-bold text-munity-text">Therapist Verification Queue</h1>
+      <h1 className="text-2xl font-bold text-munity-text">
+        Therapist Verification Queue
+      </h1>
       <p className="mt-1 text-sm text-munity-muted">Signed in as {adminName}</p>
 
       {message ? (
@@ -62,7 +64,9 @@ export function AdminTherapyReviewView({
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-munity-border bg-white">
         {rows.length === 0 ? (
-          <p className="p-6 text-sm text-munity-muted">No pending applications.</p>
+          <p className="p-6 text-sm text-munity-muted">
+            No pending applications.
+          </p>
         ) : (
           rows.map((t) => (
             <div
@@ -74,7 +78,8 @@ export function AdminTherapyReviewView({
                   {t.profiles?.first_name} {t.profiles?.last_name}
                 </p>
                 <p className="text-sm text-munity-muted">
-                  {t.professional_title} · {t.licensing_body} · License #{t.license_number}
+                  {t.professional_title} · {t.licensing_body} · License #
+                  {t.license_number}
                 </p>
                 <p className="text-xs text-munity-muted">
                   {t.years_of_experience ?? 0} yrs experience ·{" "}

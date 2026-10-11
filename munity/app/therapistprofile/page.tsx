@@ -5,7 +5,10 @@ import { TherapistProfileView } from "@/components/therapistprofile/TherapistPro
 import type { TherapistProfile } from "@/lib/therapist-profile";
 
 export default async function TherapistProfilePage() {
-  const { user, profile } = await requireRole(["therapist"], routes.therapistLogin);
+  const { user, profile } = await requireRole(
+    ["therapist"],
+    routes.therapistLogin,
+  );
   const supabase = await createClient();
 
   const { data: details } = await supabase
@@ -35,7 +38,8 @@ export default async function TherapistProfilePage() {
         })
       : "",
     verificationStatus:
-      (details?.verification_status as TherapistProfile["verificationStatus"]) ?? "pending",
+      (details?.verification_status as TherapistProfile["verificationStatus"]) ??
+      "pending",
     specialties: details?.specialties ?? [],
     payoutMethods: details?.payout_methods ?? [],
     mobileMoneyNetwork: details?.mobile_money_network ?? "",
@@ -51,5 +55,7 @@ export default async function TherapistProfilePage() {
       : "",
   };
 
-  return <TherapistProfileView initialProfile={initialProfile} userId={user.id} />;
+  return (
+    <TherapistProfileView initialProfile={initialProfile} userId={user.id} />
+  );
 }

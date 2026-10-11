@@ -1,17 +1,17 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function JoinCommunityButton({
   defaultJoined = false,
   className,
 }: {
-  defaultJoined?: boolean
-  className?: string
+  defaultJoined?: boolean;
+  className?: string;
 }) {
-  const [joined, setJoined] = useState(defaultJoined)
+  const [joined, setJoined] = useState(defaultJoined);
 
   return (
     <Button
@@ -21,5 +21,5 @@ export function JoinCommunityButton({
     >
       {joined ? "Joined" : "Join Community"}
     </Button>
-  )
+  );
 }

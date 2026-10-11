@@ -29,7 +29,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-// import { useMockStore } from "@/lib/mock-store";
 import { ImageLightbox } from "@/components/ui/image-lightbox";
 import { useCurrentProfile } from "@/hooks/use-current-profile";
 import {
@@ -219,7 +218,6 @@ function MoodLineChart() {
 }
 
 export function MemberProfileView() {
-  // const store = useMockStore();
   const { flash } = useLiveToast();
   const {
     profile,
@@ -657,29 +655,6 @@ export function MemberProfileView() {
 
           {/* Right column */}
           <div className="flex flex-col gap-6 xl:col-span-4">
-            {/* <section className="relative overflow-hidden rounded-3xl bg-munity-green p-8 text-center shadow-xl">
-              <div className="absolute -right-12 -top-12 size-32 rounded-full bg-[rgba(214,231,161,0.2)] blur-2xl" />
-              <Flame
-                className="mx-auto size-12 text-munity-lime"
-                fill="currentColor"
-              />
-              <p className="mt-4 text-5xl font-bold tracking-[-0.96px] text-white">
-                {store.profile.dayStreak}
-              </p>
-              <p className="mt-1 text-sm font-semibold uppercase tracking-[1.4px] text-white/80">
-                Day Wellness Streak
-              </p>
-              <div className="mt-3">
-                <LivePulse label="Streak active" />
-              </div>
-              <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-white/20">
-                <div className="h-full w-4/5 rounded-full bg-munity-lime shadow-[0_0_15px_rgba(214,231,161,0.5)]" />
-              </div>
-              <p className="mt-4 text-xs font-medium leading-relaxed text-white/70">
-                Only 7 days left to reach your Monthly Goal!
-              </p>
-            </section> */}
-
             <section className="flex flex-col gap-4 rounded-[20px] bg-[#eae8e7] p-6">
               <div className="flex items-center gap-2">
                 <MunityLeafIcon className="size-5 text-munity-green" />

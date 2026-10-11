@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  Lock,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowRight, Check, Lock, RefreshCw } from "lucide-react";
 import { useOnboardingProgress } from "@/hooks/useOnboardingProgress";
 import type { OnboardingStepId } from "@/lib/routes";
 import { routes } from "@/lib/routes";
@@ -56,7 +51,9 @@ export function CredentialVerificationSidebar({
             style={{ width: `${progressPercent}%` }}
           />
         </div>
-        <p className="mt-1 text-base text-munity-green">{progressPercent}% Completed</p>
+        <p className="mt-1 text-base text-munity-green">
+          {progressPercent}% Completed
+        </p>
         {reviewLive ? (
           <p className="mt-1 text-xs text-munity-muted">
             Awaiting clinical approval — dashboard locked
@@ -83,7 +80,9 @@ export function CredentialVerificationSidebar({
                   className={`size-4 text-munity-green ${reviewLive ? "animate-spin" : ""}`}
                   style={reviewLive ? { animationDuration: "3s" } : undefined}
                 />
-                <span className="text-base text-munity-green">{step.label}</span>
+                <span className="text-base text-munity-green">
+                  {step.label}
+                </span>
               </button>
             );
           }
@@ -96,13 +95,17 @@ export function CredentialVerificationSidebar({
                 type="button"
                 onClick={() => onSelectTab(step.id)}
                 className={`flex items-center gap-3 rounded-xl px-4 py-3 text-left transition-colors ${
-                  isActive ? "bg-munity-lime ring-2 ring-munity-green/20" : "bg-munity-lime/70 hover:bg-munity-lime"
+                  isActive
+                    ? "bg-munity-lime ring-2 ring-munity-green/20"
+                    : "bg-munity-lime/70 hover:bg-munity-lime"
                 }`}
               >
                 <span className="flex size-5 items-center justify-center rounded-full bg-munity-green text-white">
                   <Check className="size-3" strokeWidth={3} />
                 </span>
-                <span className="text-base text-munity-olive-text">{step.label}</span>
+                <span className="text-base text-munity-olive-text">
+                  {step.label}
+                </span>
               </button>
             );
           }
@@ -141,10 +144,12 @@ export function CredentialVerificationFooter() {
     <footer className="border-t border-munity-divider bg-munity-divider px-10 py-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-base font-bold text-munity-text">Munity Peer Support</p>
+          <p className="text-base font-bold text-munity-text">
+            Munity Peer Support
+          </p>
           <p className="mt-1 text-xs font-medium text-munity-muted">
-            © 2024 Munity Peer Support. For emergencies, contact local crisis services
-            immediately.
+            © 2024 Munity Peer Support. For emergencies, contact local crisis
+            services immediately.
           </p>
         </div>
         <div className="flex flex-wrap gap-6 text-xs font-medium text-munity-muted">

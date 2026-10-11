@@ -10,7 +10,10 @@ interface PageProps {
   searchParams: Promise<{ note?: string }>;
 }
 
-export default async function PatientClinicalNotesPage({ params, searchParams }: PageProps) {
+export default async function PatientClinicalNotesPage({
+  params,
+  searchParams,
+}: PageProps) {
   const { slug } = await params;
   const { note } = await searchParams;
   const { user } = await requireRole(["therapist"], routes.therapistLogin);
@@ -22,5 +25,7 @@ export default async function PatientClinicalNotesPage({ params, searchParams }:
 
   const notes = await getSessionNotesForPatient(user.id, patient.id);
 
-  return <ClinicalNotesView patient={patient} notes={notes} initialNoteId={note} />;
+  return (
+    <ClinicalNotesView patient={patient} notes={notes} initialNoteId={note} />
+  );
 }

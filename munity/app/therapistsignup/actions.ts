@@ -8,7 +8,9 @@ import { createClient } from "@/lib/supabase/server";
 import { authErrorMessage } from "@/lib/auth/error-messages";
 import { routes } from "@/lib/routes";
 
-export type TherapistSignupState = { error?: string; success?: string } | undefined;
+export type TherapistSignupState =
+  | { error?: string; success?: string }
+  | undefined;
 
 const therapistOnboardingPath = routes.therapistOnboarding.basicInfo;
 
@@ -94,7 +96,9 @@ export async function signInWithGoogleAsTherapist(): Promise<void> {
   });
 
   if (error) {
-    redirect(`${routes.therapistSignup}?error=${encodeURIComponent(error.message)}`);
+    redirect(
+      `${routes.therapistSignup}?error=${encodeURIComponent(error.message)}`,
+    );
   }
   if (data.url) redirect(data.url);
 }

@@ -104,7 +104,7 @@ export function GlobalSearchBar({
 
   return (
     <div ref={containerRef} className="relative mr-auto hidden sm:block">
-      <Search className="pointer-events-none absolute left-3 top-1/2 size-[18px] -translate-y-1/2 text-munity-gray" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 size-4.5 -translate-y-1/2 text-munity-gray" />
       <input
         type="search"
         value={value}
